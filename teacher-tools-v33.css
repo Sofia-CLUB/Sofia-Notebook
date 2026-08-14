@@ -1,0 +1,73 @@
+
+/* Sofia Notebook PRO v31 — teacher tools */
+.tt31-panel{
+  position:fixed;right:18px;top:86px;z-index:480;width:min(520px,calc(100vw - 36px));
+  max-height:82vh;overflow:auto;background:#fff;border:1px solid #dce5ef;border-radius:16px;
+  box-shadow:0 18px 55px rgba(13,31,58,.28);padding:12px;color:#24324a
+}
+.tt31-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.tt31-head>div{display:flex;flex-direction:column;gap:2px}
+.tt31-head span{font-size:11px;color:#6b7688}
+.tt31-close{border:0;background:transparent;font-size:24px;line-height:1}
+.tt31-tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:10px}
+.tt31-tabs button{border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:8px 5px;font-size:11px}
+.tt31-tabs button.active{background:#17315f;color:#fff;border-color:#17315f}
+.tt31-section{display:grid;gap:9px}
+.tt31-section label{display:grid;gap:4px;font-size:11px;color:#5d687a}
+.tt31-section input,.tt31-section textarea,.tt31-section select{
+  width:100%;padding:9px;border:1px solid #dce5ef;border-radius:8px;background:#fff
+}
+.tt31-actions{display:flex;flex-wrap:wrap;gap:6px}
+.tt31-actions button,.tt31-btn{
+  border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:9px 10px
+}
+.tt31-primary{background:#17315f!important;color:#fff!important;border-color:#17315f!important}
+.tt31-muted{font-size:11px;color:#6b7688;line-height:1.45}
+.tt31-wheel-wrap{display:grid;place-items:center;padding:8px}
+.tt31-wheel{
+  width:270px;height:270px;border-radius:50%;border:7px solid #fff;box-shadow:0 6px 24px rgba(0,0,0,.16);
+  transition:transform 3.6s cubic-bezier(.12,.72,.05,1);position:relative
+}
+.tt31-wheel::after{
+  content:"";position:absolute;left:50%;top:50%;width:24px;height:24px;border-radius:50%;
+  background:#17315f;transform:translate(-50%,-50%);border:3px solid #fff
+}
+.tt31-pointer{
+  width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;
+  border-top:24px solid #d43b3b;margin-bottom:-5px;z-index:3
+}
+.tt31-result{font-weight:700;text-align:center;font-size:18px;color:#17315f;min-height:26px}
+.tt31-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tt31-card{
+  min-height:120px;border:1px solid #dce5ef;border-radius:12px;padding:12px;background:#f8faff;
+  display:grid;place-items:center;text-align:center;cursor:pointer;perspective:800px
+}
+.tt31-card b{color:#17315f}.tt31-card small{display:block;color:#6b7688;margin-top:6px}
+.tt31-test-box{border:1px solid #dce5ef;border-radius:10px;padding:10px;background:#fbfcfe}
+.tt31-test-q{font-weight:700;margin-bottom:7px}
+.tt31-options{display:grid;gap:5px}
+.tt31-options button{border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:8px;text-align:left}
+.tt31-score{font-weight:700;color:#17315f}
+.tt31-image-preview{display:grid;place-items:center;min-height:180px;border:1px dashed #c8d4e4;border-radius:10px;background:#f8faff;overflow:hidden}
+.tt31-image-preview img{max-width:100%;max-height:420px;display:block}
+.tt31-list-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tt31-list-preview{border:1px solid #dce5ef;border-radius:10px;padding:10px;background:#fff;white-space:pre-wrap}
+.tt31-ai-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.tt31-ai-tools button{border:1px solid #dce5ef;background:#fff;border-radius:7px;padding:7px 9px;font-size:11px}
+@media(max-width:720px){
+  .tt31-tabs{grid-template-columns:repeat(2,1fr)}
+  .tt31-card-grid{grid-template-columns:1fr}
+}
+
+.tt32-translate-result{
+  min-height:90px;border:1px solid #dce5ef;border-radius:10px;padding:12px;background:#f8faff;
+  white-space:pre-wrap;font-size:15px;line-height:1.5
+}
+.tt32-lang-row{display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:end}
+.tt32-swap{height:39px;min-width:42px;border:1px solid #dce5ef;background:#fff;border-radius:8px}
+.tt32-selected-note{font-size:11px;color:#6b7688}
+
+#tt33InsertTest{
+  background:#eef5ff;border-color:#bfd2ef;color:#17315f;font-weight:700
+}
+#tt33InsertTest:disabled{opacity:.45;cursor:not-allowed}
