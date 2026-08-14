@@ -620,24 +620,24 @@ body.board-fullscreen #v29FullscreenExit{display:block}
 /* =========================================================
    v30 FULLSCREEN — робоче поле + усі інструменти
    ========================================================= */
-body.board-fullscreen-v31{
+body.board-fullscreen-v32{
   overflow:hidden!important;
   background:#dfe9f4!important;
 }
-body.board-fullscreen-v31 .topbar{
+body.board-fullscreen-v32 .topbar{
   position:fixed!important;
   left:0;right:0;top:0;
   z-index:9600!important;
   display:flex!important;
   min-height:58px;
 }
-body.board-fullscreen-v31 .lessonbar{
+body.board-fullscreen-v32 .lessonbar{
   position:fixed!important;
   left:0;right:0;top:58px;
   z-index:9590!important;
   display:grid!important;
 }
-body.board-fullscreen-v31 .ribbon{
+body.board-fullscreen-v32 .ribbon{
   position:fixed!important;
   left:0;right:0;top:130px;
   z-index:9580!important;
@@ -646,18 +646,18 @@ body.board-fullscreen-v31 .ribbon{
   overflow:auto;
   background:#fff;
 }
-body.board-fullscreen-v31 .leftbar{
+body.board-fullscreen-v32 .leftbar{
   display:none!important;
 }
-body.board-fullscreen-v31 .page-controls,
-body.board-fullscreen-v31 .status{
+body.board-fullscreen-v32 .page-controls,
+body.board-fullscreen-v32 .status{
   display:none!important;
 }
-body.board-fullscreen-v31 .layout{
+body.board-fullscreen-v32 .layout{
   display:block!important;
   height:100vh!important;
 }
-body.board-fullscreen-v31 .workspace{
+body.board-fullscreen-v32 .workspace{
   position:fixed!important;
   left:0;right:0;top:248px;bottom:0;
   width:100vw!important;
@@ -666,7 +666,7 @@ body.board-fullscreen-v31 .workspace{
   overflow:auto!important;
   z-index:9000!important;
 }
-body.board-fullscreen-v31 #pageViewport{
+body.board-fullscreen-v32 #pageViewport{
   width:100%!important;
   min-height:100%!important;
   padding:6px!important;
@@ -676,7 +676,7 @@ body.board-fullscreen-v31 #pageViewport{
   align-items:flex-start!important;
   background:#dfe9f4!important;
 }
-body.board-fullscreen-v31 .notebook{
+body.board-fullscreen-v32 .notebook{
   width:100%!important;
   max-width:none!important;
   margin:0!important;
@@ -684,7 +684,7 @@ body.board-fullscreen-v31 .notebook{
 }
 
 /* Floating exit button */
-#v31FullscreenExit{
+#v32FullscreenExit{
   display:none;
   position:fixed;
   right:10px;
@@ -698,10 +698,10 @@ body.board-fullscreen-v31 .notebook{
   font-weight:700;
   box-shadow:0 6px 20px rgba(0,0,0,.25)
 }
-body.board-fullscreen-v31 #v31FullscreenExit{display:block!important}
+body.board-fullscreen-v32 #v32FullscreenExit{display:block!important}
 
 /* Floating delete for every Fabric object */
-#v31ObjectDelete{
+#v32ObjectDelete{
   display:none;
   position:fixed;
   z-index:99998;
@@ -715,7 +715,7 @@ body.board-fullscreen-v31 #v31FullscreenExit{display:block!important}
   box-shadow:0 4px 15px rgba(0,0,0,.28);
   cursor:pointer
 }
-#v31ObjectDelete.show{display:block}
+#v32ObjectDelete.show{display:block}
 
 /* DOM fallback images */
 .v30-dom-image{
@@ -751,15 +751,15 @@ body.board-fullscreen-v31 #v31FullscreenExit{display:block!important}
 
 /* Tablet / interactive board: keep toolbar usable */
 @media (max-width:1200px), (pointer:coarse){
-  body.board-fullscreen-v31 .lessonbar{top:60px}
-  body.board-fullscreen-v31 .ribbon{top:136px;max-height:130px}
-  body.board-fullscreen-v31 .workspace{top:266px}
+  body.board-fullscreen-v32 .lessonbar{top:60px}
+  body.board-fullscreen-v32 .ribbon{top:136px;max-height:130px}
+  body.board-fullscreen-v32 .workspace{top:266px}
 }
 
 /* =========================================================
    v31 FULLSCREEN — ліві інструменти залишаються видимими
    ========================================================= */
-body.board-fullscreen-v31 .leftbar{
+body.board-fullscreen-v32 .leftbar{
   display:flex!important;
   position:fixed!important;
   left:0;
@@ -773,34 +773,100 @@ body.board-fullscreen-v31 .leftbar{
   overflow-x:hidden!important;
   padding:8px 5px!important;
 }
-body.board-fullscreen-v31 .leftbar .side-tool{
+body.board-fullscreen-v32 .leftbar .side-tool{
   width:100%!important;
   min-width:0!important;
   flex:0 0 auto!important;
 }
-body.board-fullscreen-v31 .workspace{
+body.board-fullscreen-v32 .workspace{
   left:72px!important;
   width:calc(100vw - 72px)!important;
 }
-body.board-fullscreen-v31 #pageViewport{
+body.board-fullscreen-v32 #pageViewport{
   width:100%!important;
 }
-body.board-fullscreen-v31 .notebook{
+body.board-fullscreen-v32 .notebook{
   width:100%!important;
   max-width:none!important;
 }
 
 /* На великих інтерактивних дошках трохи ширша панель */
 @media (min-width:1600px){
-  body.board-fullscreen-v31 .leftbar{width:82px!important}
-  body.board-fullscreen-v31 .workspace{
+  body.board-fullscreen-v32 .leftbar{width:82px!important}
+  body.board-fullscreen-v32 .workspace{
     left:82px!important;
     width:calc(100vw - 82px)!important;
   }
 }
 
 /* На невисоких екранах панель прокручується */
-body.board-fullscreen-v31 .leftbar::-webkit-scrollbar{width:6px}
-body.board-fullscreen-v31 .leftbar::-webkit-scrollbar-thumb{
+body.board-fullscreen-v32 .leftbar::-webkit-scrollbar{width:6px}
+body.board-fullscreen-v32 .leftbar::-webkit-scrollbar-thumb{
   background:#cbd6e5;border-radius:6px
+}
+
+/* =========================================================
+   v32 — навчальні картки / тест
+   ========================================================= */
+.learning-generator-panel{width:470px}
+.learning-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.learning-grid-2 label{
+  display:flex;flex-direction:column;gap:4px;font-size:10px;color:#667386
+}
+.learning-grid-2 input,.learning-grid-2 select,
+.learning-generator-panel textarea,.learning-generator-panel input,.learning-generator-panel select{
+  width:100%;padding:8px;border:1px solid #d6dfeb;border-radius:8px;background:#fff
+}
+.learning-actions{display:grid;grid-template-columns:1.25fr 1fr;gap:7px;margin:9px 0}
+.learning-preview{display:grid;gap:8px;max-height:340px;overflow:auto}
+.learning-preview-card{
+  border:1px solid #dce5ef;border-radius:10px;padding:9px;background:#f9fbff
+}
+.learning-preview-card b{color:#17315f}
+.learning-preview-card .answer{margin-top:5px;color:#5f6d81;font-size:11px}
+.learning-preview-card button{
+  margin-top:7px;border:1px solid #d7e0ec;background:#fff;border-radius:7px;padding:6px 8px
+}
+
+/* =========================================================
+   v32 — колесо фортуни
+   ========================================================= */
+.fortune-wheel-panel{
+  position:fixed;inset:5vh 4vw;z-index:9900;
+  background:#fff;border:1px solid #dce5ef;border-radius:18px;
+  box-shadow:0 22px 70px rgba(13,31,58,.35);padding:14px;overflow:auto
+}
+.fortune-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.fortune-head>div{display:flex;flex-direction:column;gap:3px}
+.fortune-head span{font-size:10px;color:#6b7688}
+.fortune-head button{border:0;background:transparent;font-size:26px}
+.fortune-layout{display:grid;grid-template-columns:minmax(420px,1.1fr) minmax(300px,.9fr);gap:18px;align-items:center}
+.fortune-canvas-wrap{position:relative;display:flex;align-items:center;justify-content:center;min-height:560px}
+#fortuneCanvas{width:min(520px,90%);height:auto;max-width:520px;filter:drop-shadow(0 12px 20px rgba(13,31,58,.18))}
+.fortune-pointer{
+  position:absolute;top:5px;left:50%;transform:translateX(-50%);
+  z-index:3;font-size:38px;color:#d83b3b;text-shadow:0 2px 0 #fff
+}
+.fortune-spin{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:118px;height:118px;border-radius:50%;border:7px solid #fff;
+  background:#17315f;color:#fff;font-weight:800;font-size:18px;
+  box-shadow:0 8px 24px rgba(0,0,0,.25)
+}
+.fortune-settings{display:grid;gap:10px}
+.fortune-settings label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#5d687a}
+.fortune-settings input,.fortune-settings textarea{
+  width:100%;padding:9px;border:1px solid #d6dfeb;border-radius:9px;background:#fff
+}
+.fortune-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.fortune-actions button{border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:9px}
+.fortune-check{flex-direction:row!important;align-items:center!important}
+.fortune-check input{width:auto!important}
+.fortune-result{
+  padding:16px;border-radius:12px;background:#f1f5fb;color:#17315f;
+  font-size:24px;font-weight:800;text-align:center;min-height:62px
+}
+@media(max-width:950px){
+  .fortune-layout{grid-template-columns:1fr}
+  .fortune-canvas-wrap{min-height:480px}
 }
