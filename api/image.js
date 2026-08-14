@@ -64,7 +64,7 @@ ${prompt.trim()}
           ],
           response_format: {
             type: "image",
-            mime_type: "image/png",
+            mime_type: "image/jpeg",
             aspect_ratio: fmt.aspect_ratio,
             image_size: fmt.image_size
           }
@@ -121,7 +121,7 @@ ${prompt.trim()}
       ) {
         return {
           data: value.data,
-          mime: value.mime_type || value.mimeType || "image/png"
+          mime: value.mime_type || value.mimeType || "image/jpeg"
         };
       }
 
