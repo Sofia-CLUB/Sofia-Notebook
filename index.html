@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sofia Notebook</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="brand">
+        <div class="logo">SGE</div>
+
+        <div>
+            <h1>Sofia Notebook</h1>
+            <p>Sofia Global Education</p>
+        </div>
+    </div>
+
+    <button id="saveBtn" class="save-btn">
+        💾 Зберегти
+    </button>
+
+</header>
+
+
+<main class="container">
+
+    <!-- Інформація про учня -->
+
+    <section class="student-panel">
+
+        <div class="field">
+            <label>Ім'я та прізвище</label>
+            <input
+                type="text"
+                id="studentName"
+                placeholder="Введіть ім'я учня"
+            >
+        </div>
+
+
+        <div class="field">
+
+            <label>Клас</label>
+
+            <select id="studentClass">
+
+                <option value="">Оберіть клас</option>
+
+                <option>1-А</option>
+                <option>1-Б</option>
+
+                <option>2-А</option>
+                <option>2-Б</option>
+
+                <option>3-А</option>
+                <option>3-Б</option>
+
+                <option>4-А</option>
+                <option>4-Б</option>
+
+                <option>5-А</option>
+                <option>5-Б</option>
+
+                <option>6-А</option>
+                <option>6-Б</option>
+
+                <option>7-А</option>
+                <option>7-Б</option>
+
+                <option>8-А</option>
+                <option>9-А</option>
+
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>Предмет</label>
+
+            <select id="subject">
+
+                <option value="">Оберіть предмет</option>
+
+                <option>Математика</option>
+                <option>Українська мова</option>
+                <option>Література</option>
+                <option>Англійська мова</option>
+                <option>Інформатика</option>
+                <option>Я досліджую світ</option>
+                <option>Історія</option>
+                <option>Географія</option>
+                <option>Біологія</option>
+
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>Тип роботи</label>
+
+            <select id="workType">
+
+                <option>Класна робота</option>
+                <option>Домашня робота</option>
+                <option>Самостійна робота</option>
+                <option>Контрольна робота</option>
+
+            </select>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- Панель інструментів -->
+
+    <section class="toolbar">
+
+        <div class="tool-group">
+
+            <button
+                class="tool active"
+                id="drawBtn"
+                title="Ручка"
+            >
+                ✏️ Ручка
+            </button>
+
+
+            <button
+                class="tool"
+                id="eraserBtn"
+                title="Гумка"
+            >
+                🧽 Гумка
+            </button>
+
+
+            <button
+                class="tool"
+                id="textBtn"
+                title="Текст"
+            >
+                T Текст
+            </button>
+
+        </div>
+
+
+        <div class="tool-group">
+
+            <label class="small-label">
+                Колір
+            </label>
+
+            <input
+                type="color"
+                id="colorPicker"
+                value="#1d3557"
+            >
+
+
+            <label class="small-label">
+                Товщина
+            </label>
+
+            <input
+                type="range"
+                id="lineWidth"
+                min="1"
+                max="15"
+                value="3"
+            >
+
+        </div>
+
+
+        <div class="tool-group">
+
+            <button
+                class="background-btn active"
+                data-background="grid"
+            >
+                # Клітинка
+            </button>
+
+            <button
+                class="background-btn"
+                data-background="lines"
+            >
+                ≡ Лінійка
+            </button>
+
+            <button
+                class="background-btn"
+                data-background="clean"
+            >
+                □ Чистий
+            </button>
+
+        </div>
+
+
+        <div class="tool-group">
+
+            <button id="undoBtn" class="tool">
+                ↶ Назад
+            </button>
+
+            <button id="clearBtn" class="danger-btn">
+                🗑 Очистити
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- Зошит -->
+
+    <section class="notebook-wrapper">
+
+        <div class="notebook-header">
+
+            <div>
+                <strong id="displaySubject">
+                    Мій зошит
+                </strong>
+            </div>
+
+            <div id="currentDate"></div>
+
+        </div>
+
+
+        <div
+            id="notebook"
+            class="notebook grid-background"
+        >
+
+            <div
+                id="textLayer"
+                class="text-layer"
+                contenteditable="false"
+            ></div>
+
+            <canvas id="drawingCanvas"></canvas>
+
+        </div>
+
+    </section>
+
+
+    <div class="status">
+
+        <span id="saveStatus">
+            Робота ще не збережена
+        </span>
+
+    </div>
+
+</main>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
