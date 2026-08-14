@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Дозволяємо запити з Sofia Notebook
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -27,7 +26,7 @@ export default async function handler(req, res) {
     const grade = context?.grade || "не вказано";
     const workType = context?.workType || "не вказано";
 
-    const instructions = `
+    const systemPrompt = `
 Ти — освітній AI-помічник Sofia Notebook PRO.
 
 Допомагай учителям та учням у навчанні.
@@ -38,29 +37,36 @@ export default async function handler(req, res) {
 
 Правила:
 - відповідай українською мовою, якщо користувач не попросив іншу;
-- пояснюй зрозуміло відповідно до віку учня;
+- пояснюй відповідно до віку учня;
+- математичні задачі розв'язуй покроково;
 - допомагай з математикою, українською та англійською мовами,
   інформатикою, природничими та іншими шкільними предметами;
-- математичні задачі розв'язуй покроково;
-- можеш створювати вправи, приклади, тести та пояснення;
-- для вчителя можеш допомагати створювати завдання для уроку;
-- не вигадуй фактів, якщо не впевнений у відповіді.
+- можеш створювати вправи, тести, приклади та пояснення;
+- відповідай чітко й без зайвої води.
 `;
 
     const response = await fetch(
-      "https://api.openai.com/v1/responses",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
         },
-
         body: JSON.stringify({
-          model: "gpt-5-mini",
-          instructions: instructions,
-          input: message
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ],
+          temperature: 0.4,
+          max_tokens: 1200
         })
       }
     );
@@ -68,43 +74,22 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("OpenAI API error:", data);
+      console.error("Groq API error:", data);
 
       return res.status(response.status).json({
         error:
           data?.error?.message ||
-          "Помилка підключення до OpenAI"
+          "Помилка підключення до Groq"
       });
     }
 
-    let answer = "";
-
-    if (data.output_text) {
-      answer = data.output_text;
-    }
-
-    if (!answer && Array.isArray(data.output)) {
-      for (const item of data.output) {
-        if (!Array.isArray(item.content)) continue;
-
-        for (const content of item.content) {
-          if (
-            content.type === "output_text" &&
-            content.text
-          ) {
-            answer += content.text;
-          }
-        }
-      }
-    }
-
-    if (!answer) {
-      answer = "AI не повернув текстову відповідь.";
-    }
+    const answer =
+      data?.choices?.[0]?.message?.content ||
+      "AI не повернув текстову відповідь.";
 
     return res.status(200).json({
-  reply: answer
-});
+      reply: answer
+    });
 
   } catch (error) {
     console.error(error);
