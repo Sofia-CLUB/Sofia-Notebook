@@ -3,90 +3,101 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
 
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Дозволено лише POST-запити"
-    });
+    return res.status(405).json({ error: "Дозволено лише POST-запити" });
   }
 
   try {
     const { prompt, size = "1024x1024" } = req.body || {};
 
     if (!prompt || !prompt.trim()) {
-      return res.status(400).json({
-        error: "Опишіть зображення"
-      });
+      return res.status(400).json({ error: "Опишіть зображення" });
     }
 
-    const apiKey = process.env.POLLINATIONS_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "У Vercel не знайдено POLLINATIONS_API_KEY"
+        error: "У Vercel не знайдено GEMINI_API_KEY"
       });
     }
 
-    const enhancedPrompt = `
-Навчальна ілюстрація для уроку.
-Чітке, якісне, зрозуміле зображення.
-Підходить для використання в школі.
-Без водяних знаків.
+    const sizeMap = {
+      "512x512": { aspectRatio: "1:1", imageSize: "512" },
+      "1024x1024": { aspectRatio: "1:1", imageSize: "1K" },
+      "1024x768": { aspectRatio: "4:3", imageSize: "1K" },
+      "768x1024": { aspectRatio: "3:4", imageSize: "1K" }
+    };
 
+    const imageConfig = sizeMap[size] || sizeMap["1024x1024"];
+
+    const enhancedPrompt = `
+Створи якісну навчальну ілюстрацію для використання в школі.
+Зображення має бути чітким, зрозумілим, охайним і придатним для демонстрації на інтерактивній дошці.
+Якщо потрібні текстові підписи — використовуй українську мову.
+Без сторонніх логотипів і без декоративних водяних знаків.
+
+Запит користувача:
 ${prompt.trim()}
 `;
 
-    const pollinationsResponse = await fetch(
-      "https://gen.pollinations.ai/v1/images/generations",
+    const model =
+      process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
+
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`,
       {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
+          "x-goog-api-key": apiKey
         },
-
         body: JSON.stringify({
-          model: "flux",
-          prompt: enhancedPrompt,
-          size: size,
-          n: 1,
-          response_format: "url",
-          safe: true
+          contents: [
+            {
+              parts: [{ text: enhancedPrompt }]
+            }
+          ],
+          generationConfig: {
+            responseModalities: ["IMAGE"],
+            responseFormat: {
+              image: {
+                aspectRatio: imageConfig.aspectRatio,
+                imageSize: imageConfig.imageSize
+              }
+            }
+          }
         })
       }
     );
 
-    const contentType =
-      pollinationsResponse.headers.get("content-type") || "";
+    const raw = await geminiResponse.text();
 
-    const raw = await pollinationsResponse.text();
-
-    if (!pollinationsResponse.ok) {
+    if (!geminiResponse.ok) {
       console.error(
-        "Pollinations API error:",
-        pollinationsResponse.status,
+        "Gemini image API error:",
+        geminiResponse.status,
         raw
       );
 
       let message =
-        "Не вдалося створити зображення. Код " +
-        pollinationsResponse.status;
+        "Gemini не зміг створити зображення. Код " +
+        geminiResponse.status;
 
       try {
         const parsed = JSON.parse(raw);
-
         message =
           parsed?.error?.message ||
-          parsed?.error ||
+          parsed?.message ||
           message;
       } catch (e) {}
 
-      return res.status(pollinationsResponse.status).json({
-        error: message
+      return res.status(geminiResponse.status).json({
+        error: message,
+        provider: "gemini",
+        status: geminiResponse.status
       });
     }
 
@@ -95,41 +106,62 @@ ${prompt.trim()}
     try {
       data = JSON.parse(raw);
     } catch (e) {
-      console.error("Pollinations повернув не JSON:", raw);
+      console.error("Gemini повернув не JSON:", raw);
 
       return res.status(500).json({
-        error: "Сервіс генерації повернув некоректну відповідь"
+        error: "Gemini повернув некоректну відповідь"
       });
     }
 
-    const imageUrl =
-      data?.data?.[0]?.url ||
-      data?.url ||
-      "";
+    const parts =
+      data?.candidates?.[0]?.content?.parts || [];
 
-    if (!imageUrl) {
+    const imagePart = parts.find(
+      part => part?.inlineData?.data || part?.inline_data?.data
+    );
+
+    const inlineData =
+      imagePart?.inlineData ||
+      imagePart?.inline_data;
+
+    if (!inlineData?.data) {
       console.error(
-        "Pollinations response without URL:",
-        data
+        "Gemini response without image:",
+        JSON.stringify(data)
       );
 
+      const textPart =
+        parts.find(part => part?.text)?.text || "";
+
       return res.status(500).json({
-        error: "Pollinations не повернув адресу зображення"
+        error:
+          textPart ||
+          "Gemini відповів, але не повернув зображення",
+        provider: "gemini"
       });
     }
+
+    const mimeType =
+      inlineData.mimeType ||
+      inlineData.mime_type ||
+      "image/png";
 
     return res.status(200).json({
       success: true,
-      url: imageUrl
+      provider: "gemini",
+      model,
+      b64_json: inlineData.data,
+      mime_type: mimeType
     });
 
   } catch (error) {
-    console.error("IMAGE API ERROR:", error);
+    console.error("GEMINI IMAGE API ERROR:", error);
 
     return res.status(500).json({
       error:
         error?.message ||
-        "Не вдалося створити зображення"
+        "Не вдалося створити зображення",
+      provider: "gemini"
     });
   }
 }
