@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Sofia Notebook PRO</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="manifest" href="manifest.webmanifest?v=28">
   <meta name="theme-color" content="#17315f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Sofia Notebook">
@@ -21,23 +21,23 @@
   <div class="brand">
     <img src="sofia-logo.jpg" class="brand-logo" alt="Sofia Global Education">
     <div>
-      <h1>Sofia Notebook PRO</h1>
+      <h1>Sofia Notebook PRO <span id="appVersionBadge" class="version-badge">v28</span></h1>
       <span>інтерактивний зошит • Sofia Global Education</span>
     </div>
   </div>
 
   <div class="top-actions">
     <div id="liveClock" class="clock">00:00</div>
-    <button id="keyboardBtn" class="top-btn">⌨ Клавіатура</button>
-    <button id="timerBtn" class="top-btn">⏱ Таймер</button>
-    <button id="calculatorBtn" class="top-btn">🧮 Калькулятор</button>
-    <button id="installAppBtn" class="top-btn">⬇️ Встановити додаток</button>
-    <button id="fullscreenBtn" class="top-btn">⛶ Повний екран</button>
-    <button id="voiceBtn" class="top-btn">🎙 Голос</button>
-    <button id="aiBtn" class="top-btn ai">✨ AI чат</button>
-    <button id="saveBtn" class="top-btn primary">💾 Зберегти</button>
-    <button id="diagnosticsBtn" class="top-btn" title="Перевірити кнопки">🛠 Перевірка</button>
-    <button id="clearAllBtn" class="top-btn danger">🗑 Очистити все</button>
+    <button type="button" id="keyboardBtn" class="top-btn">⌨ Клавіатура</button>
+    <button type="button" id="timerBtn" class="top-btn">⏱ Таймер</button>
+    <button type="button" id="calculatorBtn" class="top-btn">🧮 Калькулятор</button>
+    <button type="button" id="installAppBtn" class="top-btn">⬇️ Встановити додаток</button>
+    <button type="button" id="fullscreenBtn" class="top-btn">⛶ Повний екран</button>
+    <button type="button" id="voiceBtn" class="top-btn">🎙 Голос</button>
+    <button type="button" id="aiBtn" class="top-btn ai">✨ AI чат</button>
+    <button type="button" id="saveBtn" class="top-btn primary">💾 Зберегти</button>
+    <button type="button" id="diagnosticsBtn" class="top-btn" title="Перевірити кнопки">🛠 Перевірка</button>
+    <button type="button" id="clearAllBtn" class="top-btn danger">🗑 Очистити все</button>
   </div>
 </header>
 
@@ -165,13 +165,13 @@
       </div>
 
       <div class="ribbon-group">
-        <button id="mediaBtn" class="mini">📎 Фото / відео / файл</button>
-        <button id="elementsBtn" class="mini">✦ Елементи</button>
-        <button id="geometryBtn" class="mini">📐 Прилади</button>
-        <button id="shapeLibraryBtn" class="mini">⬡ 2D / 3D фігури</button>
-        <button id="angleBtn" class="mini">∠ Побудувати кут</button>
-        <button id="numberRayBtn" class="mini">↦ Числовий промінь</button>
-        <button id="graphBuilderBtn" class="mini">📈 Побудова графіка</button>
+        <button type="button" id="mediaBtn" class="mini">📎 Фото / відео / файл</button>
+        <button type="button" id="elementsBtn" class="mini">✦ Елементи</button>
+        <button type="button" id="geometryBtn" class="mini">📐 Прилади</button>
+        <button type="button" id="shapeLibraryBtn" class="mini">⬡ 2D / 3D фігури</button>
+        <button type="button" id="angleBtn" class="mini">∠ Побудувати кут</button>
+        <button type="button" id="numberRayBtn" class="mini">↦ Числовий промінь</button>
+        <button type="button" id="graphBuilderBtn" class="mini">📈 Побудова графіка</button>
         <button id="pointBtn" class="mini">• Точка</button>
         <button id="vertexLabelBtn" class="mini">A Вершина</button>
       </div>
@@ -733,6 +733,16 @@ window.addEventListener("load", function(){
   </div>
 </div>
 
-<script src="script.js"></script>
+
+<div id="runtimeErrorPanel" class="runtime-error-panel hidden">
+  <div class="runtime-error-head">
+    <b>⚠️ Помилка запуску</b>
+    <button type="button" id="runtimeErrorClose">×</button>
+  </div>
+  <div id="runtimeErrorText"></div>
+  <button type="button" id="runtimeReloadBtn">Оновити програму</button>
+</div>
+
+<script src="script.js?v=28"></script>
 </body>
 </html>

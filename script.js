@@ -2073,7 +2073,7 @@ $("installAppBtn")?.addEventListener("click",async()=>{
     alert("У Chrome або Edge відкрийте меню ⋮ → «Встановити Sofia Notebook PRO» / «Встановити цей сайт як програму». Після першого онлайн-відкриття основні файли зберігаються для офлайн-роботи.");
   }
 });
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.warn));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=28",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
@@ -2295,4 +2295,199 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   $("mediaPanel").classList.add("hidden");
   e.target.value="";
 });
+
+
+
+/* =========================================================
+   V28 — НАДІЙНИЙ ЗАПУСК І ПЕРЕВІРКА КНОПОК
+   ========================================================= */
+(function(){
+  const el=id=>document.getElementById(id);
+
+  // Visible runtime errors instead of silent failure.
+  window.addEventListener("error",event=>{
+    const p=el("runtimeErrorPanel"),t=el("runtimeErrorText");
+    if(p&&t){
+      t.textContent=`${event.message || "JavaScript error"}\n${event.filename || ""}:${event.lineno || ""}`;
+      p.classList.remove("hidden");
+    }
+  });
+  window.addEventListener("unhandledrejection",event=>{
+    const p=el("runtimeErrorPanel"),t=el("runtimeErrorText");
+    if(p&&t){
+      t.textContent="Помилка: "+(event.reason?.message || String(event.reason || "невідома"));
+      p.classList.remove("hidden");
+    }
+  });
+  el("runtimeErrorClose")?.addEventListener("click",()=>el("runtimeErrorPanel")?.classList.add("hidden"));
+  el("runtimeReloadBtn")?.addEventListener("click",async()=>{
+    try{
+      if("serviceWorker" in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        for(const r of regs) await r.update();
+      }
+    }catch(e){}
+    location.reload();
+  });
+
+  function stop(e){ e?.preventDefault?.(); e?.stopPropagation?.(); }
+
+  // Fullscreen
+  const full=el("fullscreenBtn");
+  if(full){
+    full.onclick=async e=>{
+      stop(e);
+      const target=el("pageViewport") || document.documentElement;
+      try{
+        if(!document.fullscreenElement){
+          if(target.requestFullscreen) await target.requestFullscreen();
+          else if(target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+        }else{
+          if(document.exitFullscreen) await document.exitFullscreen();
+          else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+      }catch(err){
+        alert("Браузер не дозволив повноекранний режим. Спробуйте клавішу F11.");
+      }
+    };
+  }
+
+  // Media panel
+  const media=el("mediaBtn");
+  if(media){
+    media.onclick=e=>{
+      stop(e);
+      const panel=el("mediaPanel");
+      if(!panel){ alert("Панель медіа не знайдена."); return; }
+      panel.classList.toggle("hidden");
+    };
+  }
+
+  // Calculator
+  const calc=el("calculatorBtn");
+  if(calc){
+    calc.onclick=e=>{
+      stop(e);
+      const panel=el("calculatorPanel");
+      if(!panel){ alert("Калькулятор не знайдений."); return; }
+      panel.classList.toggle("hidden");
+    };
+  }
+
+  // Timer
+  const timer=el("timerBtn");
+  if(timer){
+    timer.onclick=e=>{
+      stop(e);
+      const panel=el("timerPanel");
+      if(!panel){ alert("Таймер не знайдений."); return; }
+      panel.classList.toggle("hidden");
+    };
+  }
+
+  // Keyboard
+  const keyboard=el("keyboardBtn");
+  if(keyboard){
+    keyboard.onclick=e=>{
+      stop(e);
+      const panel=el("keyboardPanel");
+      if(!panel){ alert("Клавіатура не знайдена."); return; }
+      panel.classList.toggle("hidden");
+      if(!panel.classList.contains("hidden") && typeof renderKeyboard==="function") renderKeyboard();
+    };
+  }
+
+  // AI
+  const ai=el("aiBtn");
+  if(ai){
+    ai.onclick=e=>{
+      stop(e);
+      const panel=el("aiPanel");
+      if(!panel){ alert("AI-панель не знайдена."); return; }
+      panel.classList.toggle("hidden");
+    };
+  }
+
+  // Graph builder
+  const graph=el("graphBuilderBtn");
+  if(graph){
+    graph.onclick=e=>{
+      stop(e);
+      const panel=el("graphBuilderPanel");
+      if(!panel){ alert("Редактор графіків не знайдений."); return; }
+      panel.classList.toggle("hidden");
+      if(typeof renderGraphParams==="function") renderGraphParams();
+    };
+  }
+
+  // Geometry/tools/elements
+  [["elementsBtn","elementsPanel"],["geometryBtn","geometryPanel"],["shapeLibraryBtn","shapeLibraryPanel"],
+   ["angleBtn","anglePanel"],["numberRayBtn","numberRayPanel"],["ukrainianBtn","ukrainianPanel"]]
+  .forEach(([bid,pid])=>{
+    const b=el(bid);
+    if(b){
+      b.onclick=e=>{
+        stop(e);
+        const p=el(pid);
+        if(!p){ alert(`Панель ${pid} не знайдена.`); return; }
+        p.classList.toggle("hidden");
+      };
+    }
+  });
+
+  // Save
+  const save=el("saveBtn");
+  if(save){
+    save.onclick=e=>{
+      stop(e);
+      try{
+        if(typeof autoSave==="function") autoSave();
+        if(el("saveStatus")) el("saveStatus").textContent="✅ Збережено";
+      }catch(err){ alert("Помилка збереження: "+err.message); }
+    };
+  }
+
+  // Diagnostics now tests DOM + expected callable functions and opens panels without destructive actions.
+  function runFullDiagnostics(){
+    const box=el("diagnosticsResults");
+    if(!box)return;
+    box.innerHTML="";
+    const tests=[
+      ["Графічне ядро Fabric", typeof window.fabric!=="undefined"],
+      ["Полотно", typeof window.fcanvas!=="undefined" || (typeof fcanvas!=="undefined")],
+      ["Клавіатура", !!el("keyboardBtn") && !!el("keyboardPanel")],
+      ["Таймер", !!el("timerBtn") && !!el("timerPanel")],
+      ["Калькулятор", !!el("calculatorBtn") && !!el("calculatorPanel")],
+      ["Повний екран", !!el("fullscreenBtn") && !!el("pageViewport")],
+      ["Фото / відео / файл", !!el("mediaBtn") && !!el("mediaPanel")],
+      ["AI чат", !!el("aiBtn") && !!el("aiPanel")],
+      ["Елементи", !!el("elementsBtn") && !!el("elementsPanel")],
+      ["Прилади", !!el("geometryBtn") && !!el("geometryPanel")],
+      ["2D / 3D фігури", !!el("shapeLibraryBtn") && !!el("shapeLibraryPanel")],
+      ["Графіки", !!el("graphBuilderBtn") && !!el("graphBuilderPanel") && typeof insertGraph==="function"],
+      ["Числовий промінь", !!el("numberRayBtn") && !!el("numberRayPanel")],
+      ["Збереження", typeof autoSave==="function"],
+      ["Сторінки", !!el("addPageBtn") && typeof loadPage==="function"]
+    ];
+    tests.forEach(([name,ok])=>{
+      const row=document.createElement("div");
+      row.className="diag-row "+(ok?"ok":"bad");
+      row.innerHTML=`<span>${ok?"✅":"❌"} ${name}</span><small>${ok?"працює":"потрібна перевірка"}</small>`;
+      box.appendChild(row);
+    });
+  }
+  const diag=el("diagnosticsBtn");
+  if(diag){
+    diag.onclick=e=>{
+      stop(e);
+      el("diagnosticsPanel")?.classList.remove("hidden");
+      runFullDiagnostics();
+    };
+  }
+  el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
+
+  // Version marker: proves new JS actually loaded.
+  document.documentElement.dataset.sofiaVersion="28";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
+})();
 

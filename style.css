@@ -497,3 +497,31 @@ body.touch-board .top-btn{min-height:44px}
   position:absolute;right:0;bottom:0;width:18px;height:18px;
   background:#17315f;cursor:nwse-resize;border-radius:6px 0 0 0
 }
+
+.version-badge{
+  display:inline-block;
+  vertical-align:middle;
+  font:700 10px/1 Arial,sans-serif;
+  padding:4px 6px;
+  border-radius:12px;
+  background:#eaf0fa;
+  color:#17315f;
+  margin-left:4px;
+}
+.runtime-error-panel{
+  position:fixed;left:50%;top:90px;transform:translateX(-50%);
+  z-index:99999;width:min(560px,92vw);
+  background:#fff7e8;border:1px solid #e8bb63;border-radius:12px;
+  box-shadow:0 14px 40px rgba(0,0,0,.18);padding:12px;
+  color:#704b00
+}
+.runtime-error-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.runtime-error-head button{border:0;background:transparent;font-size:22px}
+.runtime-error-panel>button{margin-top:8px;border:1px solid #d6c18d;border-radius:8px;padding:8px;background:#fff}
+#runtimeErrorText{font-size:12px;line-height:1.45;white-space:pre-wrap}
+
+/* Make top/ribbon buttons easier to press on interactive boards */
+.top-btn,.mini,.nav-btn{touch-action:manipulation;user-select:none}
+@media (pointer:coarse){
+  .top-btn,.mini,.nav-btn{min-height:42px}
+}

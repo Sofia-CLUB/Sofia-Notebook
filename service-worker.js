@@ -1,20 +1,71 @@
-const CACHE_NAME="sofia-notebook-v27";
-const CORE=["./","./index.html","./style.css","./script.js","./sofia-logo.jpg","./icon-192.png","./icon-512.png","./manifest.webmanifest"];
-const CDN="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js";
-self.addEventListener("install",event=>event.waitUntil((async()=>{
-  const cache=await caches.open(CACHE_NAME);await cache.addAll(CORE);
-  try{const r=await fetch(CDN);if(r.ok)await cache.put(CDN,r.clone())}catch(e){}
-  self.skipWaiting();
-})()));
-self.addEventListener("activate",event=>event.waitUntil((async()=>{
-  for(const k of await caches.keys())if(k!==CACHE_NAME)await caches.delete(k);
-  await self.clients.claim();
-})()));
+const CACHE_NAME="sofia-notebook-v28";
+const CORE=[
+  "./",
+  "./index.html",
+  "./style.css?v=28",
+  "./script.js?v=28",
+  "./sofia-logo.jpg",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./manifest.webmanifest?v=28"
+];
+
+self.addEventListener("install",event=>{
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE_NAME);
+    for(const url of CORE){
+      try{
+        const r=await fetch(url,{cache:"reload"});
+        if(r.ok)await cache.put(url,r.clone());
+      }catch(e){}
+    }
+    self.skipWaiting();
+  })());
+});
+
+self.addEventListener("activate",event=>{
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)));
+    await self.clients.claim();
+  })());
+});
+
+async function networkFirst(request){
+  try{
+    const fresh=await fetch(request,{cache:"no-store"});
+    if(fresh && fresh.ok){
+      const cache=await caches.open(CACHE_NAME);
+      cache.put(request,fresh.clone());
+    }
+    return fresh;
+  }catch(e){
+    return (await caches.match(request)) ||
+           (request.mode==="navigate" ? await caches.match("./index.html") : Response.error());
+  }
+}
+
+async function cacheFirst(request){
+  const cached=await caches.match(request);
+  if(cached)return cached;
+  const fresh=await fetch(request);
+  if(fresh && fresh.ok){
+    const cache=await caches.open(CACHE_NAME);
+    cache.put(request,fresh.clone());
+  }
+  return fresh;
+}
+
 self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET")return;
-  event.respondWith((async()=>{
-    const cached=await caches.match(event.request);if(cached)return cached;
-    try{const fresh=await fetch(event.request);const cache=await caches.open(CACHE_NAME);cache.put(event.request,fresh.clone());return fresh}
-    catch(e){if(event.request.mode==="navigate")return await caches.match("./index.html");throw e}
-  })());
+  const url=new URL(event.request.url);
+  const sameOrigin=url.origin===self.location.origin;
+  const isCore = sameOrigin && (
+    event.request.mode==="navigate" ||
+    url.pathname.endsWith("/index.html") ||
+    url.pathname.endsWith("/style.css") ||
+    url.pathname.endsWith("/script.js") ||
+    url.pathname.endsWith("/manifest.webmanifest")
+  );
+  event.respondWith(isCore ? networkFirst(event.request) : cacheFirst(event.request));
 });
