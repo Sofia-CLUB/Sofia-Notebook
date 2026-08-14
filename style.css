@@ -525,3 +525,94 @@ body.touch-board .top-btn{min-height:44px}
 @media (pointer:coarse){
   .top-btn,.mini,.nav-btn{min-height:42px}
 }
+
+/* ===== v29 full screen board mode ===== */
+body.board-fullscreen{
+  overflow:hidden!important;
+  background:#dfe9f4!important;
+}
+body.board-fullscreen .topbar,
+body.board-fullscreen .lessonbar,
+body.board-fullscreen .leftbar,
+body.board-fullscreen .ribbon,
+body.board-fullscreen .page-controls,
+body.board-fullscreen .status{
+  display:none!important;
+}
+body.board-fullscreen .layout{
+  display:block!important;
+  height:100vh!important;
+}
+body.board-fullscreen .workspace{
+  padding:0!important;
+  height:100vh!important;
+}
+body.board-fullscreen #pageViewport{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100vh!important;
+  max-width:none!important;
+  border-radius:0!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:auto!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#dfe9f4!important;
+  z-index:9000!important;
+}
+body.board-fullscreen .notebook{
+  width:min(100vw,calc(100vh * 1.43902439))!important;
+  height:auto!important;
+  max-width:none!important;
+  margin:auto!important;
+}
+
+/* Always-accessible floating exit button in board full screen */
+#v29FullscreenExit{
+  display:none;
+  position:fixed;right:16px;top:16px;z-index:99999;
+  border:0;border-radius:10px;background:#17315f;color:#fff;
+  padding:10px 14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25)
+}
+body.board-fullscreen #v29FullscreenExit{display:block}
+
+/* Media v29 */
+.media-drop-zone{
+  border:2px dashed #aebdd0;
+  border-radius:12px;
+  padding:18px 10px;
+  text-align:center;
+  background:#f8fbff;
+  color:#17315f;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  cursor:pointer
+}
+.media-drop-zone.dragover{
+  background:#eaf2ff;
+  border-color:#17315f
+}
+.media-drop-zone span{font-size:10px;color:#68758a}
+.v29-file-card{
+  position:absolute;z-index:60;
+  width:310px;min-height:82px;
+  background:#fff;border:2px solid #17315f;border-radius:10px;
+  box-shadow:0 8px 24px rgba(13,31,58,.18);
+  padding:12px 40px 12px 48px;
+  color:#17315f;
+  cursor:move;
+  touch-action:none
+}
+.v29-file-card .icon{
+  position:absolute;left:12px;top:18px;font-size:28px
+}
+.v29-file-card .name{font-weight:700;font-size:14px;word-break:break-word}
+.v29-file-card .sub{font-size:10px;color:#68758a;margin-top:5px}
+.v29-file-card .close{
+  position:absolute;right:7px;top:7px;width:24px;height:24px;
+  border:0;border-radius:50%;background:#d43b3b;color:#fff
+}

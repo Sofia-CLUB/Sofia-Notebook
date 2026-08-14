@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Sofia Notebook PRO</title>
-  <link rel="stylesheet" href="style.css?v=28">
-  <link rel="manifest" href="manifest.webmanifest?v=28">
+  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="manifest" href="manifest.webmanifest?v=29">
   <meta name="theme-color" content="#17315f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Sofia Notebook">
@@ -21,7 +21,7 @@
   <div class="brand">
     <img src="sofia-logo.jpg" class="brand-logo" alt="Sofia Global Education">
     <div>
-      <h1>Sofia Notebook PRO <span id="appVersionBadge" class="version-badge">v28</span></h1>
+      <h1>Sofia Notebook PRO <span id="appVersionBadge" class="version-badge">v29</span></h1>
       <span>інтерактивний зошит • Sofia Global Education</span>
     </div>
   </div>
@@ -325,6 +325,10 @@
 
   <div class="media-section">
     <h4>З комп’ютера</h4>
+    <div id="mediaDropZone" class="media-drop-zone">
+      <b>Перетягніть файл сюди</b>
+      <span>або натисніть «Обрати файл»</span>
+    </div>
     <input id="mediaFileInput" type="file"
       accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip">
     <p class="note-small">Зображення вставляються прямо на сторінку. Відео відкривається у вікні на аркуші. Інші файли додаються як ярлик.</p>
@@ -743,6 +747,7 @@ window.addEventListener("load", function(){
   <button type="button" id="runtimeReloadBtn">Оновити програму</button>
 </div>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=29"></script>
+<script src="controls-v29.js?v=29"></script>
 </body>
 </html>
