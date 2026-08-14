@@ -620,24 +620,24 @@ body.board-fullscreen #v29FullscreenExit{display:block}
 /* =========================================================
    v30 FULLSCREEN — робоче поле + усі інструменти
    ========================================================= */
-body.board-fullscreen-v32{
+body.board-fullscreen-v36{
   overflow:hidden!important;
   background:#dfe9f4!important;
 }
-body.board-fullscreen-v32 .topbar{
+body.board-fullscreen-v36 .topbar{
   position:fixed!important;
   left:0;right:0;top:0;
   z-index:9600!important;
   display:flex!important;
   min-height:58px;
 }
-body.board-fullscreen-v32 .lessonbar{
+body.board-fullscreen-v36 .lessonbar{
   position:fixed!important;
   left:0;right:0;top:58px;
   z-index:9590!important;
   display:grid!important;
 }
-body.board-fullscreen-v32 .ribbon{
+body.board-fullscreen-v36 .ribbon{
   position:fixed!important;
   left:0;right:0;top:130px;
   z-index:9580!important;
@@ -646,18 +646,18 @@ body.board-fullscreen-v32 .ribbon{
   overflow:auto;
   background:#fff;
 }
-body.board-fullscreen-v32 .leftbar{
+body.board-fullscreen-v36 .leftbar{
   display:none!important;
 }
-body.board-fullscreen-v32 .page-controls,
-body.board-fullscreen-v32 .status{
+body.board-fullscreen-v36 .page-controls,
+body.board-fullscreen-v36 .status{
   display:none!important;
 }
-body.board-fullscreen-v32 .layout{
+body.board-fullscreen-v36 .layout{
   display:block!important;
   height:100vh!important;
 }
-body.board-fullscreen-v32 .workspace{
+body.board-fullscreen-v36 .workspace{
   position:fixed!important;
   left:0;right:0;top:248px;bottom:0;
   width:100vw!important;
@@ -666,7 +666,7 @@ body.board-fullscreen-v32 .workspace{
   overflow:auto!important;
   z-index:9000!important;
 }
-body.board-fullscreen-v32 #pageViewport{
+body.board-fullscreen-v36 #pageViewport{
   width:100%!important;
   min-height:100%!important;
   padding:6px!important;
@@ -676,7 +676,7 @@ body.board-fullscreen-v32 #pageViewport{
   align-items:flex-start!important;
   background:#dfe9f4!important;
 }
-body.board-fullscreen-v32 .notebook{
+body.board-fullscreen-v36 .notebook{
   width:100%!important;
   max-width:none!important;
   margin:0!important;
@@ -684,7 +684,7 @@ body.board-fullscreen-v32 .notebook{
 }
 
 /* Floating exit button */
-#v32FullscreenExit{
+#v36FullscreenExit{
   display:none;
   position:fixed;
   right:10px;
@@ -698,10 +698,10 @@ body.board-fullscreen-v32 .notebook{
   font-weight:700;
   box-shadow:0 6px 20px rgba(0,0,0,.25)
 }
-body.board-fullscreen-v32 #v32FullscreenExit{display:block!important}
+body.board-fullscreen-v36 #v36FullscreenExit{display:block!important}
 
 /* Floating delete for every Fabric object */
-#v32ObjectDelete{
+#v36ObjectDelete{
   display:none;
   position:fixed;
   z-index:99998;
@@ -715,7 +715,7 @@ body.board-fullscreen-v32 #v32FullscreenExit{display:block!important}
   box-shadow:0 4px 15px rgba(0,0,0,.28);
   cursor:pointer
 }
-#v32ObjectDelete.show{display:block}
+#v36ObjectDelete.show{display:block}
 
 /* DOM fallback images */
 .v30-dom-image{
@@ -751,15 +751,15 @@ body.board-fullscreen-v32 #v32FullscreenExit{display:block!important}
 
 /* Tablet / interactive board: keep toolbar usable */
 @media (max-width:1200px), (pointer:coarse){
-  body.board-fullscreen-v32 .lessonbar{top:60px}
-  body.board-fullscreen-v32 .ribbon{top:136px;max-height:130px}
-  body.board-fullscreen-v32 .workspace{top:266px}
+  body.board-fullscreen-v36 .lessonbar{top:60px}
+  body.board-fullscreen-v36 .ribbon{top:136px;max-height:130px}
+  body.board-fullscreen-v36 .workspace{top:266px}
 }
 
 /* =========================================================
    v31 FULLSCREEN — ліві інструменти залишаються видимими
    ========================================================= */
-body.board-fullscreen-v32 .leftbar{
+body.board-fullscreen-v36 .leftbar{
   display:flex!important;
   position:fixed!important;
   left:0;
@@ -773,35 +773,35 @@ body.board-fullscreen-v32 .leftbar{
   overflow-x:hidden!important;
   padding:8px 5px!important;
 }
-body.board-fullscreen-v32 .leftbar .side-tool{
+body.board-fullscreen-v36 .leftbar .side-tool{
   width:100%!important;
   min-width:0!important;
   flex:0 0 auto!important;
 }
-body.board-fullscreen-v32 .workspace{
+body.board-fullscreen-v36 .workspace{
   left:72px!important;
   width:calc(100vw - 72px)!important;
 }
-body.board-fullscreen-v32 #pageViewport{
+body.board-fullscreen-v36 #pageViewport{
   width:100%!important;
 }
-body.board-fullscreen-v32 .notebook{
+body.board-fullscreen-v36 .notebook{
   width:100%!important;
   max-width:none!important;
 }
 
 /* На великих інтерактивних дошках трохи ширша панель */
 @media (min-width:1600px){
-  body.board-fullscreen-v32 .leftbar{width:82px!important}
-  body.board-fullscreen-v32 .workspace{
+  body.board-fullscreen-v36 .leftbar{width:82px!important}
+  body.board-fullscreen-v36 .workspace{
     left:82px!important;
     width:calc(100vw - 82px)!important;
   }
 }
 
 /* На невисоких екранах панель прокручується */
-body.board-fullscreen-v32 .leftbar::-webkit-scrollbar{width:6px}
-body.board-fullscreen-v32 .leftbar::-webkit-scrollbar-thumb{
+body.board-fullscreen-v36 .leftbar::-webkit-scrollbar{width:6px}
+body.board-fullscreen-v36 .leftbar::-webkit-scrollbar-thumb{
   background:#cbd6e5;border-radius:6px
 }
 
@@ -870,3 +870,42 @@ body.board-fullscreen-v32 .leftbar::-webkit-scrollbar-thumb{
   .fortune-layout{grid-template-columns:1fr}
   .fortune-canvas-wrap{min-height:480px}
 }
+
+/* v33: always-visible teacher activities */
+.teacher-activities-bar{display:flex;gap:5px;align-items:center;flex-wrap:nowrap}
+.activity-top-btn{
+  border:1px solid #d6dfeb;background:#fff;color:#17315f;
+  border-radius:9px;padding:9px 10px;white-space:nowrap;font-size:12px
+}
+.activity-top-btn:hover{background:#eef4fb}
+@media(max-width:1350px){
+  .activity-top-btn{padding:8px 7px;font-size:11px}
+  .teacher-activities-bar{gap:3px}
+}
+
+/* AI image */
+.ai-image-panel{
+  position:fixed;right:18px;top:86px;z-index:9950;width:430px;
+  background:#fff;border:1px solid #dce5ef;border-radius:15px;
+  box-shadow:0 18px 55px rgba(13,31,58,.3);padding:12px
+}
+.ai-image-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.ai-image-head>div{display:flex;flex-direction:column;gap:2px}
+.ai-image-head span{font-size:10px;color:#6b7688}
+.ai-image-head button{border:0;background:transparent;font-size:22px}
+.ai-image-panel>label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#5d687a}
+.ai-image-panel textarea,.ai-image-panel select{
+  width:100%;padding:8px;border:1px solid #d6dfeb;border-radius:8px
+}
+.ai-image-preview img{max-width:100%;border-radius:10px;border:1px solid #dce5ef}
+.ai-image-preview .insert-ai-image{width:100%;margin-top:7px;padding:8px;border:1px solid #dce5ef;border-radius:8px;background:#fff}
+
+/* table builder */
+.table-builder-panel{
+  position:fixed;right:18px;top:86px;z-index:9950;width:360px;
+  background:#fff;border:1px solid #dce5ef;border-radius:15px;
+  box-shadow:0 18px 55px rgba(13,31,58,.3);padding:12px
+}
+.table-builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.table-builder-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#667386}
+.table-builder-grid input{padding:7px;border:1px solid #d6dfeb;border-radius:7px}

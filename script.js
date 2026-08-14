@@ -1,6 +1,12 @@
 const $=id=>document.getElementById(id);
 const notebook=$("notebook");
 const fcanvas=new fabric.Canvas("fabricCanvas",{selection:true,preserveObjectStacking:true});
+window.fcanvas=fcanvas;
+
+/* v34: expose core helpers to independent feature controller */
+window.sofiaCore = window.sofiaCore || {};
+window.sofiaCore.getCanvas = () => fcanvas;
+
 
 
 
@@ -1392,7 +1398,8 @@ $("subject").onchange=()=>{
     }
     return "AI-інтерфейс працює. Для повноцінних відповідей рівня ChatGPT потрібно підключити захищений серверний API. Поки що я можу вставляти локальні шаблони та заготовки для уроку.";
   };
-const sendBtn = byId("aiSendBtn");
+
+  const sendBtn=byId("aiSendBtn");
   if(sendBtn){
     sendBtn.onclick=async()=>{
       const input=byId("aiPrompt");
@@ -2072,7 +2079,7 @@ $("installAppBtn")?.addEventListener("click",async()=>{
     alert("У Chrome або Edge відкрийте меню ⋮ → «Встановити Sofia Notebook PRO» / «Встановити цей сайт як програму». Після першого онлайн-відкриття основні файли зберігаються для офлайн-роботи.");
   }
 });
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=28",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=36",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
@@ -2298,7 +2305,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
 
 /* =========================================================
-   V35 — НАДІЙНИЙ ЗАПУСК І ПЕРЕВІРКА КНОПОК
+   V28 — НАДІЙНИЙ ЗАПУСК І ПЕРЕВІРКА КНОПОК
    ========================================================= */
 (function(){
   const el=id=>document.getElementById(id);
@@ -2487,6 +2494,6 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
   // Version marker: proves new JS actually loaded.
   document.documentElement.dataset.sofiaVersion="28";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v35";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
 })();
 
