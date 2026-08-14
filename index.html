@@ -1,281 +1,317 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Sofia Notebook</title>
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sofia Notebook PRO</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-
-<header class="header">
-
-    <div class="brand">
-        <div class="logo">SGE</div>
-
-        <div>
-            <h1>Sofia Notebook</h1>
-            <p>Sofia Global Education</p>
-        </div>
+<header class="app-header">
+  <div class="brand">
+    <div class="logo">SGE</div>
+    <div>
+      <h1>Sofia Notebook PRO</h1>
+      <div class="subtitle">Sofia Global Education • інтерактивний зошит учителя й учня</div>
     </div>
+  </div>
 
-    <button id="saveBtn" class="save-btn">
-        💾 Зберегти
-    </button>
-
+  <div class="header-actions">
+    <div class="clock-box">
+      <div id="liveClock">00:00:00</div>
+      <button id="timerBtn" class="btn secondary">⏱ Таймер</button>
+    </div>
+    <button id="aiBtn" class="btn ai">✨ Sofia AI</button>
+    <button id="saveBtn" class="btn primary">💾 Зберегти</button>
+  </div>
 </header>
 
-
-<main class="container">
-
-    <!-- Інформація про учня -->
-
-    <section class="student-panel">
-
-        <div class="field">
-            <label>Ім'я та прізвище</label>
-            <input
-                type="text"
-                id="studentName"
-                placeholder="Введіть ім'я учня"
-            >
-        </div>
-
-
-        <div class="field">
-
-            <label>Клас</label>
-
-            <select id="studentClass">
-
-                <option value="">Оберіть клас</option>
-
-                <option>1-А</option>
-                <option>1-Б</option>
-
-                <option>2-А</option>
-                <option>2-Б</option>
-
-                <option>3-А</option>
-                <option>3-Б</option>
-
-                <option>4-А</option>
-                <option>4-Б</option>
-
-                <option>5-А</option>
-                <option>5-Б</option>
-
-                <option>6-А</option>
-                <option>6-Б</option>
-
-                <option>7-А</option>
-                <option>7-Б</option>
-
-                <option>8-А</option>
-                <option>9-А</option>
-
-            </select>
-
-        </div>
-
-
-        <div class="field">
-
-            <label>Предмет</label>
-
-            <select id="subject">
-
-                <option value="">Оберіть предмет</option>
-
-                <option>Математика</option>
-                <option>Українська мова</option>
-                <option>Література</option>
-                <option>Англійська мова</option>
-                <option>Інформатика</option>
-                <option>Я досліджую світ</option>
-                <option>Історія</option>
-                <option>Географія</option>
-                <option>Біологія</option>
-
-            </select>
-
-        </div>
-
-
-        <div class="field">
-
-            <label>Тип роботи</label>
-
-            <select id="workType">
-
-                <option>Класна робота</option>
-                <option>Домашня робота</option>
-                <option>Самостійна робота</option>
-                <option>Контрольна робота</option>
-
-            </select>
-
-        </div>
-
-    </section>
-
-
-
-    <!-- Панель інструментів -->
-
-    <section class="toolbar">
-
-        <div class="tool-group">
-
-            <button
-                class="tool active"
-                id="drawBtn"
-                title="Ручка"
-            >
-                ✏️ Ручка
-            </button>
-
-
-            <button
-                class="tool"
-                id="eraserBtn"
-                title="Гумка"
-            >
-                🧽 Гумка
-            </button>
-
-
-            <button
-                class="tool"
-                id="textBtn"
-                title="Текст"
-            >
-                T Текст
-            </button>
-
-        </div>
-
-
-        <div class="tool-group">
-
-            <label class="small-label">
-                Колір
-            </label>
-
-            <input
-                type="color"
-                id="colorPicker"
-                value="#1d3557"
-            >
-
-
-            <label class="small-label">
-                Товщина
-            </label>
-
-            <input
-                type="range"
-                id="lineWidth"
-                min="1"
-                max="15"
-                value="3"
-            >
-
-        </div>
-
-
-        <div class="tool-group">
-
-            <button
-                class="background-btn active"
-                data-background="grid"
-            >
-                # Клітинка
-            </button>
-
-            <button
-                class="background-btn"
-                data-background="lines"
-            >
-                ≡ Лінійка
-            </button>
-
-            <button
-                class="background-btn"
-                data-background="clean"
-            >
-                □ Чистий
-            </button>
-
-        </div>
-
-
-        <div class="tool-group">
-
-            <button id="undoBtn" class="tool">
-                ↶ Назад
-            </button>
-
-            <button id="clearBtn" class="danger-btn">
-                🗑 Очистити
-            </button>
-
-        </div>
-
-    </section>
-
-
-
-    <!-- Зошит -->
-
-    <section class="notebook-wrapper">
-
-        <div class="notebook-header">
-
-            <div>
-                <strong id="displaySubject">
-                    Мій зошит
-                </strong>
-            </div>
-
-            <div id="currentDate"></div>
-
-        </div>
-
-
-        <div
-            id="notebook"
-            class="notebook grid-background"
-        >
-
-            <div
-                id="textLayer"
-                class="text-layer"
-                contenteditable="false"
-            ></div>
-
-            <canvas id="drawingCanvas"></canvas>
-
-        </div>
-
-    </section>
-
-
-    <div class="status">
-
-        <span id="saveStatus">
-            Робота ще не збережена
-        </span>
-
+<main class="app">
+  <section class="meta-panel card">
+    <div class="field wide">
+      <label>Ім'я та прізвище</label>
+      <input id="studentName" type="text" placeholder="Введіть ім'я учня / учителя" />
     </div>
 
+    <div class="field">
+      <label>Клас</label>
+      <select id="studentClass">
+        <option value="">Оберіть клас</option>
+        <option>1-А</option><option>1-Б</option>
+        <option>2-А</option><option>2-Б</option>
+        <option>3-А</option><option>3-Б</option>
+        <option>4-А</option><option>4-Б</option>
+        <option>5-А</option><option>5-Б</option>
+        <option>6-А</option><option>6-Б</option>
+        <option>7-А</option><option>7-Б</option>
+        <option>8-А</option><option>8-Б</option>
+        <option>9-А</option><option>9-Б</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Предмет</label>
+      <select id="subject">
+        <option value="">Оберіть предмет</option>
+        <option>Математика</option>
+        <option>Алгебра</option>
+        <option>Геометрія</option>
+        <option>Українська мова</option>
+        <option>Українська література</option>
+        <option>Англійська мова</option>
+        <option>Інформатика</option>
+        <option>Я досліджую світ</option>
+        <option>Історія</option>
+        <option>Географія</option>
+        <option>Біологія</option>
+        <option>Фізика</option>
+        <option>Хімія</option>
+        <option>Мистецтво</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Вид роботи</label>
+      <select id="workType">
+        <option>Класна робота</option>
+        <option>Домашня робота</option>
+        <option>Самостійна робота</option>
+        <option>Контрольна робота</option>
+        <option>Практична робота</option>
+        <option>Лабораторна робота</option>
+        <option>Діагностична робота</option>
+        <option>Творча робота</option>
+        <option>Робота над помилками</option>
+        <option value="custom">Інше…</option>
+      </select>
+      <input id="customWorkType" class="hidden" type="text" placeholder="Введіть назву роботи" />
+    </div>
+
+    <div class="field">
+      <label>Дата на аркуші</label>
+      <select id="dateMode">
+        <option value="words">Прописом</option>
+        <option value="numeric">Числом</option>
+        <option value="none">Не показувати</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Фон сторінки</label>
+      <select id="paperType">
+        <option value="grid5">Клітинка 5×5</option>
+        <option value="grid10">Клітинка 10×10</option>
+        <option value="lines">Лінійка</option>
+        <option value="slant">Коса лінія</option>
+        <option value="music">Нотний стан</option>
+        <option value="millimeter">Міліметровка</option>
+        <option value="clean">Чистий аркуш</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="toolbar card">
+    <div class="tool-group">
+      <button class="tool active" data-tool="pen">✏️ Ручка</button>
+      <button class="tool" data-tool="eraser">🧽 Гумка</button>
+      <button class="tool" data-tool="text">T Текст</button>
+      <button class="tool" data-tool="select">☝️ Виділити</button>
+    </div>
+
+    <div class="tool-group">
+      <button class="tool" data-tool="line">╱ Пряма</button>
+      <button class="tool" data-tool="curve">〰 Крива</button>
+      <button class="tool" data-tool="arrow">➜ Стрілка</button>
+      <button class="tool" data-tool="rectangle">▭ Прямокутник</button>
+      <button class="tool" data-tool="ellipse">○ Коло/овал</button>
+      <button class="tool" data-tool="triangle">△ Трикутник</button>
+    </div>
+
+    <div class="tool-group compact">
+      <label>Колір <input id="colorPicker" type="color" value="#17315f"></label>
+      <label>Товщина
+        <input id="lineWidth" type="range" min="1" max="18" value="3">
+        <span id="lineWidthValue">3</span>
+      </label>
+      <label>Лінія
+        <select id="lineStyle">
+          <option value="solid">Суцільна</option>
+          <option value="dashed">Штрихова</option>
+          <option value="dotted">Пунктирна</option>
+          <option value="dashdot">Штрихпунктирна</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="tool-group compact">
+      <label>Шрифт
+        <select id="fontFamily">
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="'Trebuchet MS'">Trebuchet</option>
+          <option value="'Courier New'">Courier New</option>
+          <option value="'Comic Sans MS'">Comic Sans</option>
+        </select>
+      </label>
+      <label>Розмір
+        <select id="fontSize">
+          <option>16</option><option selected>20</option><option>24</option><option>28</option><option>36</option><option>48</option>
+        </select>
+      </label>
+      <button id="boldBtn" class="mini-btn"><b>B</b></button>
+      <button id="italicBtn" class="mini-btn"><i>I</i></button>
+      <button id="underlineBtn" class="mini-btn"><u>U</u></button>
+    </div>
+
+    <div class="tool-group">
+      <button id="mathBtn" class="tool">∑ Математика</button>
+      <button id="insertBtn" class="tool">➕ Вставити</button>
+      <button id="geometryBtn" class="tool">📐 Інструменти</button>
+      <button id="voiceBtn" class="tool">🎙 Голос</button>
+      <button id="translateBtn" class="tool">🌐 Перекласти</button>
+      <button id="stickerBtn" class="tool">😊 Стікери</button>
+      <button id="tableBtn" class="tool">▦ Таблиця</button>
+    </div>
+
+    <div class="tool-group">
+      <button id="undoBtn" class="tool">↶ Назад</button>
+      <button id="redoBtn" class="tool">↷ Вперед</button>
+      <button id="clearBtn" class="tool danger">🗑 Очистити</button>
+    </div>
+  </section>
+
+  <section class="workspace card">
+    <div class="page-topbar">
+      <div class="page-nav">
+        <button id="prevPageBtn" class="btn secondary">‹</button>
+        <span id="pageIndicator">Сторінка 1 з 1</span>
+        <button id="nextPageBtn" class="btn secondary">›</button>
+        <button id="addPageBtn" class="btn primary">＋ Нова сторінка</button>
+        <button id="deletePageBtn" class="btn danger-soft">Видалити сторінку</button>
+      </div>
+      <div class="zoom">
+        <button id="zoomOut" class="btn secondary">−</button>
+        <span id="zoomValue">100%</span>
+        <button id="zoomIn" class="btn secondary">＋</button>
+      </div>
+    </div>
+
+    <div id="pageViewport">
+      <div id="notebook" class="notebook paper-grid5">
+        <div id="pageHeading" class="page-heading">
+          <div id="dateHeading"></div>
+          <div id="workHeading">Класна робота</div>
+        </div>
+
+        <div id="textLayer" class="text-layer" contenteditable="false"></div>
+        <div id="objectsLayer" class="objects-layer"></div>
+        <canvas id="drawingCanvas"></canvas>
+
+        <div id="rulerOverlay" class="geometry-overlay ruler hidden" data-geo="ruler">
+          <div class="drag-handle">Лінійка • перетягніть</div>
+          <div class="ticks"></div>
+        </div>
+
+        <div id="protractorOverlay" class="geometry-overlay protractor hidden" data-geo="protractor">
+          <div class="drag-handle">Транспортир</div>
+          <div class="protractor-face">180°</div>
+        </div>
+
+        <div id="setSquareOverlay" class="geometry-overlay setsquare hidden" data-geo="setsquare">
+          <div class="drag-handle">Косинець</div>
+          <div class="triangle-face"></div>
+        </div>
+
+        <div id="compassOverlay" class="geometry-overlay compass hidden" data-geo="compass">
+          <div class="drag-handle">Циркуль</div>
+          <div class="compass-body">∧</div>
+          <button id="drawCircleFromCompass" class="tiny-action">Намалювати коло</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <span id="saveStatus">Робота ще не збережена</span>
+      <span>Порада: зміни автоматично зберігаються у браузері.</span>
+    </div>
+  </section>
 </main>
 
+<!-- Dropdown / modal panels -->
+<div id="mathPanel" class="floating-panel hidden">
+  <div class="panel-title">Математичні символи <button data-close="mathPanel">×</button></div>
+  <div id="mathSymbols" class="symbol-grid"></div>
+</div>
+
+<div id="insertPanel" class="floating-panel hidden">
+  <div class="panel-title">Вставити <button data-close="insertPanel">×</button></div>
+  <button class="panel-action" id="insertImageBtn">🖼 Зображення</button>
+  <button class="panel-action" id="insertLinkBtn">🔗 Посилання</button>
+  <button class="panel-action" id="insertVideoBtn">▶ YouTube-відео</button>
+  <button class="panel-action" id="insertFileBtn">📄 Файл / матеріал</button>
+  <input id="imageInput" type="file" accept="image/*" class="hidden">
+</div>
+
+<div id="geometryPanel" class="floating-panel hidden">
+  <div class="panel-title">Геометричні інструменти <button data-close="geometryPanel">×</button></div>
+  <button class="panel-action geo-toggle" data-target="rulerOverlay">📏 Лінійка</button>
+  <button class="panel-action geo-toggle" data-target="protractorOverlay">📐 Транспортир</button>
+  <button class="panel-action geo-toggle" data-target="setSquareOverlay">◩ Косинець</button>
+  <button class="panel-action geo-toggle" data-target="compassOverlay">🧭 Циркуль</button>
+</div>
+
+<div id="stickerPanel" class="floating-panel hidden">
+  <div class="panel-title">Стікери <button data-close="stickerPanel">×</button></div>
+  <div id="stickers" class="symbol-grid"></div>
+</div>
+
+<div id="timerModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="panel-title">⏱ Таймер <button data-close="timerModal">×</button></div>
+    <div class="timer-display" id="timerDisplay">05:00</div>
+    <div class="timer-row">
+      <input id="timerMinutes" type="number" min="1" max="180" value="5">
+      <span>хв</span>
+    </div>
+    <div class="timer-row">
+      <button id="startTimer" class="btn primary">Старт</button>
+      <button id="pauseTimer" class="btn secondary">Пауза</button>
+      <button id="resetTimer" class="btn danger-soft">Скинути</button>
+    </div>
+  </div>
+</div>
+
+<div id="aiModal" class="modal hidden">
+  <div class="modal-card large">
+    <div class="panel-title">✨ Sofia AI <button data-close="aiModal">×</button></div>
+    <p class="muted">Локальний помічник уже може вставляти заготовки. Для справжнього AI (генерація тексту, побудова фігур за описом, пояснення) пізніше підключимо захищений сервер та OpenAI API.</p>
+    <textarea id="aiPrompt" rows="5" placeholder="Наприклад: Створи завдання на додавання дробів для 5 класу"></textarea>
+    <div class="timer-row">
+      <button id="aiInsertTemplate" class="btn primary">Вставити заготовку</button>
+      <button id="aiCreateShape" class="btn secondary">Намалювати приклад фігури</button>
+    </div>
+  </div>
+</div>
+
+<div id="translateModal" class="modal hidden">
+  <div class="modal-card large">
+    <div class="panel-title">🌐 Переклад <button data-close="translateModal">×</button></div>
+    <textarea id="translateText" rows="5" placeholder="Вставте текст або виділіть текст у зошиті"></textarea>
+    <select id="translateLang">
+      <option value="en">Англійська</option>
+      <option value="uk">Українська</option>
+      <option value="de">Німецька</option>
+      <option value="fr">Французька</option>
+      <option value="pl">Польська</option>
+      <option value="es">Іспанська</option>
+    </select>
+    <div class="timer-row">
+      <button id="openTranslate" class="btn primary">Відкрити переклад</button>
+    </div>
+    <p class="muted">Переклад відкривається через Google Translate у новій вкладці без зберігання ключів API на сайті.</p>
+  </div>
+</div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
