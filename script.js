@@ -727,280 +727,222 @@ $("noteBtn").onclick=()=>{
 
 
 
-/* ---------- Побудова графіків на декартовій системі ---------- */
+/* ---------- Побудова графіків v26 ---------- */
 const graphParamSets={
-  linear:[["k",1],["b",0]],
-  quadratic:[["a",1],["b",0],["c",0]],
-  cubic:[["a",1],["b",0],["c",0],["d",0]],
-  absolute:[["a",1],["h",0],["k",0]],
-  inverse:[["a",1]],
-  sqrt:[["a",1],["h",0],["k",0]],
-  sin:[["a",1],["b",1],["c",0],["d",0]],
-  cos:[["a",1],["b",1],["c",0],["d",0]],
+  linear:[["k","1"],["b","0"]],
+  quadratic:[["a","1"],["b","0"],["c","0"]],
+  cubic:[["a","1"],["b","0"],["c","0"],["d","0"]],
+  absolute:[["a","1"],["h","0"],["k","0"]],
+  inverse:[["a","1"]],
+  sqrt:[["a","1"],["h","0"],["k","0"]],
+  sin:[["a","1"],["b","1"],["c","0"],["d","0"]],
+  cos:[["a","1"],["b","1"],["c","0"],["d","0"]],
   custom:[]
 };
 let selectedGraphObject=null;
 let graphCounter=1;
+let currentMathTarget=null;
 
-function getParamObjectFromPanel(container){
-  const obj={};
-  container.querySelectorAll("[data-gparam]").forEach(el=>obj[el.dataset.gparam]=Number(el.value));
+function normalizeMathExpr(expr){
+  return String(expr??"").trim().replace(/,/g,".")
+    .replace(/π/g,"pi").replace(/√\s*\(/g,"sqrt(").replace(/√\s*([0-9.]+)/g,"sqrt($1)")
+    .replace(/\^/g,"**")
+    .replace(/\bpi\b/gi,"Math.PI").replace(/\bsqrt\b/gi,"Math.sqrt")
+    .replace(/\bsin\b/gi,"Math.sin").replace(/\bcos\b/gi,"Math.cos")
+    .replace(/\btan\b/gi,"Math.tan").replace(/\babs\b/gi,"Math.abs");
+}
+function evalMath(expr){
+  const s=normalizeMathExpr(expr);
+  if(!s)return 0;
+  if(!/^[0-9+\-*/().\s*MathPIinscoqrtab]+$/i.test(s))throw new Error("Недопустимий вираз: "+expr);
+  const v=Function(`"use strict";return (${s})`)();
+  if(!Number.isFinite(v))throw new Error("Невизначене значення: "+expr);
+  return v;
+}
+function displayMathExpr(expr){
+  return String(expr??"").replace(/\bpi\b/gi,"π").replace(/\bsqrt\(/gi,"√(").replace(/\^2\b/g,"²").replace(/\^3\b/g,"³");
+}
+function getParamObjectFromPanel(container,selected=false){
+  const obj={},attr=selected?"data-selected-gparam":"data-gparam";
+  container.querySelectorAll(`[${attr}]`).forEach(el=>{
+    const key=selected?el.dataset.selectedGparam:el.dataset.gparam;
+    obj[key]={raw:el.value,value:evalMath(el.value)};
+  });
   return obj;
 }
-function prettyNum(n){
-  if(Math.abs(n)<1e-9)n=0;
-  return Number(n.toFixed(3)).toString();
-}
-function signedTerm(n,suffix=""){
-  return n>=0?` + ${prettyNum(n)}${suffix}`:` - ${prettyNum(Math.abs(n))}${suffix}`;
-}
+function pval(p,key,def=0){return p?.[key]?.value??def}
+function praw(p,key,def="0"){return p?.[key]?.raw??def}
+function prettyNum(n){if(Math.abs(n)<1e-9)n=0;return Number(n.toFixed(4)).toString()}
+function signedTerm(n,suffix=""){return n>=0?` + ${prettyNum(n)}${suffix}`:` - ${prettyNum(Math.abs(n))}${suffix}`}
 function baseFormulaLabel(type,p,customExpr=""){
-  if(type==="linear")return `y = ${prettyNum(p.k)}x${signedTerm(p.b)}`;
-  if(type==="quadratic")return `y = ${prettyNum(p.a)}x²${signedTerm(p.b,"x")}${signedTerm(p.c)}`;
-  if(type==="cubic")return `y = ${prettyNum(p.a)}x³${signedTerm(p.b,"x²")}${signedTerm(p.c,"x")}${signedTerm(p.d)}`;
-  if(type==="absolute")return `y = ${prettyNum(p.a)}|x - ${prettyNum(p.h)}|${signedTerm(p.k)}`;
-  if(type==="inverse")return `y = ${prettyNum(p.a)}/x`;
-  if(type==="sqrt")return `y = ${prettyNum(p.a)}√(x - ${prettyNum(p.h)})${signedTerm(p.k)}`;
-  if(type==="sin")return `y = ${prettyNum(p.a)}·sin(${prettyNum(p.b)}x${signedTerm(p.c)})${signedTerm(p.d)}`;
-  if(type==="cos")return `y = ${prettyNum(p.a)}·cos(${prettyNum(p.b)}x${signedTerm(p.c)})${signedTerm(p.d)}`;
-  return `y = ${customExpr||"x"}`;
+  if(type==="linear")return `y = ${displayMathExpr(praw(p,"k","1"))}x + (${displayMathExpr(praw(p,"b","0"))})`;
+  if(type==="quadratic")return `y = ${displayMathExpr(praw(p,"a","1"))}x² + (${displayMathExpr(praw(p,"b","0"))})x + (${displayMathExpr(praw(p,"c","0"))})`;
+  if(type==="cubic")return `y = ${displayMathExpr(praw(p,"a","1"))}x³ + (${displayMathExpr(praw(p,"b","0"))})x² + (${displayMathExpr(praw(p,"c","0"))})x + (${displayMathExpr(praw(p,"d","0"))})`;
+  if(type==="absolute")return `y = ${displayMathExpr(praw(p,"a","1"))}|x - (${displayMathExpr(praw(p,"h","0"))})| + (${displayMathExpr(praw(p,"k","0"))})`;
+  if(type==="inverse")return `y = ${displayMathExpr(praw(p,"a","1"))}/x`;
+  if(type==="sqrt")return `y = ${displayMathExpr(praw(p,"a","1"))}√(x - (${displayMathExpr(praw(p,"h","0"))})) + (${displayMathExpr(praw(p,"k","0"))})`;
+  if(type==="sin")return `y = ${displayMathExpr(praw(p,"a","1"))}·sin(${displayMathExpr(praw(p,"b","1"))}x + (${displayMathExpr(praw(p,"c","0"))})) + (${displayMathExpr(praw(p,"d","0"))})`;
+  if(type==="cos")return `y = ${displayMathExpr(praw(p,"a","1"))}·cos(${displayMathExpr(praw(p,"b","1"))}x + (${displayMathExpr(praw(p,"c","0"))})) + (${displayMathExpr(praw(p,"d","0"))})`;
+  return `y = ${displayMathExpr(customExpr||"x")}`;
 }
 function shiftedFormulaLabel(meta){
-  const sx=Number(meta.shiftX||0),sy=Number(meta.shiftY||0);
-  const p=meta.params||{};
+  const sx=Number(meta.shiftX||0),sy=Number(meta.shiftY||0),p=meta.params||{};
   if(Math.abs(sx)<1e-9&&Math.abs(sy)<1e-9)return baseFormulaLabel(meta.type,p,meta.customExpr||"");
-
   if(meta.type==="linear"){
-    const newB=p.b-p.k*sx+sy;
-    return `y = ${prettyNum(p.k)}x${signedTerm(newB)}`;
+    const k=pval(p,"k",1),b=pval(p,"b",0);
+    return `y = ${prettyNum(k)}x${signedTerm(b-k*sx+sy)}`;
   }
-  if(meta.type==="quadratic"){
-    const q=sx>=0?`x - ${prettyNum(sx)}`:`x + ${prettyNum(Math.abs(sx))}`;
-    return `y = ${prettyNum(p.a)}(${q})²${signedTerm(p.b,`(${q})`)}${signedTerm(p.c+sy)}`;
-  }
-  if(meta.type==="absolute"){
-    return `y = ${prettyNum(p.a)}|x - ${prettyNum((p.h||0)+sx)}|${signedTerm((p.k||0)+sy)}`;
-  }
-  if(meta.type==="inverse"){
-    const q=sx>=0?`x - ${prettyNum(sx)}`:`x + ${prettyNum(Math.abs(sx))}`;
-    return `y = ${prettyNum(p.a)}/(${q})${signedTerm(sy)}`;
-  }
-  if(meta.type==="sqrt"){
-    return `y = ${prettyNum(p.a)}√(x - ${prettyNum((p.h||0)+sx)})${signedTerm((p.k||0)+sy)}`;
-  }
-  return `${baseFormulaLabel(meta.type,p,meta.customExpr||"")}  |  зсув X=${prettyNum(sx)}, Y=${prettyNum(sy)}`;
+  return `${baseFormulaLabel(meta.type,p,meta.customExpr||"")} | зсув X=${prettyNum(sx)}, Y=${prettyNum(sy)}`;
 }
 function graphFunction(meta){
   const p=meta.params||{},type=meta.type;
-  if(type==="linear")return x=>p.k*x+p.b;
-  if(type==="quadratic")return x=>p.a*x*x+p.b*x+p.c;
-  if(type==="cubic")return x=>p.a*x*x*x+p.b*x*x+p.c*x+p.d;
-  if(type==="absolute")return x=>p.a*Math.abs(x-p.h)+p.k;
-  if(type==="inverse")return x=>Math.abs(x)<1e-9?NaN:p.a/x;
-  if(type==="sqrt")return x=>x<p.h?NaN:p.a*Math.sqrt(x-p.h)+p.k;
-  if(type==="sin")return x=>p.a*Math.sin(p.b*x+p.c)+p.d;
-  if(type==="cos")return x=>p.a*Math.cos(p.b*x+p.c)+p.d;
-
-  let expr=(meta.customExpr||"x").trim();
-  const safe=expr
-    .replace(/\^/g,"**")
-    .replace(/\bpi\b/gi,"Math.PI")
-    .replace(/\bsin\b/gi,"Math.sin")
-    .replace(/\bcos\b/gi,"Math.cos")
-    .replace(/\btan\b/gi,"Math.tan")
-    .replace(/\bsqrt\b/gi,"Math.sqrt")
-    .replace(/\babs\b/gi,"Math.abs");
-  const fn=new Function("x",`return (${safe});`);
-  return fn;
+  if(type==="linear")return x=>pval(p,"k",1)*x+pval(p,"b",0);
+  if(type==="quadratic")return x=>pval(p,"a",1)*x*x+pval(p,"b",0)*x+pval(p,"c",0);
+  if(type==="cubic")return x=>pval(p,"a",1)*x*x*x+pval(p,"b",0)*x*x+pval(p,"c",0)*x+pval(p,"d",0);
+  if(type==="absolute")return x=>pval(p,"a",1)*Math.abs(x-pval(p,"h",0))+pval(p,"k",0);
+  if(type==="inverse")return x=>Math.abs(x)<1e-9?NaN:pval(p,"a",1)/x;
+  if(type==="sqrt")return x=>x<pval(p,"h",0)?NaN:pval(p,"a",1)*Math.sqrt(x-pval(p,"h",0))+pval(p,"k",0);
+  if(type==="sin")return x=>pval(p,"a",1)*Math.sin(pval(p,"b",1)*x+pval(p,"c",0))+pval(p,"d",0);
+  if(type==="cos")return x=>pval(p,"a",1)*Math.cos(pval(p,"b",1)*x+pval(p,"c",0))+pval(p,"d",0);
+  let expr=(meta.customExpr||"x").trim().replace(/π/g,"pi").replace(/√\s*\(/g,"sqrt(").replace(/\^/g,"**");
+  const safe=expr.replace(/\bpi\b/gi,"Math.PI").replace(/\bsqrt\b/gi,"Math.sqrt")
+    .replace(/\bsin\b/gi,"Math.sin").replace(/\bcos\b/gi,"Math.cos").replace(/\btan\b/gi,"Math.tan")
+    .replace(/\babs\b/gi,"Math.abs").replace(/\blog\b/gi,"Math.log10").replace(/\bln\b/gi,"Math.log");
+  return new Function("x",`"use strict";return (${safe});`);
+}
+function readGraphRange(){
+  const xmin=evalMath($("graphXMin").value),xmax=evalMath($("graphXMax").value),
+        ymin=evalMath($("graphYMin").value),ymax=evalMath($("graphYMax").value);
+  if(!(xmin<xmax&&ymin<ymax))throw new Error("Межі осей задані неправильно.");
+  return{xmin,xmax,ymin,ymax};
+}
+function computeAutoRange(meta){
+  const fn=graphFunction(meta),base=readGraphRange();
+  let ymin=Infinity,ymax=-Infinity;
+  for(let i=0;i<=400;i++){
+    const x=base.xmin+(base.xmax-base.xmin)*i/400,y=fn(x-(meta.shiftX||0))+(meta.shiftY||0);
+    if(Number.isFinite(y)&&Math.abs(y)<1e6){ymin=Math.min(ymin,y);ymax=Math.max(ymax,y)}
+  }
+  if(!Number.isFinite(ymin)||!Number.isFinite(ymax)||ymin===ymax)return base;
+  const pad=Math.max(1,(ymax-ymin)*.12);
+  return{xmin:base.xmin,xmax:base.xmax,ymin:Math.floor(ymin-pad),ymax:Math.ceil(ymax+pad)};
+}
+function graphWorldToPixel(x,y,r){
+  return{x:(x-r.xmin)/(r.xmax-r.xmin)*1180,y:820-(y-r.ymin)/(r.ymax-r.ymin)*820};
 }
 function createGraphParts(meta){
-  const W=1180,H=820;
-  const step=Math.max(20,Number($("paperSize").value)||32);
-  const ox=W/2,oy=H/2;
-  const xMin=-ox/step,xMax=(W-ox)/step;
-  const color=meta.color||$("colorPicker").value;
-  const sw=meta.strokeWidth||Math.max(2,Number($("lineWidth").value));
-  const fn=graphFunction(meta);
-  const sx=Number(meta.shiftX||0),sy=Number(meta.shiftY||0);
-
+  const range=meta.autoScale?computeAutoRange(meta):(meta.range||readGraphRange());
+  meta.range=range;
+  const color=meta.color||$("colorPicker").value,sw=meta.strokeWidth||Math.max(2,Number($("lineWidth").value));
+  const fn=graphFunction(meta),sx=Number(meta.shiftX||0),sy=Number(meta.shiftY||0);
   let segments=[],current=[];
-  for(let i=0;i<=1100;i++){
-    const x=xMin+(xMax-xMin)*i/1100;
-    const y=fn(x-sx)+sy;
-    if(!Number.isFinite(y)||Math.abs(y)>H/step*5){
-      if(current.length>1)segments.push(current);current=[];continue;
-    }
-    const px=ox+x*step,py=oy-y*step;
-    if(py<-H||py>H*2){
-      if(current.length>1)segments.push(current);current=[];continue;
-    }
-    current.push({x:px,y:py});
+  for(let i=0;i<=1500;i++){
+    const x=range.xmin+(range.xmax-range.xmin)*i/1500,y=fn(x-sx)+sy;
+    if(!Number.isFinite(y)||y<range.ymin||y>range.ymax){if(current.length>1)segments.push(current);current=[];continue}
+    current.push(graphWorldToPixel(x,y,range));
   }
   if(current.length>1)segments.push(current);
-
   const parts=[];
-  segments.forEach(seg=>parts.push(new fabric.Polyline(seg,{
-    fill:"transparent",stroke:color,strokeWidth:sw,
-    selectable:false,evented:false,objectCaching:false
-  })));
-
+  segments.forEach(seg=>parts.push(new fabric.Polyline(seg,{fill:"transparent",stroke:color,strokeWidth:sw,selectable:false,evented:false,objectCaching:false})));
   if(meta.showPoints){
-    for(let x=Math.ceil(xMin);x<=Math.floor(xMax);x++){
+    for(let x=Math.ceil(range.xmin);x<=Math.floor(range.xmax);x++){
       const y=fn(x-sx)+sy;
-      if(Number.isFinite(y)&&Math.abs(y)<=H/step/2){
-        parts.push(new fabric.Circle({left:ox+x*step-3,top:oy-y*step-3,radius:3,fill:color,selectable:false,evented:false}));
+      if(Number.isFinite(y)&&y>=range.ymin&&y<=range.ymax){
+        const pt=graphWorldToPixel(x,y,range);
+        parts.push(new fabric.Circle({left:pt.x-3,top:pt.y-3,radius:3,fill:color,selectable:false,evented:false}));
       }
     }
   }
-
-  const title=`${meta.name||"Графік"}: ${shiftedFormulaLabel(meta)}`;
-  parts.push(new fabric.Text(title,{
-    left:20,top:20,fontSize:18,fill:color,fontFamily:"Arial",
-    backgroundColor:"rgba(255,255,255,.88)",padding:5,
-    selectable:false,evented:false,erasable:false
+  parts.push(new fabric.Text(`${meta.name||"Графік"}: ${shiftedFormulaLabel(meta)}`,{
+    left:18,top:18,fontSize:18,fill:color,fontFamily:"Arial",
+    backgroundColor:"rgba(255,255,255,.90)",padding:5,selectable:false,evented:false,erasable:false
   }));
   return parts;
 }
 function createGraphGroup(meta){
-  return new fabric.Group(createGraphParts(meta),{
-    left:0,top:0,selectable:true,evented:true,
-    graphObject:true,graphName:meta.name,graphMeta:JSON.parse(JSON.stringify(meta)),
-    erasable:"deep",objectCaching:false
-  });
+  return new fabric.Group(createGraphParts(meta),{left:0,top:0,selectable:true,evented:true,graphObject:true,graphName:meta.name,graphMeta:JSON.parse(JSON.stringify(meta)),erasable:"deep",objectCaching:false});
 }
 function replaceGraphObject(oldGraph,newMeta){
-  const idx=fcanvas.getObjects().indexOf(oldGraph);
-  fcanvas.remove(oldGraph);
-  const g=createGraphGroup(newMeta);
-  fcanvas.insertAt(g,idx>=0?idx:fcanvas.getObjects().length,false);
-  fcanvas.setActiveObject(g);
-  selectedGraphObject=g;
-  fcanvas.requestRenderAll();
-  return g;
+  const idx=fcanvas.getObjects().indexOf(oldGraph);fcanvas.remove(oldGraph);
+  const g=createGraphGroup(newMeta);fcanvas.insertAt(g,idx>=0?idx:fcanvas.getObjects().length,false);
+  fcanvas.setActiveObject(g);selectedGraphObject=g;fcanvas.requestRenderAll();return g;
 }
 function renderGraphParams(){
-  const type=$("graphType").value,box=$("graphParams");
-  box.innerHTML="";
+  const type=$("graphType").value,box=$("graphParams");box.innerHTML="";
   (graphParamSets[type]||[]).forEach(([name,val])=>{
-    const wrap=document.createElement("label");
-    wrap.className="graph-param";
-    wrap.innerHTML=`<span>${name} =</span><input data-gparam="${name}" type="number" step="0.1" value="${val}">`;
-    box.appendChild(wrap);
+    const wrap=document.createElement("label");wrap.className="graph-param";
+    wrap.innerHTML=`<span>${name} =</span><input data-gparam="${name}" type="text" value="${val}" placeholder="1/2, sqrt(2), pi">`;box.appendChild(wrap);
   });
-  $("customGraphWrap").classList.toggle("hidden",type!=="custom");
-  updateBuilderFormulaPreview();
+  $("customGraphWrap").classList.toggle("hidden",type!=="custom");updateBuilderFormulaPreview();
 }
 function updateBuilderFormulaPreview(){
-  const meta={
-    type:$("graphType").value,
-    params:getParamObjectFromPanel($("graphParams")),
-    customExpr:$("customGraphExpression").value.trim()
-  };
-  $("graphFormulaPreview").textContent=baseFormulaLabel(meta.type,meta.params,meta.customExpr);
+  try{
+    const meta={type:$("graphType").value,params:getParamObjectFromPanel($("graphParams")),customExpr:$("customGraphExpression").value.trim()};
+    $("graphFormulaPreview").textContent=baseFormulaLabel(meta.type,meta.params,meta.customExpr);
+  }catch(e){$("graphFormulaPreview").textContent="Перевірте математичний вираз"}
 }
-$("graphType").onchange=renderGraphParams;
-$("customGraphExpression").oninput=updateBuilderFormulaPreview;
-$("graphParams").addEventListener("input",updateBuilderFormulaPreview);
-renderGraphParams();
+$("graphType").onchange=renderGraphParams;$("customGraphExpression").oninput=updateBuilderFormulaPreview;
+$("graphParams").addEventListener("input",updateBuilderFormulaPreview);renderGraphParams();
 
+document.addEventListener("focusin",e=>{
+  if(e.target.matches("[data-gparam], [data-selected-gparam], #customGraphExpression, #selectedCustomExpression, #graphXMin, #graphXMax, #graphYMin, #graphYMax"))currentMathTarget=e.target;
+});
+document.querySelectorAll("[data-mathinsert]").forEach(btn=>btn.onclick=()=>{
+  const el=currentMathTarget||document.querySelector("[data-gparam]");if(!el)return;
+  const ins=btn.dataset.mathinsert,a=el.selectionStart??el.value.length,b=el.selectionEnd??a;
+  el.value=el.value.slice(0,a)+ins+el.value.slice(b);el.focus();el.setSelectionRange(a+ins.length,a+ins.length);
+  el.dispatchEvent(new Event("input",{bubbles:true}));
+});
 function insertGraph(){
   try{
     $("paperType").value="coordinate";applyPaper();
-    const meta={
-      name:$("graphName").value.trim()||`Графік ${graphCounter}`,
-      type:$("graphType").value,
-      params:getParamObjectFromPanel($("graphParams")),
-      customExpr:$("customGraphExpression").value.trim(),
-      showPoints:$("graphShowPoints").checked,
-      showFormula:true,shiftX:0,shiftY:0,
-      color:$("colorPicker").value,
-      strokeWidth:Math.max(2,Number($("lineWidth").value))
-    };
-    const g=createGraphGroup(meta);
-    fcanvas.add(g);fcanvas.setActiveObject(g);
-    graphCounter++;$("graphName").value=`Графік ${graphCounter}`;
-    pushHistory();autoSave();setTool("select");
-    $("graphBuilderPanel").classList.add("hidden");openGraphEditor(g);
+    const meta={name:$("graphName").value.trim()||`Графік ${graphCounter}`,type:$("graphType").value,
+      params:getParamObjectFromPanel($("graphParams")),customExpr:$("customGraphExpression").value.trim(),
+      showPoints:$("graphShowPoints").checked,shiftX:0,shiftY:0,range:readGraphRange(),autoScale:$("graphAutoScale").checked,
+      clipToPlane:$("graphClipToPlane").checked,color:$("colorPicker").value,strokeWidth:Math.max(2,Number($("lineWidth").value))};
+    const g=createGraphGroup(meta);fcanvas.add(g);fcanvas.setActiveObject(g);graphCounter++;$("graphName").value=`Графік ${graphCounter}`;
+    pushHistory();autoSave();setTool("select");$("graphBuilderPanel").classList.add("hidden");openGraphEditor(g);
   }catch(e){alert("Не вдалося побудувати графік: "+e.message)}
 }
 function openGraphEditor(graph){
-  if(!graph?.graphObject)return;
-  selectedGraphObject=graph;
-  const m=graph.graphMeta||{};
-  $("selectedGraphName").value=m.name||graph.graphName||"Графік";
-  $("selectedGraphFormula").textContent=shiftedFormulaLabel(m);
-  $("graphShiftX").value=prettyNum(m.shiftX||0);
-  $("graphShiftY").value=prettyNum(m.shiftY||0);
+  if(!graph?.graphObject)return;selectedGraphObject=graph;const m=graph.graphMeta||{};
+  $("selectedGraphName").value=m.name||graph.graphName||"Графік";$("selectedGraphFormula").textContent=shiftedFormulaLabel(m);
+  $("graphShiftX").value=prettyNum(m.shiftX||0);$("graphShiftY").value=prettyNum(m.shiftY||0);
   const box=$("selectedGraphParams");box.innerHTML="";
   (graphParamSets[m.type]||[]).forEach(([name])=>{
-    const wrap=document.createElement("label");
-    wrap.className="graph-param";
-    wrap.innerHTML=`<span>${name} =</span><input data-selected-gparam="${name}" type="number" step="0.1" value="${m.params?.[name]??0}">`;
-    box.appendChild(wrap);
+    const wrap=document.createElement("label");wrap.className="graph-param";
+    wrap.innerHTML=`<span>${name} =</span><input data-selected-gparam="${name}" type="text" value="${praw(m.params,name,"0")}">`;box.appendChild(wrap);
   });
-  if(m.type==="custom"){
-    const wrap=document.createElement("label");
-    wrap.className="graph-param";
-    wrap.innerHTML=`<span>y =</span><input id="selectedCustomExpression" type="text" value="${m.customExpr||"x"}">`;
-    box.appendChild(wrap);
-  }
+  if(m.type==="custom"){const wrap=document.createElement("label");wrap.className="graph-param";wrap.innerHTML=`<span>y =</span><input id="selectedCustomExpression" type="text" value="${m.customExpr||"x"}">`;box.appendChild(wrap)}
   $("graphEditorPanel").classList.remove("hidden");
 }
 function collectSelectedGraphMeta(){
-  if(!selectedGraphObject)return null;
-  const old=selectedGraphObject.graphMeta||{},params={...old.params};
-  document.querySelectorAll("[data-selected-gparam]").forEach(el=>params[el.dataset.selectedGparam]=Number(el.value));
-  return {...old,
-    name:$("selectedGraphName").value.trim()||old.name||"Графік",
-    params,
-    customExpr:$("selectedCustomExpression")?.value??old.customExpr??"",
-    shiftX:Number($("graphShiftX").value)||0,
-    shiftY:Number($("graphShiftY").value)||0
-  };
+  if(!selectedGraphObject)return null;const old=selectedGraphObject.graphMeta||{},params={...old.params};
+  document.querySelectorAll("[data-selected-gparam]").forEach(el=>params[el.dataset.selectedGparam]={raw:el.value,value:evalMath(el.value)});
+  return {...old,name:$("selectedGraphName").value.trim()||old.name||"Графік",params,
+    customExpr:$("selectedCustomExpression")?.value??old.customExpr??"",shiftX:Number($("graphShiftX").value)||0,shiftY:Number($("graphShiftY").value)||0};
 }
 function liveUpdateSelectedGraph(){
   if(!selectedGraphObject)return;
-  try{
-    const meta=collectSelectedGraphMeta();
-    selectedGraphObject=replaceGraphObject(selectedGraphObject,meta);
-    $("selectedGraphFormula").textContent=shiftedFormulaLabel(meta);
-    pushHistory();autoSave();
-  }catch(e){$("selectedGraphFormula").textContent="Помилка у формулі"}
+  try{const meta=collectSelectedGraphMeta();selectedGraphObject=replaceGraphObject(selectedGraphObject,meta);$("selectedGraphFormula").textContent=shiftedFormulaLabel(meta);pushHistory();autoSave()}
+  catch(e){$("selectedGraphFormula").textContent="Помилка у формулі"}
 }
-$("selectedGraphParams").addEventListener("input",liveUpdateSelectedGraph);
-$("selectedGraphName").addEventListener("input",liveUpdateSelectedGraph);
-$("graphShiftX").addEventListener("input",liveUpdateSelectedGraph);
-$("graphShiftY").addEventListener("input",liveUpdateSelectedGraph);
-
-$("graphBuilderBtn").onclick=()=>$("graphBuilderPanel").classList.toggle("hidden");
-$("insertGraphBtn").onclick=insertGraph;
-$("clearGraphsBtn").onclick=()=>{
-  fcanvas.getObjects().filter(o=>o.graphObject).forEach(o=>fcanvas.remove(o));
-  selectedGraphObject=null;$("graphEditorPanel").classList.add("hidden");
-  fcanvas.discardActiveObject();fcanvas.requestRenderAll();pushHistory();autoSave();
-};
+$("selectedGraphParams").addEventListener("input",liveUpdateSelectedGraph);$("selectedGraphName").addEventListener("input",liveUpdateSelectedGraph);
+$("graphShiftX").addEventListener("input",liveUpdateSelectedGraph);$("graphShiftY").addEventListener("input",liveUpdateSelectedGraph);
+$("graphBuilderBtn").onclick=()=>$("graphBuilderPanel").classList.toggle("hidden");$("insertGraphBtn").onclick=insertGraph;
+$("clearGraphsBtn").onclick=()=>{fcanvas.getObjects().filter(o=>o.graphObject).forEach(o=>fcanvas.remove(o));selectedGraphObject=null;$("graphEditorPanel").classList.add("hidden");fcanvas.discardActiveObject();fcanvas.requestRenderAll();pushHistory();autoSave()};
 $("graphEditorCloseBtn").onclick=()=>$("graphEditorPanel").classList.add("hidden");
 $("resetGraphPositionBtn").onclick=()=>{if(selectedGraphObject){$("graphShiftX").value=0;$("graphShiftY").value=0;liveUpdateSelectedGraph()}};
 $("deleteGraphBtn").onclick=()=>{if(selectedGraphObject){fcanvas.remove(selectedGraphObject);selectedGraphObject=null;$("graphEditorPanel").classList.add("hidden");fcanvas.requestRenderAll();pushHistory();autoSave()}};
-$("duplicateGraphBtn").onclick=()=>{
-  if(!selectedGraphObject)return;
-  const meta=JSON.parse(JSON.stringify(selectedGraphObject.graphMeta));
-  meta.name=(meta.name||"Графік")+" копія";meta.shiftX=(meta.shiftX||0)+1;meta.shiftY=(meta.shiftY||0)+1;
-  const g=createGraphGroup(meta);fcanvas.add(g);fcanvas.setActiveObject(g);pushHistory();autoSave();openGraphEditor(g);
-};
-
+$("duplicateGraphBtn").onclick=()=>{if(!selectedGraphObject)return;const meta=JSON.parse(JSON.stringify(selectedGraphObject.graphMeta));meta.name=(meta.name||"Графік")+" копія";meta.shiftX=(meta.shiftX||0)+1;meta.shiftY=(meta.shiftY||0)+1;const g=createGraphGroup(meta);fcanvas.add(g);fcanvas.setActiveObject(g);pushHistory();autoSave();openGraphEditor(g)};
 fcanvas.on("selection:created",e=>{const o=e.selected?.[0]||fcanvas.getActiveObject();if(o?.graphObject)openGraphEditor(o)});
 fcanvas.on("selection:updated",e=>{const o=e.selected?.[0]||fcanvas.getActiveObject();if(o?.graphObject)openGraphEditor(o)});
-
 fcanvas.on("object:modified",e=>{
-  const g=e.target;if(!g?.graphObject)return;
-  const step=Math.max(20,Number($("paperSize").value)||32);
+  const g=e.target;if(!g?.graphObject)return;const range=g.graphMeta?.range||readGraphRange();
   const meta={...(g.graphMeta||{})};
-  meta.shiftX=Number(meta.shiftX||0)+(g.left||0)/step;
-  meta.shiftY=Number(meta.shiftY||0)-(g.top||0)/step;
-  const newGraph=replaceGraphObject(g,meta);
-  newGraph.set({left:0,top:0,scaleX:1,scaleY:1,angle:0});newGraph.setCoords();
-  selectedGraphObject=newGraph;openGraphEditor(newGraph);pushHistory();autoSave();
+  meta.shiftX=Number(meta.shiftX||0)+(g.left||0)*(range.xmax-range.xmin)/1180;
+  meta.shiftY=Number(meta.shiftY||0)-(g.top||0)*(range.ymax-range.ymin)/820;
+  const ng=replaceGraphObject(g,meta);ng.set({left:0,top:0,scaleX:1,scaleY:1,angle:0});ng.setCoords();selectedGraphObject=ng;openGraphEditor(ng);pushHistory();autoSave();
 });
 
 /* ---------- Числовий промінь ---------- */
@@ -1978,6 +1920,8 @@ $("subject").onchange=()=>{
     ["keyboardBtn","Клавіатура"],
     ["timerBtn","Таймер"],
     ["calculatorBtn","Калькулятор"],
+    ["fullscreenBtn","Повний екран"],
+    ["mediaBtn","Фото / відео / файл"],
     ["voiceBtn","Голос"],
     ["aiBtn","AI чат"],
     ["saveBtn","Зберегти"],
@@ -2115,4 +2059,240 @@ $("insertCalcResultBtn").onclick=()=>{
   const val=$("calculatorDisplay").value.trim();
   if(val && val!=="Помилка")insertTextIntoBoard(val);
 };
+
+
+/* ---------- Встановлення як окремого додатка / офлайн ---------- */
+let deferredInstallPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;$("installAppBtn")?.classList.add("primary")});
+$("installAppBtn")?.addEventListener("click",async()=>{
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+  }else{
+    alert("У Chrome або Edge відкрийте меню ⋮ → «Встановити Sofia Notebook PRO» / «Встановити цей сайт як програму». Після першого онлайн-відкриття основні файли зберігаються для офлайн-роботи.");
+  }
+});
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.warn));
+
+
+/* ---------- Повноекранний режим ---------- */
+$("fullscreenBtn")?.addEventListener("click",async()=>{
+  const target=$("pageViewport");
+  try{
+    if(!document.fullscreenElement){
+      if(target.requestFullscreen) await target.requestFullscreen();
+      else if(target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+    }else{
+      if(document.exitFullscreen) await document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+  }catch(e){
+    alert("Не вдалося перейти у повноекранний режим. Спробуйте F11 або меню браузера.");
+  }
+});
+document.addEventListener("fullscreenchange",()=>{
+  const b=$("fullscreenBtn");
+  if(b)b.textContent=document.fullscreenElement?"↙ Вийти з повного екрана":"⛶ Повний екран";
+});
+
+
+/* ---------- Фото / відео / файли / посилання ---------- */
+$("mediaBtn")?.addEventListener("click",()=>$("mediaPanel")?.classList.toggle("hidden"));
+
+function addFabricImageFromUrl(url,title=""){
+  fabric.Image.fromURL(url,img=>{
+    if(!img){
+      alert("Не вдалося завантажити зображення.");
+      return;
+    }
+    const maxW=520,maxH=420;
+    const scale=Math.min(maxW/img.width,maxH/img.height,1);
+    img.set({
+      left:180,top:150,
+      scaleX:scale,scaleY:scale,
+      selectable:true,evented:true
+    });
+    fcanvas.add(img);
+    fcanvas.setActiveObject(img);
+    if(title){
+      const t=new fabric.Text(title,{
+        left:180,top:125,fontSize:18,fill:$("colorPicker").value,
+        backgroundColor:"rgba(255,255,255,.88)",erasable:false
+      });
+      fcanvas.add(t);
+    }
+    pushHistory();autoSave();setTool("select");
+  },{crossOrigin:"anonymous"});
+}
+
+function addLinkCard(url,title="Посилання",kind="link"){
+  const c=$("colorPicker").value;
+  const icon=kind==="file"?"📄":kind==="video"?"▶":"🔗";
+  const bg=new fabric.Rect({
+    left:0,top:0,width:330,height:86,rx:10,ry:10,
+    fill:"#ffffff",stroke:"#cfd9e7",strokeWidth:1
+  });
+  const ic=new fabric.Text(icon,{left:15,top:19,fontSize:30,fill:c});
+  const tx=new fabric.Textbox(title||url,{
+    left:58,top:13,width:250,fontSize:17,fill:"#17315f",fontWeight:"bold"
+  });
+  const sub=new fabric.Textbox(url,{
+    left:58,top:45,width:250,fontSize:10,fill:"#607089"
+  });
+  const g=new fabric.Group([bg,ic,tx,sub],{
+    left:240,top:250,
+    linkUrl:url,linkKind:kind,
+    selectable:true,evented:true
+  });
+  fcanvas.add(g);fcanvas.setActiveObject(g);pushHistory();autoSave();setTool("select");
+}
+
+fcanvas.on("mouse:dblclick",opt=>{
+  const o=opt.target;
+  if(o?.linkUrl){
+    window.open(o.linkUrl,"_blank","noopener");
+  }
+});
+
+function youtubeEmbedUrl(url){
+  try{
+    const u=new URL(url);
+    if(u.hostname.includes("youtu.be")){
+      const id=u.pathname.replace("/","");
+      return `https://www.youtube.com/embed/${id}`;
+    }
+    if(u.hostname.includes("youtube.com")){
+      const id=u.searchParams.get("v");
+      if(id)return `https://www.youtube.com/embed/${id}`;
+      if(u.pathname.startsWith("/embed/"))return url;
+    }
+  }catch(e){}
+  return null;
+}
+
+function createMediaOverlay(type,url,title="Відео"){
+  const el=document.createElement("div");
+  el.className="media-overlay";
+  el.style.left="28%";
+  el.style.top="23%";
+  el.style.width="42%";
+  el.style.height="38%";
+  el.innerHTML=`
+    <div class="media-overlay-bar">
+      <span>${title||"Медіа"}</span>
+      <span class="media-overlay-actions">
+        <button class="media-open" title="Відкрити окремо">↗</button>
+        <button class="media-close" title="Видалити">×</button>
+      </span>
+    </div>
+    <div class="media-overlay-body"></div>
+    <div class="media-overlay-resize"></div>
+  `;
+  const body=el.querySelector(".media-overlay-body");
+  body.style.height="calc(100% - 30px)";
+
+  const yt=youtubeEmbedUrl(url);
+  if(yt){
+    const iframe=document.createElement("iframe");
+    iframe.src=yt;
+    iframe.allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+    iframe.allowFullscreen=true;
+    body.appendChild(iframe);
+  }else{
+    const video=document.createElement("video");
+    video.src=url;
+    video.controls=true;
+    video.playsInline=true;
+    body.appendChild(video);
+  }
+
+  notebook.appendChild(el);
+
+  el.querySelector(".media-close").onclick=()=>el.remove();
+  el.querySelector(".media-open").onclick=()=>window.open(url,"_blank","noopener");
+
+  // drag
+  const bar=el.querySelector(".media-overlay-bar");
+  let dragging=false,ox=0,oy=0;
+  bar.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button"))return;
+    dragging=true;
+    const er=el.getBoundingClientRect();
+    ox=e.clientX-er.left;oy=e.clientY-er.top;
+    bar.setPointerCapture(e.pointerId);
+  });
+  bar.addEventListener("pointermove",e=>{
+    if(!dragging)return;
+    const nr=notebook.getBoundingClientRect();
+    let left=e.clientX-nr.left-ox;
+    let top=e.clientY-nr.top-oy;
+    left=Math.max(0,Math.min(nr.width-el.offsetWidth,left));
+    top=Math.max(0,Math.min(nr.height-el.offsetHeight,top));
+    el.style.left=(left/nr.width*100)+"%";
+    el.style.top=(top/nr.height*100)+"%";
+  });
+  bar.addEventListener("pointerup",()=>dragging=false);
+
+  // resize
+  const handle=el.querySelector(".media-overlay-resize");
+  let resizing=false,sx=0,sy=0,sw=0,sh=0;
+  handle.addEventListener("pointerdown",e=>{
+    resizing=true;sx=e.clientX;sy=e.clientY;sw=el.offsetWidth;sh=el.offsetHeight;
+    handle.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  handle.addEventListener("pointermove",e=>{
+    if(!resizing)return;
+    const nr=notebook.getBoundingClientRect();
+    const nw=Math.max(180,sw+(e.clientX-sx));
+    const nh=Math.max(110,sh+(e.clientY-sy));
+    el.style.width=(nw/nr.width*100)+"%";
+    el.style.height=(nh/nr.height*100)+"%";
+  });
+  handle.addEventListener("pointerup",()=>resizing=false);
+}
+
+function detectUrlType(url){
+  const lower=url.toLowerCase();
+  if(/\.(png|jpg|jpeg|gif|webp|svg)(\?|#|$)/.test(lower))return"image";
+  if(/youtube\.com|youtu\.be|vimeo\.com|\.(mp4|webm|ogg)(\?|#|$)/.test(lower))return"video";
+  return"link";
+}
+
+function insertMediaUrl(forcedType=null){
+  const url=$("mediaUrlInput").value.trim();
+  if(!url){alert("Вставте посилання.");return}
+  const title=$("mediaTitleInput").value.trim();
+  let type=forcedType||$("mediaUrlType").value;
+  if(type==="auto")type=detectUrlType(url);
+
+  if(type==="image")addFabricImageFromUrl(url,title);
+  else if(type==="video")createMediaOverlay("video",url,title||"Відео");
+  else addLinkCard(url,title||"Посилання","link");
+
+  $("mediaPanel").classList.add("hidden");
+}
+$("insertMediaUrlBtn")?.addEventListener("click",()=>insertMediaUrl());
+$("insertWebLinkBtn")?.addEventListener("click",()=>insertMediaUrl("link"));
+$("insertImageUrlBtn")?.addEventListener("click",()=>insertMediaUrl("image"));
+$("insertVideoUrlBtn")?.addEventListener("click",()=>insertMediaUrl("video"));
+
+$("mediaFileInput")?.addEventListener("change",e=>{
+  const file=e.target.files?.[0];
+  if(!file)return;
+
+  if(file.type.startsWith("image/")){
+    const reader=new FileReader();
+    reader.onload=()=>addFabricImageFromUrl(reader.result,file.name);
+    reader.readAsDataURL(file);
+  }else if(file.type.startsWith("video/")){
+    const url=URL.createObjectURL(file);
+    createMediaOverlay("video",url,file.name);
+  }else{
+    const url=URL.createObjectURL(file);
+    addLinkCard(url,file.name,"file");
+  }
+  $("mediaPanel").classList.add("hidden");
+  e.target.value="";
+});
 

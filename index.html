@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Sofia Notebook PRO</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#17315f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Sofia Notebook">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <script
       src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"
       onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/fabric@5.3.1/dist/fabric.min.js';">
@@ -26,6 +31,8 @@
     <button id="keyboardBtn" class="top-btn">⌨ Клавіатура</button>
     <button id="timerBtn" class="top-btn">⏱ Таймер</button>
     <button id="calculatorBtn" class="top-btn">🧮 Калькулятор</button>
+    <button id="installAppBtn" class="top-btn">⬇️ Встановити додаток</button>
+    <button id="fullscreenBtn" class="top-btn">⛶ Повний екран</button>
     <button id="voiceBtn" class="top-btn">🎙 Голос</button>
     <button id="aiBtn" class="top-btn ai">✨ AI чат</button>
     <button id="saveBtn" class="top-btn primary">💾 Зберегти</button>
@@ -158,6 +165,7 @@
       </div>
 
       <div class="ribbon-group">
+        <button id="mediaBtn" class="mini">📎 Фото / відео / файл</button>
         <button id="elementsBtn" class="mini">✦ Елементи</button>
         <button id="geometryBtn" class="mini">📐 Прилади</button>
         <button id="shapeLibraryBtn" class="mini">⬡ 2D / 3D фігури</button>
@@ -310,6 +318,39 @@
 </main>
 
 
+
+<!-- Вставлення медіа -->
+<div id="mediaPanel" class="panel media-panel hidden">
+  <div class="panel-head">📎 Вставити медіа <button data-close="mediaPanel">×</button></div>
+
+  <div class="media-section">
+    <h4>З комп’ютера</h4>
+    <input id="mediaFileInput" type="file"
+      accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip">
+    <p class="note-small">Зображення вставляються прямо на сторінку. Відео відкривається у вікні на аркуші. Інші файли додаються як ярлик.</p>
+  </div>
+
+  <div class="media-section">
+    <h4>З інтернету або за посиланням</h4>
+    <select id="mediaUrlType">
+      <option value="auto">Визначити автоматично</option>
+      <option value="image">Зображення</option>
+      <option value="video">Відео / YouTube</option>
+      <option value="link">Посилання / файл</option>
+    </select>
+    <input id="mediaUrlInput" type="url" placeholder="https://...">
+    <input id="mediaTitleInput" type="text" placeholder="Підпис (необов’язково)">
+    <button id="insertMediaUrlBtn" class="primary">＋ Вставити на сторінку</button>
+  </div>
+
+  <div class="media-section">
+    <h4>Швидкі дії</h4>
+    <button id="insertWebLinkBtn">🔗 Додати клікабельне посилання</button>
+    <button id="insertImageUrlBtn">🖼 Вставити картинку за URL</button>
+    <button id="insertVideoUrlBtn">▶ Вставити відео за URL</button>
+  </div>
+</div>
+
 <!-- Елементи у стилі Canva -->
 <div id="elementsPanel" class="panel elements-panel hidden">
   <div class="panel-head">✦ Елементи <button data-close="elementsPanel">×</button></div>
@@ -423,6 +464,29 @@
   </label>
 
   <div id="graphFormulaPreview" class="graph-formula-preview">y = x</div>
+  <div class="graph-range-box">
+    <div class="graph-range-title">Межі координатної площини</div>
+    <div class="graph-range-grid">
+      <label>X min <input id="graphXMin" type="text" value="-10"></label>
+      <label>X max <input id="graphXMax" type="text" value="10"></label>
+      <label>Y min <input id="graphYMin" type="text" value="-10"></label>
+      <label>Y max <input id="graphYMax" type="text" value="10"></label>
+    </div>
+    <label class="graph-auto-scale"><input id="graphAutoScale" type="checkbox"> Автомасштаб під графік</label>
+  </div>
+  <div class="math-input-toolbar">
+    <span>Математичне введення:</span>
+    <button type="button" data-mathinsert="1/2">½</button>
+    <button type="button" data-mathinsert="1/3">⅓</button>
+    <button type="button" data-mathinsert="2/3">⅔</button>
+    <button type="button" data-mathinsert="sqrt(">√</button>
+    <button type="button" data-mathinsert="pi">π</button>
+    <button type="button" data-mathinsert="^2">x²</button>
+    <button type="button" data-mathinsert="^3">x³</button>
+    <button type="button" data-mathinsert="abs("> |x| </button>
+    <button type="button" data-mathinsert="sin(">sin</button>
+    <button type="button" data-mathinsert="cos(">cos</button>
+  </div>
   <div id="graphParams" class="graph-params"></div>
 
   <label id="customGraphWrap" class="panel-label hidden">Формула y =
@@ -433,6 +497,7 @@
     <label><input id="graphShowPoints" type="checkbox"> Позначити точки</label>
     <label><input id="graphShowFormula" type="checkbox" checked> Показати формулу</label>
     <label><input id="graphLiveUpdate" type="checkbox" checked> Оновлювати одразу</label>
+    <label><input id="graphClipToPlane" type="checkbox" checked> Обрізати по межах площини</label>
   </div>
 
   <div class="panel-actions">
