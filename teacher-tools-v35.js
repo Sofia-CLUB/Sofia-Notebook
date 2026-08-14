@@ -511,7 +511,7 @@ q("tt31GenerateImage").onclick=async()=>{
   q("tt31GenerateImage").disabled=true;q("tt31GenerateImage").textContent="Генерую…";
   q("tt31ImageStatus").textContent="Створюю зображення…";
   try{
-    const res=await fetch("/api/image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+    const res=await fetch("https://sofia-notebook.vercel.app/api/image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       prompt,size:q("tt31ImageSize").value
     })});
     const data=await res.json();if(!res.ok)throw new Error(data.error||"Image API error");
