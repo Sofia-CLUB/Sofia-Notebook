@@ -59,3 +59,12 @@ POLLINATIONS_KEY
 - Можна застосувати окремо до верхньої панелі, панелі інструментів або до обох.
 - Якщо обрано 1 рядок і кнопки не вміщаються, панель прокручується горизонтально, а не переноситься на другий рядок.
 - Усі налаштування зберігаються у браузері.
+
+
+SOFIA NOTEBOOK PRO v37
+AI IMAGE:
+1. Основний сервіс: Google Gemini Image API.
+2. У Vercel → Project → Settings → Environment Variables додайте:
+   GEMINI_API_KEY = ваш ключ Google AI Studio.
+3. POLLINATIONS_KEY можна залишити — він використовується як резервний.
+4. Після зміни Environment Variables зробіть Redeploy.

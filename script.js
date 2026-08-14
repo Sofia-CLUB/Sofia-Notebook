@@ -2079,7 +2079,7 @@ $("installAppBtn")?.addEventListener("click",async()=>{
     alert("У Chrome або Edge відкрийте меню ⋮ → «Встановити Sofia Notebook PRO» / «Встановити цей сайт як програму». Після першого онлайн-відкриття основні файли зберігаються для офлайн-роботи.");
   }
 });
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=36",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=37",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
