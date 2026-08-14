@@ -616,3 +616,142 @@ body.board-fullscreen #v29FullscreenExit{display:block}
   position:absolute;right:7px;top:7px;width:24px;height:24px;
   border:0;border-radius:50%;background:#d43b3b;color:#fff
 }
+
+/* =========================================================
+   v30 FULLSCREEN — робоче поле + усі інструменти
+   ========================================================= */
+body.board-fullscreen-v30{
+  overflow:hidden!important;
+  background:#dfe9f4!important;
+}
+body.board-fullscreen-v30 .topbar{
+  position:fixed!important;
+  left:0;right:0;top:0;
+  z-index:9600!important;
+  display:flex!important;
+  min-height:58px;
+}
+body.board-fullscreen-v30 .lessonbar{
+  position:fixed!important;
+  left:0;right:0;top:58px;
+  z-index:9590!important;
+  display:grid!important;
+}
+body.board-fullscreen-v30 .ribbon{
+  position:fixed!important;
+  left:0;right:0;top:130px;
+  z-index:9580!important;
+  display:flex!important;
+  max-height:118px;
+  overflow:auto;
+  background:#fff;
+}
+body.board-fullscreen-v30 .leftbar{
+  display:none!important;
+}
+body.board-fullscreen-v30 .page-controls,
+body.board-fullscreen-v30 .status{
+  display:none!important;
+}
+body.board-fullscreen-v30 .layout{
+  display:block!important;
+  height:100vh!important;
+}
+body.board-fullscreen-v30 .workspace{
+  position:fixed!important;
+  left:0;right:0;top:248px;bottom:0;
+  width:100vw!important;
+  height:auto!important;
+  padding:0!important;
+  overflow:auto!important;
+  z-index:9000!important;
+}
+body.board-fullscreen-v30 #pageViewport{
+  width:100%!important;
+  min-height:100%!important;
+  padding:6px!important;
+  margin:0!important;
+  display:flex!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  background:#dfe9f4!important;
+}
+body.board-fullscreen-v30 .notebook{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  height:auto!important;
+}
+
+/* Floating exit button */
+#v30FullscreenExit{
+  display:none;
+  position:fixed;
+  right:10px;
+  bottom:10px;
+  z-index:99999;
+  border:0;
+  border-radius:10px;
+  background:#17315f;
+  color:#fff;
+  padding:10px 14px;
+  font-weight:700;
+  box-shadow:0 6px 20px rgba(0,0,0,.25)
+}
+body.board-fullscreen-v30 #v30FullscreenExit{display:block!important}
+
+/* Floating delete for every Fabric object */
+#v30ObjectDelete{
+  display:none;
+  position:fixed;
+  z-index:99998;
+  width:34px;height:34px;
+  border:3px solid #fff;
+  border-radius:50%;
+  background:#d83b3b;
+  color:#fff;
+  font:700 23px/27px Arial,sans-serif;
+  padding:0;
+  box-shadow:0 4px 15px rgba(0,0,0,.28);
+  cursor:pointer
+}
+#v30ObjectDelete.show{display:block}
+
+/* DOM fallback images */
+.v30-dom-image{
+  position:absolute;
+  z-index:60;
+  max-width:50%;
+  max-height:55%;
+  border:2px solid #17315f;
+  border-radius:8px;
+  background:#fff;
+  cursor:move;
+  touch-action:none
+}
+.v30-dom-image img{
+  display:block;
+  max-width:100%;
+  max-height:100%;
+  border-radius:6px
+}
+.v30-dom-image .close{
+  position:absolute;
+  right:-12px;
+  top:-12px;
+  width:30px;height:30px;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#d83b3b;
+  color:#fff;
+  font-size:20px;
+  line-height:24px;
+  padding:0
+}
+
+/* Tablet / interactive board: keep toolbar usable */
+@media (max-width:1200px), (pointer:coarse){
+  body.board-fullscreen-v30 .lessonbar{top:60px}
+  body.board-fullscreen-v30 .ribbon{top:136px;max-height:130px}
+  body.board-fullscreen-v30 .workspace{top:266px}
+}

@@ -1,14 +1,14 @@
-const CACHE_NAME="sofia-notebook-v29";
+const CACHE_NAME="sofia-notebook-v30";
 const CORE=[
   "./",
   "./index.html",
-  "./style.css?v=29",
-  "./script.js?v=29",
-  "./controls-v29.js?v=29",
+  "./style.css?v=30",
+  "./script.js?v=30",
+  "./controls-v30.js?v=30",
   "./sofia-logo.jpg",
   "./icon-192.png",
   "./icon-512.png",
-  "./manifest.webmanifest?v=29"
+  "./manifest.webmanifest?v=30"
 ];
 self.addEventListener("install",event=>event.waitUntil((async()=>{
   const cache=await caches.open(CACHE_NAME);
@@ -25,7 +25,7 @@ self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET")return;
   const u=new URL(event.request.url);
   const core=event.request.mode==="navigate" ||
-    /\/(index\.html|style\.css|script\.js|controls-v29\.js|manifest\.webmanifest)$/.test(u.pathname);
+    /\/(index\.html|style\.css|script\.js|controls-v30\.js|manifest\.webmanifest)$/.test(u.pathname);
   event.respondWith((async()=>{
     if(core){
       try{
