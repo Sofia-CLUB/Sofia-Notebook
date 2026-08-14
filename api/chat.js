@@ -103,8 +103,8 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({
-      answer: answer
-    });
+  reply: answer
+});
 
   } catch (error) {
     console.error(error);
