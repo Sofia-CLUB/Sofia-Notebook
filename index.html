@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Sofia Notebook PRO</title>
+  <link rel="stylesheet" href="style.css">
+  <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"
+      onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/fabric@5.3.1/dist/fabric.min.js';">
+    </script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <img src="sofia-logo.jpg" class="brand-logo" alt="Sofia Global Education">
+    <div>
+      <h1>Sofia Notebook PRO</h1>
+      <span>інтерактивний зошит • Sofia Global Education</span>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <div id="liveClock" class="clock">00:00</div>
+    <button id="keyboardBtn" class="top-btn">⌨ Клавіатура</button>
+    <button id="timerBtn" class="top-btn">⏱ Таймер</button>
+    <button id="calculatorBtn" class="top-btn">🧮 Калькулятор</button>
+    <button id="voiceBtn" class="top-btn">🎙 Голос</button>
+    <button id="aiBtn" class="top-btn ai">✨ AI чат</button>
+    <button id="saveBtn" class="top-btn primary">💾 Зберегти</button>
+    <button id="diagnosticsBtn" class="top-btn" title="Перевірити кнопки">🛠 Перевірка</button>
+    <button id="clearAllBtn" class="top-btn danger">🗑 Очистити все</button>
+  </div>
+</header>
+
+<section class="lessonbar">
+  <input id="studentName" placeholder="Ім’я та прізвище">
+
+  <select id="studentClass">
+    <option value="">Клас</option>
+    <option>1-А</option><option>1-Б</option><option>2-А</option><option>2-Б</option>
+    <option>3-А</option><option>3-Б</option><option>4-А</option><option>4-Б</option>
+    <option>5-А</option><option>5-Б</option><option>6-А</option><option>6-Б</option>
+    <option>7-А</option><option>7-Б</option><option>8-А</option><option>8-Б</option>
+    <option>9-А</option><option>9-Б</option><option>10-А</option><option>11-А</option>
+  </select>
+
+  <select id="subject">
+    <option value="">Предмет</option>
+    <option>Математика</option><option>Алгебра</option><option>Геометрія</option>
+    <option>Українська мова</option><option>Українська література</option>
+    <option>Англійська мова</option><option>Інформатика</option>
+    <option>Фізика</option><option>Хімія</option><option>Біологія</option>
+    <option>Географія</option><option>Історія</option><option>Мистецтво</option>
+  </select>
+
+  <select id="pageMode">
+    <option value="lesson">Навчальна сторінка</option>
+    <option value="free">Вільна сторінка</option>
+  </select>
+
+  <select id="workType">
+    <option>Класна робота</option>
+    <option>Домашня робота</option>
+    <option>Самостійна робота</option>
+    <option>Контрольна робота</option>
+    <option>Практична робота</option>
+    <option>Лабораторна робота</option>
+    <option>Діагностична робота</option>
+    <option>Творча робота</option>
+    <option>Робота над помилками</option>
+  </select>
+
+  <div class="date-control">
+    <select id="dateMode">
+      <option value="words" id="optDateWords"></option>
+      <option value="dayMonth" id="optDateDayMonth"></option>
+      <option value="numeric" id="optDateNumeric"></option>
+      <option value="calendar">Вибрати іншу дату</option>
+      <option value="manual">Ввести дату вручну</option>
+      <option value="none">Без дати</option>
+    </select>
+    <input id="customDate" class="hidden" type="date">
+    <input id="manualDate" class="hidden" type="text" placeholder="Напр.: 1 вересня">
+  </div>
+
+  <select id="paperType">
+    <option value="grid">Клітинка</option>
+    <option value="lines">Лінійка</option>
+    <option value="slant">Коса лінія</option>
+    <option value="music">Нотний стан</option>
+    <option value="millimeter">Міліметровка</option>
+    <option value="coordinate">Декартова система координат</option>
+    <option value="clean">Чистий</option>
+  </select>
+
+  <label class="paper-size-slider" title="Розмір клітинки / відстань між лініями">
+    <span>Розмір</span>
+    <button type="button" id="paperSizeMinus">−</button>
+    <input id="paperSize" type="range" min="16" max="50" step="1" value="25">
+    <button type="button" id="paperSizePlus">＋</button>
+    <b><span id="paperSizeValue">25</span> px</b>
+  </label>
+
+  <label class="paper-color-control">
+    <span>Колір ліній</span>
+    <input id="paperLineColor" type="color" value="#9fd5ff">
+  </label>
+</section>
+
+<main class="layout">
+
+  <aside class="leftbar">
+    <button class="side-tool active" data-tool="select">✋<span>Рука</span></button>
+    <button class="side-tool" data-tool="pen">✏️<span>Ручка</span></button>
+    <button class="side-tool" data-tool="marker">🖍<span>Маркер</span></button>
+    <button class="side-tool" data-tool="eraser">🧽<span>Стирачка</span></button>
+    <button class="side-tool" data-tool="line">╱<span>Лінія</span></button>
+    <button class="side-tool" data-tool="curve">⌒<span>Крива</span></button>
+    <button class="side-tool" data-tool="polyline">⌁<span>Ламана</span></button>
+    <button class="side-tool" data-tool="wave">〰<span>Хвиляста</span></button>
+    <button class="side-tool" data-tool="arrow">➜<span>Стрілка</span></button>
+    <button class="side-tool" data-tool="rectangle">▭<span>Прямокутник</span></button>
+    <button class="side-tool" data-tool="ellipse">○<span>Коло</span></button>
+    <button class="side-tool" data-tool="triangle">△<span>Трикутник</span></button>
+    <button class="side-tool" data-tool="text">T<span>Текст</span></button>
+  </aside>
+
+  <section class="workspace">
+
+    <div class="ribbon">
+      <div class="ribbon-group">
+        <label>Колір <input id="colorPicker" type="color" value="#17315f"></label>
+        <label>Товщина
+          <input id="lineWidth" type="range" min="1" max="24" value="3">
+          <b id="lineWidthValue">3</b>
+        </label>
+        <select id="lineStyle">
+          <option value="solid">Суцільна</option>
+          <option value="dashed">Штрихова</option>
+          <option value="dotted">Пунктирна</option>
+          <option value="dashdot">Штрихпунктирна</option>
+        </select>
+
+        <select id="lineKind" title="Тип прямої / відрізка / стрілки">
+          <option value="segment">— Відрізок</option>
+          <option value="line">↔ Пряма</option>
+          <option value="ray">→ Промінь</option>
+          <option value="arrow">➜ Стрілка в один бік</option>
+          <option value="doubleArrow">↔ Стрілка в обидва боки</option>
+        </select>
+
+        <label>Перевірка
+          <input id="correctionColor" type="color" value="#e53935">
+        </label>
+        <button id="correctionMarkerBtn" class="mini">✓ Маркер перевірки</button>
+      </div>
+
+      <div class="ribbon-group">
+        <button id="elementsBtn" class="mini">✦ Елементи</button>
+        <button id="geometryBtn" class="mini">📐 Прилади</button>
+        <button id="shapeLibraryBtn" class="mini">⬡ 2D / 3D фігури</button>
+        <button id="angleBtn" class="mini">∠ Побудувати кут</button>
+        <button id="numberRayBtn" class="mini">↦ Числовий промінь</button>
+        <button id="graphBuilderBtn" class="mini">📈 Побудова графіка</button>
+        <button id="pointBtn" class="mini">• Точка</button>
+        <button id="vertexLabelBtn" class="mini">A Вершина</button>
+      </div>
+
+      <div class="ribbon-group">
+        <button id="ukrainianBtn" class="mini">🇺🇦 Розбір</button>
+        <button id="noteBtn" class="mini">🗒 Замітка</button>
+        <button id="groupBtn" class="mini">🔗 Групувати</button>
+        <button id="ungroupBtn" class="mini">🔓 Розгрупувати</button>
+        <button id="explodeShapeBtn" class="mini">✂ Розкласти фігуру</button>
+        <button id="editVerticesBtn" class="mini">◆ Змінювати кути</button>
+        <button id="finishPolylineBtn" class="mini hidden">✓ Завершити ламану</button>
+      </div>
+
+
+      <div id="textFormatBar" class="text-format-bar hidden">
+        <div class="text-format-title">Формат тексту</div>
+
+        <select id="textFontFamily" title="Шрифт">
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Calibri">Calibri</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Trebuchet MS">Trebuchet MS</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Comic Sans MS">Comic Sans</option>
+        </select>
+
+        <button id="fontSizeDown" class="mini" title="Зменшити шрифт">A−</button>
+        <input id="textFontSize" type="number" min="8" max="120" value="26" title="Розмір шрифту">
+        <button id="fontSizeUp" class="mini" title="Збільшити шрифт">A＋</button>
+
+        <button id="textBoldBtn" class="mini" title="Жирний"><b>B</b></button>
+        <button id="textItalicBtn" class="mini" title="Курсив"><i>I</i></button>
+        <button id="textUnderlineBtn" class="mini" title="Підкреслений"><u>U</u></button>
+        <button id="textStrikeBtn" class="mini" title="Закреслений"><s>S</s></button>
+
+        <label class="format-color">Текст <input id="textColor" type="color" value="#17315f"></label>
+        <label class="format-color">Фон <input id="textBgColor" type="color" value="#ffffff"></label>
+
+        <select id="textAlign" title="Вирівнювання">
+          <option value="left">⇤ Ліворуч</option>
+          <option value="center">↔ По центру</option>
+          <option value="right">⇥ Праворуч</option>
+        </select>
+
+        <button id="textDuplicateBtn" class="mini" title="Дублювати">⧉</button>
+      </div>
+
+      <div class="ribbon-group">
+        <button id="undoBtn" class="mini">↶</button>
+        <button id="redoBtn" class="mini">↷</button>
+        <button id="deleteSelectedBtn" class="mini danger-soft">✕ Видалити вибране</button>
+        <button id="clearPageBtn" class="mini danger-soft">Очистити сторінку</button>
+      </div>
+    </div>
+
+    <div class="page-controls">
+      <div>
+        <button id="prevPageBtn" class="nav-btn">‹</button>
+        <span id="pageIndicator">Сторінка 1 з 1</span>
+        <button id="nextPageBtn" class="nav-btn">›</button>
+        <button id="addPageBtn" class="nav-btn primary">＋ Нова сторінка</button>
+        <button id="deletePageBtn" class="nav-btn danger-soft">Видалити сторінку</button>
+      </div>
+    </div>
+
+    <div id="pageViewport">
+      <div id="notebook" class="notebook paper-grid">
+        <div class="page-heading hidden">
+          <div id="dateHeading"></div>
+          <div id="workHeading">Класна робота</div>
+        </div>
+
+        <div id="coordinatePaperOverlay" class="coordinate-paper-overlay hidden"></div>
+
+        <img src="sofia-logo.jpg" class="page-watermark" alt="Sofia Global Education">
+
+        <canvas id="fabricCanvas" width="1180" height="820"></canvas>
+
+        <div id="rulerOverlay" class="geo ruler hidden legacy-instrument">
+          <div class="geo-title">
+            <span>📏 Лінійка <span class="geo-hint">20 см • поділки 1 мм</span></span>
+            <span class="geo-actions"><button class="geo-left">↶</button><button class="geo-right">↷</button><button class="geo-close">×</button></span>
+          </div>
+          <div class="ruler-scale"></div>
+          <div class="geo-rotation-control"><label>Поворот <input class="geo-angle-slider" type="range" min="-180" max="180" value="0"> <b class="geo-angle-value">0°</b></label></div>
+        </div>
+
+        <div id="protractorOverlay" class="geo protractor hidden legacy-instrument">
+          <div class="geo-title">
+            <span>📐 Транспортир <span id="angleReadout" class="geo-hint">90°</span></span>
+            <span class="geo-actions"><button class="geo-left">↶</button><button class="geo-right">↷</button><button class="geo-close">×</button></span>
+          </div>
+          <div class="protractor-face">
+            <div id="protractorRay" class="protractor-ray"></div>
+            <div class="angle-labels">
+              <span style="left:1%">0°</span><span style="left:16%">30°</span><span style="left:31%">60°</span>
+              <span style="left:47%">90°</span><span style="left:64%">120°</span><span style="left:80%">150°</span><span style="right:1%">180°</span>
+            </div>
+          </div>
+          <div class="protractor-controls">
+            <label>Вимір <input id="angleMeasure" type="range" min="0" max="180" value="90"> <b id="angleMeasureValue">90°</b></label>
+            <label>Поворот <input class="geo-angle-slider" type="range" min="-180" max="180" value="0"> <b class="geo-angle-value">0°</b></label>
+          </div>
+        </div>
+
+        <div id="setSquareOverlay" class="geo setsquare hidden legacy-instrument">
+          <div class="geo-title">
+            <span>◩ Косинець <span class="geo-hint">30° / 60° / 90°</span></span>
+            <span class="geo-actions"><button class="geo-left">↶</button><button class="geo-right">↷</button><button class="geo-close">×</button></span>
+          </div>
+          <div class="set-square-body">
+            <div class="sq-horizontal-scale"></div>
+            <div class="sq-vertical-scale"></div>
+            <div class="sq-diagonal-scale"></div>
+            <div class="sq-angle sq-a">90°</div><div class="sq-angle sq-b">60°</div><div class="sq-angle sq-c">30°</div>
+          </div>
+          <div class="geo-rotation-control"><label>Поворот <input class="geo-angle-slider" type="range" min="-180" max="180" value="0"> <b class="geo-angle-value">0°</b></label></div>
+        </div>
+
+        <div id="compassOverlay" class="geo compass hidden legacy-instrument">
+          <div class="geo-title">
+            <span>🧭 Циркуль <span class="geo-hint">радіус у см</span></span>
+            <span class="geo-actions"><button class="geo-left">↶</button><button class="geo-right">↷</button><button class="geo-close">×</button></span>
+          </div>
+          <div class="compass-icon">∧</div>
+          <div class="compass-radius">
+            <label>Радіус <input id="compassRadius" type="range" min="0.5" max="10" step="0.1" value="2"> <b><span id="compassRadiusValue">2.0</span> см</b></label>
+            <div>Діаметр: <b id="compassDiameterValue">4.0</b> см</div>
+          </div>
+          <button id="drawCircleFromCompass">Намалювати коло</button>
+          <div class="geo-rotation-control"><label>Поворот <input class="geo-angle-slider" type="range" min="-180" max="180" value="0"> <b class="geo-angle-value">0°</b></label></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status">
+      <span id="saveStatus">Робота ще не збережена</span>
+      <span>✋ Об’єкти можна рухати, масштабувати, обертати і видаляти через червоний ×. Тип лінії обирається у верхній панелі. 🧽 Стирачка стирає тільки намальовані лінії/фігури, але не текст і не фон.</span>
+    </div>
+  </section>
+</main>
+
+
+<!-- Елементи у стилі Canva -->
+<div id="elementsPanel" class="panel elements-panel hidden">
+  <div class="panel-head">✦ Елементи <button data-close="elementsPanel">×</button></div>
+
+  <div class="elements-tabs">
+    <button class="element-tab active" data-tab="basic">Основні</button>
+    <button class="element-tab" data-tab="education">Освіта</button>
+    <button class="element-tab" data-tab="decor">Декор</button>
+  </div>
+
+  <div class="element-section" data-section="basic">
+    <div class="element-grid">
+      <button data-element="circle">●<span>Коло</span></button>
+      <button data-element="square">■<span>Квадрат</span></button>
+      <button data-element="triangle">▲<span>Трикутник</span></button>
+      <button data-element="star">★<span>Зірка</span></button>
+      <button data-element="arrow">➜<span>Стрілка</span></button>
+      <button data-element="speech">💬<span>Хмарка</span></button>
+      <button data-element="check">✓<span>Галочка</span></button>
+      <button data-element="cross">✕<span>Хрестик</span></button>
+      <button data-element="heart">♥<span>Серце</span></button>
+    </div>
+  </div>
+
+  <div class="element-section hidden" data-section="education">
+    <div class="element-grid">
+      <button data-element="book">📘<span>Книга</span></button>
+      <button data-element="bulb">💡<span>Ідея</span></button>
+      <button data-element="pin">📌<span>Позначка</span></button>
+      <button data-element="note">🗒<span>Замітка</span></button>
+      <button data-element="formula">∑<span>Формула</span></button>
+      <button data-element="computer">💻<span>Комп'ютер</span></button>
+      <button data-element="globe">🌍<span>Світ</span></button>
+      <button data-element="clock">🕒<span>Час</span></button>
+      <button data-element="medal">🏅<span>Досягнення</span></button>
+    </div>
+  </div>
+
+  <div class="element-section hidden" data-section="decor">
+    <div class="element-grid">
+      <button data-element="sparkle">✨<span>Блиск</span></button>
+      <button data-element="smile">😊<span>Смайл</span></button>
+      <button data-element="warning">⚠️<span>Увага</span></button>
+      <button data-element="question">❓<span>Питання</span></button>
+      <button data-element="ideaSticker">💭<span>Думка</span></button>
+      <button data-element="ribbon">🎀<span>Стрічка</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Геометричні прилади -->
+<div id="geometryPanel" class="panel hidden">
+  <div class="panel-head">Геометричні прилади <button data-close="geometryPanel">×</button></div>
+  <button data-instrument="ruler">📏 Лінійка 20 см</button>
+  <button data-instrument="protractor">📐 Транспортир 0–180°</button>
+  <button data-instrument="setsquare">◩ Косинець 30°/60°/90°</button>
+  <button data-instrument="compass">🧭 Циркуль</button>
+  <p class="note-small">Прилади вставляються як звичайні об’єкти: ✋ рукою їх можна переміщувати, збільшувати, зменшувати, повертати й видаляти через ×.</p>
+</div>
+
+<!-- Бібліотека фігур -->
+<div id="shapeLibraryPanel" class="panel shape-panel hidden">
+  <div class="panel-head">2D / 3D фігури <button data-close="shapeLibraryPanel">×</button></div>
+  <div class="shape-grid">
+    <button data-shape="square">□<span>Квадрат</span></button>
+    <button data-shape="parallelogram">▱<span>Паралелограм</span></button>
+    <button data-shape="rhombus">◇<span>Ромб</span></button>
+    <button data-shape="trapezoid">⏢<span>Трапеція</span></button>
+    <button data-shape="cube">◫<span>Куб</span></button>
+    <button data-shape="cuboid">▣<span>Паралелепіпед</span></button>
+    <button data-shape="pyramid">△<span>Піраміда</span></button>
+    <button data-shape="cylinder">⬭<span>Циліндр</span></button>
+    <button data-shape="cone">◭<span>Конус</span></button>
+    <button data-shape="sphere">◯<span>Сфера</span></button>
+    <button data-shape="prism">⬡<span>Призма</span></button>
+    <button data-shape="point">•<span>Точка</span></button>
+  </div>
+  <p class="note-small">Невидимі ребра 3D-фігур автоматично штрихові. Натисніть «Розгрупувати», щоб редагувати окремі ребра.</p>
+</div>
+
+<!-- Кут -->
+<div id="anglePanel" class="panel hidden">
+  <div class="panel-head">Побудова кута <button data-close="anglePanel">×</button></div>
+  <label class="panel-label">Кут, ° <input id="angleBuildValue" type="number" min="1" max="359" value="60"></label>
+  <label class="panel-label">Довжина променів <input id="angleRayLength" type="range" min="80" max="300" value="170"></label>
+  <button id="insertAngleBtn">∠ Вставити кут</button>
+</div>
+
+
+
+<!-- Побудова графіків -->
+<div id="graphBuilderPanel" class="panel wide-panel hidden">
+  <div class="panel-head">📈 Побудова графіка <button data-close="graphBuilderPanel">×</button></div>
+
+  <label class="panel-label">Назва графіка
+    <input id="graphName" type="text" value="Графік 1" placeholder="Напр.: Функція 1">
+  </label>
+
+  <label class="panel-label">Вид функції
+    <select id="graphType">
+      <option value="linear">Лінійна y = kx + b</option>
+      <option value="quadratic">Квадратична y = ax² + bx + c</option>
+      <option value="cubic">Кубічна y = ax³ + bx² + cx + d</option>
+      <option value="absolute">Модуль y = a|x-h| + k</option>
+      <option value="inverse">Обернена пропорційність y = a/x</option>
+      <option value="sqrt">Коренева y = a√(x-h) + k</option>
+      <option value="sin">Синусоїда y = a·sin(bx+c)+d</option>
+      <option value="cos">Косинусоїда y = a·cos(bx+c)+d</option>
+      <option value="custom">Власна формула</option>
+    </select>
+  </label>
+
+  <div id="graphFormulaPreview" class="graph-formula-preview">y = x</div>
+  <div id="graphParams" class="graph-params"></div>
+
+  <label id="customGraphWrap" class="panel-label hidden">Формула y =
+    <input id="customGraphExpression" type="text" value="x*x" placeholder="Напр.: x*x, sin(x), 2*x+3">
+  </label>
+
+  <div class="graph-options">
+    <label><input id="graphShowPoints" type="checkbox"> Позначити точки</label>
+    <label><input id="graphShowFormula" type="checkbox" checked> Показати формулу</label>
+    <label><input id="graphLiveUpdate" type="checkbox" checked> Оновлювати одразу</label>
+  </div>
+
+  <div class="panel-actions">
+    <button id="insertGraphBtn" class="primary">📈 Побудувати на координатній площині</button>
+    <button id="clearGraphsBtn">Прибрати графіки</button>
+  </div>
+  <p class="note-small">Якщо фон ще не «Декартова система координат», він буде ввімкнений автоматично. Графік після побудови можна виділити рукою, переміщувати, масштабувати та видаляти.</p>
+</div>
+
+<!-- Числовий промінь -->
+<div id="numberRayPanel" class="panel hidden">
+  <div class="panel-head">↦ Числовий промінь <button data-close="numberRayPanel">×</button></div>
+  <label class="panel-label">Початок <input id="rayStart" type="number" value="0" step="1"></label>
+  <label class="panel-label">Кінець <input id="rayEnd" type="number" value="10" step="1"></label>
+  <label class="panel-label">Крок поділок <input id="rayStep" type="number" value="1" min="0.1" step="0.1"></label>
+  <label class="panel-label">Довжина <input id="rayLength" type="range" min="250" max="850" value="520"></label>
+  <button id="insertNumberRayBtn">↦ Вставити числовий промінь</button>
+  <p class="note-small">Після вставлення промінь можна переміщувати, масштабувати та повертати рукою.</p>
+</div>
+
+<!-- Українська мова -->
+<div id="ukrainianPanel" class="panel wide-panel hidden">
+  <div class="panel-head">🇺🇦 Розбір речення і будова слова <button data-close="ukrainianPanel">×</button></div>
+  <h4>Члени речення</h4>
+  <div class="tool-grid">
+    <button data-ukmark="subject">Підмет<br><span>одна лінія</span></button>
+    <button data-ukmark="predicate">Присудок<br><span>дві лінії</span></button>
+    <button data-ukmark="attribute">Означення<br><span>хвиляста</span></button>
+    <button data-ukmark="object">Додаток<br><span>пунктир</span></button>
+    <button data-ukmark="adverbial">Обставина<br><span>штрихпунктир</span></button>
+  </div>
+  <h4>Будова слова</h4>
+  <div class="tool-grid">
+    <button data-wordmark="root">∩ Корінь</button>
+    <button data-wordmark="prefix">⌜ Префікс</button>
+    <button data-wordmark="suffix">⌃ Суфікс</button>
+    <button data-wordmark="ending">□ Закінчення</button>
+    <button data-wordmark="stem">⌒ Основа</button>
+  </div>
+</div>
+
+<!-- AI чат -->
+<div id="aiPanel" class="ai-chat-panel hidden">
+  <div class="ai-chat-head">
+    <div><b>✨ Sofia AI</b><span>помічник для уроку</span></div>
+    <button data-close="aiPanel">×</button>
+  </div>
+  <div id="aiMessages" class="ai-messages">
+    <div class="ai-message assistant">Вітаю! Я можу допомогти сформулювати завдання, пояснення, текст для уроку або підказати, що додати на дошку.</div>
+  </div>
+  <div class="ai-quick">
+    <button data-aiquick="Створи 5 завдань для уроку">5 завдань</button>
+    <button data-aiquick="Поясни тему простими словами">Пояснення</button>
+    <button data-aiquick="Створи коротку вправу для учнів">Вправа</button>
+  </div>
+  <div class="ai-compose">
+    <textarea id="aiPrompt" rows="3" placeholder="Напишіть запит..."></textarea>
+    <button id="aiSendBtn" class="primary">Надіслати</button>
+    <button id="aiInsertLastBtn">Вставити відповідь на дошку</button>
+  </div>
+  <p class="note-small">Для реальних відповідей AI потрібен захищений серверний endpoint. GitHub Pages не може безпечно зберігати API-ключ.</p>
+</div>
+<!-- Екранна клавіатура -->
+<div id="keyboardPanel" class="keyboard-panel hidden">
+  <div class="keyboard-head">
+    <b>⌨ Екранна клавіатура</b>
+    <div>
+      <button id="keyboardLangBtn" type="button">UA</button>
+      <button id="keyboardCloseBtn" type="button">×</button>
+    </div>
+  </div>
+  <div id="keyboardKeys" class="keyboard-keys"></div>
+</div>
+
+
+<div id="timerPanel" class="timer-panel hidden">
+  <div class="timer-head">
+    <div>
+      <b>⏱ Таймер змагання</b>
+      <span>для вікторин, естафет і командних завдань</span>
+    </div>
+    <button id="timerCloseBtn">×</button>
+  </div>
+
+  <div id="timerDisplay" class="timer-display-big">05:00</div>
+
+  <div class="timer-presets">
+    <button data-time="60">1 хв</button>
+    <button data-time="180">3 хв</button>
+    <button data-time="300">5 хв</button>
+    <button data-time="600">10 хв</button>
+    <button data-time="900">15 хв</button>
+  </div>
+
+  <div class="timer-custom">
+    <label>Хвилини <input id="timerMinutes" type="number" min="0" max="180" value="5"></label>
+    <label>Секунди <input id="timerSecondsInput" type="number" min="0" max="59" value="0"></label>
+  </div>
+
+  <div class="timer-actions">
+    <button id="timerStartBtn" class="primary">▶ Старт</button>
+    <button id="timerPauseBtn">⏸ Пауза</button>
+    <button id="timerResetBtn">↺ Скинути</button>
+    <button id="timerPlusBtn">＋ 30 с</button>
+  </div>
+
+  <label class="timer-option">
+    <input id="timerSound" type="checkbox" checked>
+    Звуковий сигнал після завершення
+  </label>
+
+  <button id="timerFullscreenBtn" class="timer-fullscreen-btn">⛶ Великий режим для дошки</button>
+</div>
+
+
+<div id="vertexEditPanel" class="vertex-edit-panel hidden">
+  <div class="vertex-edit-head">
+    <b>◆ Редагування вершин</b>
+    <button id="vertexEditClose">×</button>
+  </div>
+  <p>Перетягуйте круглі маркери вершин. Кути та довжини сторін змінюються автоматично.</p>
+  <div id="vertexAngles" class="vertex-angle-list"></div>
+  <button id="finishVertexEdit" class="primary">✓ Завершити редагування</button>
+</div>
+
+
+<div id="diagnosticsPanel" class="diagnostics-panel hidden">
+  <div class="diagnostics-head">
+    <div>
+      <b>🛠 Перевірка функцій</b>
+      <span>автоматична перевірка основних кнопок</span>
+    </div>
+    <button id="diagnosticsCloseBtn">×</button>
+  </div>
+  <div id="diagnosticsResults" class="diagnostics-results"></div>
+  <button id="runDiagnosticsBtn" class="primary">Перевірити ще раз</button>
+</div>
+
+
+<script>
+window.addEventListener("load", function(){
+  if (typeof window.fabric === "undefined") {
+    var box = document.createElement("div");
+    box.className = "fatal-library-warning";
+    box.innerHTML = "<b>⚠️ Не завантажилась графічна бібліотека.</b><br>Перевірте інтернет-з’єднання на інтерактивній дошці та оновіть сторінку Ctrl+F5.";
+    document.body.appendChild(box);
+  }
+});
+</script>
+
+
+<!-- Калькулятор -->
+<div id="calculatorPanel" class="calculator-panel hidden">
+  <div class="calculator-head">
+    <div><b>🧮 Калькулятор</b><span>звичайний і науковий</span></div>
+    <button id="calculatorCloseBtn">×</button>
+  </div>
+
+  <input id="calculatorDisplay" class="calculator-display" type="text" value="" placeholder="0">
+
+  <div class="calculator-memory">
+    <button data-calc="sin(">sin</button>
+    <button data-calc="cos(">cos</button>
+    <button data-calc="tan(">tan</button>
+    <button data-calc="sqrt(">√</button>
+    <button data-calc="^">xʸ</button>
+    <button data-calc="pi">π</button>
+  </div>
+
+  <div class="calculator-grid">
+    <button data-calc="C" class="calc-danger">C</button>
+    <button data-calc="(">(</button>
+    <button data-calc=")">)</button>
+    <button data-calc="/">÷</button>
+
+    <button data-calc="7">7</button>
+    <button data-calc="8">8</button>
+    <button data-calc="9">9</button>
+    <button data-calc="*">×</button>
+
+    <button data-calc="4">4</button>
+    <button data-calc="5">5</button>
+    <button data-calc="6">6</button>
+    <button data-calc="-">−</button>
+
+    <button data-calc="1">1</button>
+    <button data-calc="2">2</button>
+    <button data-calc="3">3</button>
+    <button data-calc="+">+</button>
+
+    <button data-calc="BACK">⌫</button>
+    <button data-calc="0">0</button>
+    <button data-calc=".">,</button>
+    <button data-calc="=" class="calc-equals">=</button>
+  </div>
+
+  <button id="insertCalcResultBtn" class="calc-insert">Вставити результат на дошку</button>
+</div>
+
+
+<div id="graphEditorPanel" class="graph-editor-panel hidden">
+  <div class="graph-editor-head">
+    <div>
+      <b>📊 Властивості графіка</b>
+      <span>зміни одразу видно на координатній площині</span>
+    </div>
+    <button id="graphEditorCloseBtn">×</button>
+  </div>
+
+  <label>Назва
+    <input id="selectedGraphName" type="text">
+  </label>
+
+  <div id="selectedGraphFormula" class="selected-graph-formula">y = x</div>
+
+  <div id="selectedGraphParams" class="graph-params"></div>
+
+  <div class="graph-transform-grid">
+    <label>Зсув по X
+      <input id="graphShiftX" type="number" step="0.1" value="0">
+    </label>
+    <label>Зсув по Y
+      <input id="graphShiftY" type="number" step="0.1" value="0">
+    </label>
+  </div>
+
+  <p class="note-small">Можна змінювати коефіцієнти тут або перетягувати графік рукою. Після переміщення формула оновлюється автоматично.</p>
+
+  <div class="graph-editor-actions">
+    <button id="resetGraphPositionBtn">↺ Скинути зсув</button>
+    <button id="duplicateGraphBtn">⧉ Дублювати</button>
+    <button id="deleteGraphBtn" class="danger-soft">✕ Видалити</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
