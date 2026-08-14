@@ -1392,7 +1392,7 @@ $("subject").onchange=()=>{
     }
     return "AI-інтерфейс працює. Для повноцінних відповідей рівня ChatGPT потрібно підключити захищений серверний API. Поки що я можу вставляти локальні шаблони та заготовки для уроку.";
   };
-
+const sendBtn = byId("aiSendBtn");
   if(sendBtn){
     sendBtn.onclick=async()=>{
       const input=byId("aiPrompt");
