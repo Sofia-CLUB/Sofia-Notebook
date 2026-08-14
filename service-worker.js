@@ -1,44 +1,151 @@
-const CACHE_NAME="sofia-notebook-v32";
-const CORE=[
+const CACHE_NAME = "sofia-notebook-v34";
+
+const CORE = [
   "./",
   "./index.html",
-  "./style.css?v=32",
-  "./script.js?v=32",
-  "./controls-v32.js?v=32",
+
+  "./style.css",
+  "./script.js",
+
+  "./controls-v32.js",
+
+  "./teacher-tools-v34.css",
+  "./teacher-tools-v34.js",
+
   "./sofia-logo.jpg",
   "./icon-192.png",
   "./icon-512.png",
-  "./manifest.webmanifest?v=32"
+
+  "./manifest.webmanifest"
 ];
-self.addEventListener("install",event=>event.waitUntil((async()=>{
-  const cache=await caches.open(CACHE_NAME);
-  for(const url of CORE){
-    try{const r=await fetch(url,{cache:"reload"});if(r.ok)await cache.put(url,r.clone())}catch(e){}
-  }
-  self.skipWaiting();
-})()));
-self.addEventListener("activate",event=>event.waitUntil((async()=>{
-  for(const k of await caches.keys())if(k!==CACHE_NAME)await caches.delete(k);
-  await self.clients.claim();
-})()));
-self.addEventListener("fetch",event=>{
-  if(event.request.method!=="GET")return;
-  const u=new URL(event.request.url);
-  const core=event.request.mode==="navigate" ||
-    /\/(index\.html|style\.css|script\.js|controls-v32\.js|manifest\.webmanifest)$/.test(u.pathname);
-  event.respondWith((async()=>{
-    if(core){
-      try{
-        const r=await fetch(event.request,{cache:"no-store"});
-        if(r.ok)(await caches.open(CACHE_NAME)).put(event.request,r.clone());
-        return r;
-      }catch(e){return (await caches.match(event.request)) || (await caches.match("./index.html"));}
+
+/* Встановлення */
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+
+    const cache = await caches.open(CACHE_NAME);
+
+    for (const url of CORE) {
+      try {
+        const response = await fetch(url, {
+          cache: "no-store"
+        });
+
+        if (response.ok) {
+          await cache.put(url, response.clone());
+        }
+
+      } catch (error) {
+        console.log("Не вдалося кешувати:", url);
+      }
     }
-    const c=await caches.match(event.request);if(c)return c;
-    try{
-      const r=await fetch(event.request);
-      if(r.ok)(await caches.open(CACHE_NAME)).put(event.request,r.clone());
-      return r;
-    }catch(e){return Response.error();}
+
+    self.skipWaiting();
+
   })());
+});
+
+
+/* Активація */
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+
+    const keys = await caches.keys();
+
+    for (const key of keys) {
+      if (key !== CACHE_NAME) {
+        await caches.delete(key);
+      }
+    }
+
+    await self.clients.claim();
+
+  })());
+});
+
+
+/* Запити */
+self.addEventListener("fetch", event => {
+
+  if (event.request.method !== "GET") {
+    return;
+  }
+
+  const url = new URL(event.request.url);
+
+  const importantFile =
+    event.request.mode === "navigate" ||
+    /\/(index\.html|style\.css|script\.js|controls-v32\.js|teacher-tools-v34\.js|teacher-tools-v34\.css|manifest\.webmanifest)$/.test(url.pathname);
+
+
+  event.respondWith((async () => {
+
+    /* Для важливих файлів — спочатку інтернет */
+    if (importantFile) {
+
+      try {
+
+        const response = await fetch(event.request, {
+          cache: "no-store"
+        });
+
+        if (response.ok) {
+
+          const cache = await caches.open(CACHE_NAME);
+
+          await cache.put(
+            event.request,
+            response.clone()
+          );
+
+        }
+
+        return response;
+
+      } catch (error) {
+
+        return (
+          await caches.match(event.request)
+        ) || (
+          await caches.match("./index.html")
+        );
+
+      }
+
+    }
+
+
+    /* Інші файли */
+    const cached = await caches.match(event.request);
+
+    if (cached) {
+      return cached;
+    }
+
+
+    try {
+
+      const response = await fetch(event.request);
+
+      if (response.ok) {
+
+        const cache = await caches.open(CACHE_NAME);
+
+        await cache.put(
+          event.request,
+          response.clone()
+        );
+
+      }
+
+      return response;
+
+    } catch (error) {
+
+      return Response.error();
+
+    }
+
+  })());
+
 });
