@@ -2298,7 +2298,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
 
 /* =========================================================
-   V28 — НАДІЙНИЙ ЗАПУСК І ПЕРЕВІРКА КНОПОК
+   V35 — НАДІЙНИЙ ЗАПУСК І ПЕРЕВІРКА КНОПОК
    ========================================================= */
 (function(){
   const el=id=>document.getElementById(id);
@@ -2487,6 +2487,6 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
   // Version marker: proves new JS actually loaded.
   document.documentElement.dataset.sofiaVersion="28";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v35";
 })();
 
