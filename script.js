@@ -3986,3 +3986,179 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     setTimeout(repair,1000);
   }
 })();
+
+
+
+/* =========================================================
+   V47: ПОВНИЙ ЕКРАН ЛИШЕ ДЛЯ КОЛЕСА ФОРТУНИ
+   + ЧІТКІ КНОПКИ ЗАКРИТИ / ВИЙТИ З ПОВНОГО ЕКРАНУ
+   ========================================================= */
+(function(){
+  function hideFullscreenOnOtherPanels(){
+    document.querySelectorAll(".sofia-floating-window").forEach(panel=>{
+      if(panel.id==="teacherToolsPanel")return;
+      panel.querySelectorAll(".sofia-window-action").forEach(btn=>{
+        const title=(btn.title||"").toLowerCase();
+        const txt=(btn.textContent||"").trim();
+        if(title.includes("весь екран") || txt==="□" || txt==="❐"){
+          btn.style.display="none";
+        }
+      });
+    });
+  }
+
+  function isWheelActive(panel){
+    if(!panel)return false;
+
+    const activeTab = panel.querySelector(
+      '[data-tool-tab].active,[data-tab].active,.teacher-tool-tab.active,.teacher-tools-tab.active,.active[data-panel]'
+    );
+    if(activeTab && /колес/i.test(activeTab.textContent||""))return true;
+
+    // fallback: visible wheel-related content
+    const visibleWheel = Array.from(panel.querySelectorAll("*")).find(el=>{
+      const txt=(el.textContent||"").trim();
+      if(!/крутити колесо|колесо фортуни/i.test(txt))return false;
+      const cs=getComputedStyle(el);
+      return cs.display!=="none" && cs.visibility!=="hidden";
+    });
+    return !!visibleWheel;
+  }
+
+  function teacherPanel(){
+    return document.getElementById("teacherToolsPanel") ||
+           document.querySelector(".teacher-tools-panel");
+  }
+
+  function ensureControls(){
+    const panel=teacherPanel();
+    if(!panel)return;
+
+    let head=panel.querySelector(".teacher-tools-head,.panel-head,h2,h3") || panel.firstElementChild || panel;
+    if(!head)return;
+
+    let box=document.getElementById("fortuneWindowControlsV47");
+    if(!box){
+      box=document.createElement("div");
+      box.id="fortuneWindowControlsV47";
+      box.style.cssText=[
+        "margin-left:auto",
+        "display:inline-flex",
+        "align-items:center",
+        "gap:6px",
+        "position:sticky",
+        "top:0",
+        "z-index:10020"
+      ].join(";");
+
+      const full=document.createElement("button");
+      full.type="button";
+      full.id="fortuneFullscreenBtnV47";
+      full.textContent="⛶ На весь екран";
+      full.title="Розгорнути колесо фортуни";
+      full.style.cssText="padding:7px 10px;border-radius:8px;border:1px solid #cbd6e5;background:#fff;cursor:pointer;font-weight:600;";
+
+      const close=document.createElement("button");
+      close.type="button";
+      close.id="fortuneCloseBtnV47";
+      close.textContent="✕ Закрити";
+      close.title="Закрити інструменти вчителя";
+      close.style.cssText="padding:7px 10px;border-radius:8px;border:1px solid #f0b8b8;background:#fff5f5;color:#b42323;cursor:pointer;font-weight:600;";
+
+      box.append(full,close);
+      head.appendChild(box);
+
+      full.addEventListener("click",e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        if(!isWheelActive(panel))return;
+
+        const nowMax=!panel.classList.contains("sofia-maximized");
+        panel.classList.toggle("sofia-maximized",nowMax);
+        full.textContent=nowMax ? "↙ Вийти з повного екрану" : "⛶ На весь екран";
+        full.title=nowMax ? "Повернути звичайний розмір" : "Розгорнути колесо фортуни";
+        panel.style.zIndex="10010";
+      });
+
+      close.addEventListener("click",e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        panel.classList.remove("sofia-maximized");
+        full.textContent="⛶ На весь екран";
+        panel.classList.add("hidden");
+      });
+    }
+
+    updateVisibility();
+  }
+
+  function updateVisibility(){
+    const panel=teacherPanel();
+    const box=document.getElementById("fortuneWindowControlsV47");
+    const full=document.getElementById("fortuneFullscreenBtnV47");
+    if(!panel || !box || !full)return;
+
+    // Close is always available. Fullscreen is ONLY for the wheel.
+    const wheel=isWheelActive(panel);
+    full.style.display=wheel ? "" : "none";
+
+    // If user leaves the wheel tab while maximized, automatically return to normal.
+    if(!wheel && panel.classList.contains("sofia-maximized")){
+      panel.classList.remove("sofia-maximized");
+      full.textContent="⛶ На весь екран";
+    }
+  }
+
+  function removeOldTeacherMaxButton(){
+    const panel=teacherPanel();
+    if(!panel)return;
+    panel.querySelectorAll(".sofia-window-action").forEach(btn=>{
+      const title=(btn.title||"").toLowerCase();
+      const txt=(btn.textContent||"").trim();
+      if(title.includes("весь екран") || txt==="□" || txt==="❐"){
+        btn.style.display="none";
+      }
+    });
+  }
+
+  function init(){
+    hideFullscreenOnOtherPanels();
+    ensureControls();
+    removeOldTeacherMaxButton();
+
+    document.addEventListener("click",e=>{
+      const panel=teacherPanel();
+      if(panel && panel.contains(e.target)){
+        setTimeout(()=>{
+          ensureControls();
+          updateVisibility();
+          removeOldTeacherMaxButton();
+        },30);
+      }
+    },true);
+
+    document.addEventListener("keydown",e=>{
+      if(e.key!=="Escape")return;
+      const panel=teacherPanel();
+      const full=document.getElementById("fortuneFullscreenBtnV47");
+      if(panel?.classList.contains("sofia-maximized")){
+        panel.classList.remove("sofia-maximized");
+        if(full)full.textContent="⛶ На весь екран";
+      }
+    });
+
+    const mo=new MutationObserver(()=>{
+      hideFullscreenOnOtherPanels();
+      ensureControls();
+      removeOldTeacherMaxButton();
+      updateVisibility();
+    });
+    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
+  }else{
+    setTimeout(init,250);
+  }
+})();
