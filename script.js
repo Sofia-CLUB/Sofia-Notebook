@@ -4162,3 +4162,1428 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     setTimeout(init,250);
   }
 })();
+
+
+
+/* =========================================================
+   V48: ОДНА КНОПКА ЗАКРИТИ + НАДІЙНИЙ FULLSCREEN ДЛЯ КОЛЕСА
+   ========================================================= */
+(function(){
+  function panel(){
+    return document.getElementById("teacherToolsPanel") ||
+           document.querySelector(".teacher-tools-panel");
+  }
+
+  function wheelIsOpen(p){
+    if(!p)return false;
+    const txt=(p.innerText||p.textContent||"").toLowerCase();
+    return txt.includes("крутити колесо") ||
+           txt.includes("прибрати переможця") ||
+           txt.includes("учасники / слова / завдання") ||
+           txt.includes("колесо фортуни");
+  }
+
+  function removeDuplicateV47Controls(){
+    const old=document.getElementById("fortuneWindowControlsV47");
+    if(old)old.remove();
+
+    // Remove old artificial close/fullscreen controls from previous versions,
+    // but keep the app's original close X.
+    const p=panel();
+    if(!p)return;
+    p.querySelectorAll(".sofia-window-action").forEach(b=>{
+      const t=(b.title||"").toLowerCase();
+      const x=(b.textContent||"").trim();
+      if(t.includes("весь екран") || x==="□" || x==="❐") b.remove();
+    });
+  }
+
+  function getHead(p){
+    return p.querySelector(".teacher-tools-head,.panel-head,h2,h3") ||
+           p.firstElementChild || p;
+  }
+
+  function ensureFullscreenButton(){
+    const p=panel();
+    if(!p)return;
+
+    removeDuplicateV47Controls();
+
+    let btn=document.getElementById("fortuneFullscreenBtnV48");
+    if(!btn){
+      btn=document.createElement("button");
+      btn.type="button";
+      btn.id="fortuneFullscreenBtnV48";
+      btn.textContent="⛶ На весь екран";
+      btn.title="Розгорнути колесо фортуни на весь екран";
+      btn.style.cssText=[
+        "margin-left:8px",
+        "padding:7px 10px",
+        "border-radius:8px",
+        "border:1px solid #cbd6e5",
+        "background:#173b78",
+        "color:#fff",
+        "cursor:pointer",
+        "font-weight:700",
+        "white-space:nowrap",
+        "position:relative",
+        "z-index:10050"
+      ].join(";");
+
+      const head=getHead(p);
+      const originalClose =
+        head.querySelector("[data-close],.close,.panel-close,.teacher-tools-close") ||
+        Array.from(head.querySelectorAll("button")).find(b=>{
+          const t=(b.textContent||"").trim();
+          return t==="×" || t==="✕" || /закрити/i.test(b.title||"");
+        });
+
+      if(originalClose) head.insertBefore(btn,originalClose);
+      else head.appendChild(btn);
+
+      btn.addEventListener("click",e=>{
+        e.preventDefault();
+        e.stopPropagation();
+
+        const maximize=!p.classList.contains("sofia-maximized");
+        p.classList.toggle("sofia-maximized",maximize);
+
+        if(maximize){
+          p.style.setProperty("left","10px","important");
+          p.style.setProperty("top","10px","important");
+          p.style.setProperty("right","10px","important");
+          p.style.setProperty("bottom","10px","important");
+          p.style.setProperty("width","calc(100vw - 20px)","important");
+          p.style.setProperty("height","calc(100vh - 20px)","important");
+          p.style.setProperty("max-width","none","important");
+          p.style.setProperty("max-height","none","important");
+          p.style.setProperty("z-index","10040","important");
+          btn.textContent="↙ Вийти з повного екрану";
+          btn.title="Повернути звичайний розмір";
+        }else{
+          ["left","top","right","bottom","width","height","max-width","max-height"].forEach(k=>{
+            p.style.removeProperty(k);
+          });
+          btn.textContent="⛶ На весь екран";
+          btn.title="Розгорнути колесо фортуни на весь екран";
+        }
+      });
+    }
+
+    // Fullscreen button is shown only while the fortune-wheel content is open.
+    btn.style.display=wheelIsOpen(p) ? "" : "none";
+  }
+
+  function exitFullscreen(){
+    const p=panel();
+    const btn=document.getElementById("fortuneFullscreenBtnV48");
+    if(!p)return;
+    p.classList.remove("sofia-maximized");
+    ["left","top","right","bottom","width","height","max-width","max-height"].forEach(k=>{
+      p.style.removeProperty(k);
+    });
+    if(btn){
+      btn.textContent="⛶ На весь екран";
+      btn.title="Розгорнути колесо фортуни на весь екран";
+    }
+  }
+
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape")exitFullscreen();
+  });
+
+  document.addEventListener("click",e=>{
+    const p=panel();
+    if(!p)return;
+
+    // If original close X is clicked while maximized, reset the fullscreen state.
+    if(p.contains(e.target)){
+      const b=e.target.closest?.("button");
+      if(b){
+        const t=(b.textContent||"").trim();
+        if(t==="×" || t==="✕") setTimeout(exitFullscreen,0);
+      }
+      setTimeout(ensureFullscreenButton,30);
+    }
+  },true);
+
+  function init(){
+    ensureFullscreenButton();
+    const mo=new MutationObserver(()=>{
+      clearTimeout(mo.__t);
+      mo.__t=setTimeout(ensureFullscreenButton,60);
+    });
+    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,300));
+  }else{
+    setTimeout(init,300);
+  }
+})();
+
+
+
+/* =========================================================
+   V49: СИСТЕМНІ ВИПРАВЛЕННЯ
+   - циркуль реально малює
+   - клавіатура UA/EN без затримки
+   - "Встановити додаток" зверху
+   - стирачка не стирає прилади/системні об'єкти
+   - "Розбір" показує потрібні кнопки
+   ========================================================= */
+(function(){
+  /* ---------- 1. ПЕРЕНОС "ВСТАНОВИТИ ДОДАТОК" У ВЕРХ ---------- */
+  function moveInstallTop(){
+    const btn=document.getElementById("installAppBtn");
+    if(!btn)return;
+
+    const topCandidates=[
+      document.querySelector(".top-actions"),
+      document.querySelector(".header-actions"),
+      document.querySelector("header"),
+      document.querySelector(".app-header"),
+      document.querySelector(".topbar")
+    ].filter(Boolean);
+
+    const target=topCandidates[0];
+    if(target && btn.parentElement!==target){
+      target.appendChild(btn);
+    }
+  }
+
+  /* ---------- 2. ШВИДКА КЛАВІАТУРА UA / EN ---------- */
+  const KEYS_UA=["1","2","3","4","5","6","7","8","9","0","-","=",
+    "й","ц","у","к","е","н","г","ш","щ","з","х","ї",
+    "ф","і","в","а","п","р","о","л","д","ж","є",
+    "я","ч","с","м","и","т","ь","б","ю",",",".","?"];
+  const KEYS_EN=["1","2","3","4","5","6","7","8","9","0","-","=",
+    "q","w","e","r","t","y","u","i","o","p","[","]",
+    "a","s","d","f","g","h","j","k","l",";","'",
+    "z","x","c","v","b","n","m",",",".","?"];
+
+  let v49KeyboardLang="UA";
+
+  function keyboardPanel(){ return document.getElementById("keyboardPanel"); }
+  function keyboardBox(){ return document.getElementById("keyboardKeys"); }
+
+  function insertKeyText(v){
+    if(v==="BACK"){
+      const o=window.fcanvas?.getActiveObject?.() || (typeof fcanvas!=="undefined" ? fcanvas.getActiveObject() : null);
+      if(o && ["i-text","textbox"].includes(o.type)){
+        const p=o.selectionStart||0;
+        if(p>0)o.removeChars(p-1,p);
+        o.setSelectionStart(Math.max(0,p-1));
+        o.setSelectionEnd(Math.max(0,p-1));
+        fcanvas.requestRenderAll();
+        if(typeof autoSave==="function")autoSave();
+      }
+      return;
+    }
+    if(typeof insertTextIntoBoard==="function")insertTextIntoBoard(v);
+  }
+
+  function renderFastKeyboard(){
+    const box=keyboardBox();
+    if(!box)return;
+    box.innerHTML="";
+    const keys=v49KeyboardLang==="UA"?KEYS_UA:KEYS_EN;
+
+    const frag=document.createDocumentFragment();
+    keys.forEach(k=>{
+      const b=document.createElement("button");
+      b.type="button";
+      b.className="key-btn";
+      b.textContent=k;
+      b.onclick=()=>insertKeyText(k);
+      frag.appendChild(b);
+    });
+    [["Пробіл"," "],["Enter","\n"],["⌫","BACK"]].forEach(([label,val])=>{
+      const b=document.createElement("button");
+      b.type="button";
+      b.className="key-btn special "+(label==="Пробіл"?"space":"");
+      b.textContent=label;
+      b.onclick=()=>insertKeyText(val);
+      frag.appendChild(b);
+    });
+    box.appendChild(frag);
+
+    const lang=document.getElementById("keyboardLangBtn");
+    if(lang){
+      lang.textContent=v49KeyboardLang;
+      lang.title="Змінити мову клавіатури";
+    }
+  }
+
+  function bindKeyboard(){
+    const btn=document.getElementById("keyboardBtn");
+    const lang=document.getElementById("keyboardLangBtn");
+    const close=document.getElementById("keyboardCloseBtn");
+
+    if(btn){
+      btn.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        const p=keyboardPanel();
+        if(!p)return;
+        renderFastKeyboard();
+        p.classList.toggle("hidden");
+        p.style.zIndex="6000";
+      };
+    }
+    if(lang){
+      lang.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        v49KeyboardLang=v49KeyboardLang==="UA"?"EN":"UA";
+        renderFastKeyboard();
+      };
+    }
+    if(close){
+      close.onclick=()=>keyboardPanel()?.classList.add("hidden");
+    }
+  }
+
+  /* ---------- 3. РОЗБІР УКРАЇНСЬКОЇ МОВИ ---------- */
+  function ensureUkrainianButtons(){
+    const panel=document.getElementById("ukrainianPanel");
+    if(!panel)return;
+
+    if(panel.querySelector("[data-ukmark],[data-wordmark]"))return;
+
+    const wrap=document.createElement("div");
+    wrap.id="ukrainianToolsV49";
+    wrap.style.cssText="display:grid;gap:14px;padding:14px;";
+
+    const syntax=document.createElement("div");
+    syntax.innerHTML=`
+      <div style="font-weight:800;margin-bottom:8px">Синтаксичний розбір</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button type="button" data-ukmark="subject">Підмет — одна лінія</button>
+        <button type="button" data-ukmark="predicate">Присудок — дві лінії</button>
+        <button type="button" data-ukmark="object">Додаток — пунктир</button>
+        <button type="button" data-ukmark="attribute">Означення — хвиляста</button>
+        <button type="button" data-ukmark="adverbial">Обставина — штрих-пунктир</button>
+      </div>`;
+
+    const word=document.createElement("div");
+    word.innerHTML=`
+      <div style="font-weight:800;margin-bottom:8px">Будова слова</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button type="button" data-wordmark="root">Корінь</button>
+        <button type="button" data-wordmark="prefix">Префікс</button>
+        <button type="button" data-wordmark="suffix">Суфікс</button>
+        <button type="button" data-wordmark="ending">Закінчення</button>
+        <button type="button" data-wordmark="stem">Основа</button>
+      </div>`;
+
+    wrap.append(syntax,word);
+    panel.appendChild(wrap);
+
+    panel.querySelectorAll("[data-ukmark]").forEach(b=>{
+      b.onclick=()=>{
+        const kind=b.dataset.ukmark;
+        if(typeof addUkLine==="function"){
+          addUkLine(kind);
+        }else{
+          // fallback
+          const c=document.getElementById("colorPicker")?.value||"#17315f";
+          const sw=Math.max(2,Number(document.getElementById("lineWidth")?.value||2));
+          const o=[];
+          if(kind==="subject")o.push(new fabric.Line([0,0,150,0],{stroke:c,strokeWidth:sw}));
+          if(kind==="predicate"){
+            o.push(new fabric.Line([0,-4,150,-4],{stroke:c,strokeWidth:sw}),
+                   new fabric.Line([0,4,150,4],{stroke:c,strokeWidth:sw}));
+          }
+          if(kind==="object")o.push(new fabric.Line([0,0,150,0],{stroke:c,strokeWidth:sw,strokeDashArray:[8,6]}));
+          if(kind==="attribute"){
+            let p="M 0 0"; for(let x=10;x<=150;x+=10)p+=` L ${x} ${(x/10)%2?6:-6}`;
+            o.push(new fabric.Path(p,{stroke:c,strokeWidth:sw,fill:"transparent"}));
+          }
+          if(kind==="adverbial")o.push(new fabric.Line([0,0,150,0],{stroke:c,strokeWidth:sw,strokeDashArray:[12,5,2,5]}));
+          if(typeof groupAndPlace==="function")groupAndPlace(o,360,420);
+        }
+      };
+    });
+
+    panel.querySelectorAll("[data-wordmark]").forEach(b=>{
+      b.onclick=()=>{
+        const map={root:"∩",prefix:"⌜",suffix:"⌃",ending:"□",stem:"⌒"};
+        const t=new fabric.Text(map[b.dataset.wordmark],{
+          left:380,top:380,fontSize:54,
+          fill:document.getElementById("colorPicker")?.value||"#17315f"
+        });
+        fcanvas.add(t);
+        fcanvas.setActiveObject(t);
+        if(typeof pushHistory==="function")pushHistory();
+        if(typeof autoSave==="function")autoSave();
+      };
+    });
+  }
+
+  function bindUkrainian(){
+    const btn=document.getElementById("ukrainianBtn");
+    if(!btn)return;
+    btn.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const p=document.getElementById("ukrainianPanel");
+      if(!p)return;
+      ensureUkrainianButtons();
+      p.classList.toggle("hidden");
+      p.style.zIndex="6200";
+    };
+  }
+
+  /* ---------- 4. ЦИРКУЛЬ: НАДІЙНЕ МАЛЮВАННЯ ---------- */
+  function fixCompass(){
+    const panel=document.getElementById("sofiaCompassPanel");
+    if(!panel || typeof fcanvas==="undefined")return;
+
+    const radius=document.getElementById("sofiaCompassRadius");
+    const pick=document.getElementById("sofiaCompassPick");
+    const build=document.getElementById("sofiaCompassBuild");
+    const status=document.getElementById("sofiaCompassStatus");
+
+    if(!radius || !pick || !build)return;
+
+    let center=null;
+    let selecting=false;
+
+    function radiusCm(){
+      const v=parseFloat(String(radius.value||"").replace(",","."));
+      return Number.isFinite(v)&&v>0?v:1;
+    }
+
+    pick.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      selecting=true;
+      center=null;
+      if(status)status.textContent="Клікніть на аркуші, щоб вибрати центр кола.";
+    };
+
+    if(!fcanvas.__sofiaCompassV49Bound){
+      fcanvas.__sofiaCompassV49Bound=true;
+      fcanvas.on("mouse:down",opt=>{
+        if(!selecting)return;
+        center=fcanvas.getPointer(opt.e);
+        selecting=false;
+        if(status)status.textContent=`Центр вибрано. Радіус: ${radiusCm().toString().replace(".",",")} см. Натисніть «Побудувати коло».`;
+      });
+    }
+
+    build.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      if(!center){
+        if(status)status.textContent="Спочатку натисніть «1. Вибрати центр» і клікніть на аркуші.";
+        return;
+      }
+
+      const cm=radiusCm();
+      const px=cm*37.7952755906;
+      const color=document.getElementById("colorPicker")?.value||"#17315f";
+      const sw=Math.max(1,Number(document.getElementById("lineWidth")?.value||2));
+
+      const circle=new fabric.Circle({
+        left:center.x-px,
+        top:center.y-px,
+        radius:px,
+        fill:"transparent",
+        stroke:color,
+        strokeWidth:sw,
+        selectable:true,
+        evented:true
+      });
+      circle.sofiaCompassCircle=true;
+      circle.radiusCm=cm;
+
+      const dot=new fabric.Circle({
+        left:center.x-3,top:center.y-3,radius:3,
+        fill:color,
+        selectable:false,
+        evented:false
+      });
+      dot.sofiaInstrumentProtected=true;
+
+      circle.sofiaInstrumentProtected=false;
+      fcanvas.add(circle,dot);
+      fcanvas.setActiveObject(circle);
+      fcanvas.requestRenderAll();
+
+      if(typeof pushHistory==="function")pushHistory();
+      if(typeof autoSave==="function")autoSave();
+
+      if(status)status.textContent=`Готово. Побудовано коло радіусом ${cm.toString().replace(".",",")} см.`;
+      center=null;
+    };
+  }
+
+  /* ---------- 5. СТИРАЧКА НЕ ЧІПАЄ ПРИЛАДИ ---------- */
+  function markProtectedInstruments(){
+    if(typeof fcanvas==="undefined")return;
+    fcanvas.getObjects().forEach(o=>{
+      // Groups created by measuring instruments / geometry tools
+      if(o?.sofiaInstrumentProtected)return;
+      if(o?.type==="group"){
+        const name=(o.name||o.type||"").toLowerCase();
+        if(o.instrumentType || o.geometryInstrument || o.isInstrument){
+          o.sofiaInstrumentProtected=true;
+        }
+      }
+    });
+  }
+
+  function patchInstrumentCreation(){
+    if(typeof groupInstrument==="function" && !window.__sofiaGroupInstrumentV49){
+      window.__sofiaGroupInstrumentV49=true;
+      const old=groupInstrument;
+      try{
+        window.groupInstrument=function(objects,left=220,top=210){
+          const g=old(objects,left,top);
+          if(g){
+            g.sofiaInstrumentProtected=true;
+            g.isInstrument=true;
+          }
+          return g;
+        };
+      }catch(e){}
+    }
+  }
+
+  function protectFromEraser(){
+    if(typeof fcanvas==="undefined")return;
+
+    // This does not alter the eraser implementation globally. It makes
+    // instruments repaint above eraser masks so they remain visible.
+    const repaint=()=>{
+      const objs=fcanvas.getObjects();
+      const protectedObjs=objs.filter(o=>o?.sofiaInstrumentProtected || o?.isInstrument || o?.geometryInstrument);
+      protectedObjs.forEach(o=>fcanvas.bringToFront(o));
+      fcanvas.requestRenderAll();
+    };
+
+    fcanvas.on("object:added",()=>setTimeout(repaint,0));
+    fcanvas.on("mouse:up",()=>setTimeout(repaint,0));
+  }
+
+  /* ---------- 6. ПОВТОРНА ПРИВ'ЯЗКА ОСНОВНИХ ПАНЕЛЕЙ ---------- */
+  const PANELS={
+    elementsBtn:"elementsPanel",
+    geometryBtn:"geometryPanel",
+    shapeLibraryBtn:"shapeLibraryPanel",
+    angleBtn:"anglePanel",
+    numberRayBtn:"numberRayPanel",
+    graphBuilderBtn:"graphBuilderPanel",
+    mediaBtn:"mediaPanel",
+    calculatorBtn:"calculatorPanel",
+    timerBtn:"timerPanel"
+  };
+
+  function rebindPanels(){
+    Object.entries(PANELS).forEach(([bid,pid])=>{
+      const b=document.getElementById(bid);
+      const p=document.getElementById(pid);
+      if(!b || !p)return;
+      b.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        p.classList.toggle("hidden");
+        p.style.zIndex="6100";
+      };
+    });
+  }
+
+  function init(){
+    moveInstallTop();
+    bindKeyboard();
+    ensureUkrainianButtons();
+    bindUkrainian();
+    fixCompass();
+    patchInstrumentCreation();
+    markProtectedInstruments();
+    protectFromEraser();
+    rebindPanels();
+
+    [300,900,1800].forEach(ms=>setTimeout(()=>{
+      moveInstallTop();
+      bindKeyboard();
+      ensureUkrainianButtons();
+      bindUkrainian();
+      fixCompass();
+      rebindPanels();
+    },ms));
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200));
+  }else{
+    setTimeout(init,200);
+  }
+})();
+
+
+
+/* =========================================================
+   V50: ПОВНЕ ВІДНОВЛЕННЯ "ІНСТРУМЕНТІВ ВЧИТЕЛЯ"
+   Колесо / Картки / Тест / Списки / Перекладач / Зображення
+   ========================================================= */
+(function(){
+  const TOOLS=[
+    ["wheel","🎡 Колесо"],
+    ["cards","🃏 Картки"],
+    ["test","✅ Тест"],
+    ["lists","☷ Списки"],
+    ["translate","🌐 Перекладач"],
+    ["image","🖼 Зображення"]
+  ];
+
+  function teacherPanel(){
+    return document.getElementById("teacherToolsPanel") ||
+           document.querySelector(".teacher-tools-panel") ||
+           document.querySelector("[data-tt31-section]")?.parentElement;
+  }
+
+  function sections(){
+    const p=teacherPanel();
+    if(!p)return [];
+    return Array.from(p.querySelectorAll("[data-tt31-section]"));
+  }
+
+  function activeTool(){
+    const ss=sections();
+    const visible=ss.find(s=>!s.classList.contains("hidden") && getComputedStyle(s).display!=="none");
+    return visible?.dataset.tt31Section || "wheel";
+  }
+
+  function showTool(name){
+    const p=teacherPanel();
+    if(!p)return;
+
+    sections().forEach(s=>{
+      const on=s.dataset.tt31Section===name;
+      s.classList.toggle("hidden",!on);
+      if(on){
+        s.style.removeProperty("display");
+        s.style.removeProperty("visibility");
+        s.style.removeProperty("opacity");
+      }
+    });
+
+    p.querySelectorAll("[data-tt31]").forEach(b=>{
+      b.classList.toggle("active",b.dataset.tt31===name);
+    });
+
+    const bar=document.getElementById("teacherToolsTabsV50");
+    bar?.querySelectorAll("[data-v50-tool]").forEach(b=>{
+      b.classList.toggle("active",b.dataset.v50Tool===name);
+    });
+
+    // Fullscreen belongs only to fortune wheel.
+    const full=document.getElementById("fortuneFullscreenBtnV48");
+    if(full)full.style.display=name==="wheel"?"":"none";
+
+    if(name!=="wheel" && p.classList.contains("sofia-maximized")){
+      p.classList.remove("sofia-maximized");
+      ["left","top","right","bottom","width","height","max-width","max-height"].forEach(k=>p.style.removeProperty(k));
+    }
+
+    p.style.zIndex="6500";
+  }
+
+  function makeTabs(){
+    const p=teacherPanel();
+    if(!p || !sections().length)return;
+
+    let bar=document.getElementById("teacherToolsTabsV50");
+    if(!bar){
+      bar=document.createElement("div");
+      bar.id="teacherToolsTabsV50";
+      bar.style.cssText=[
+        "display:flex",
+        "flex-wrap:wrap",
+        "gap:7px",
+        "padding:8px 14px",
+        "border-top:1px solid #edf1f7",
+        "border-bottom:1px solid #dfe6f0",
+        "background:#fff",
+        "position:sticky",
+        "top:0",
+        "z-index:6510"
+      ].join(";");
+
+      TOOLS.forEach(([id,label])=>{
+        const b=document.createElement("button");
+        b.type="button";
+        b.dataset.v50Tool=id;
+        b.textContent=label;
+        b.style.cssText=[
+          "padding:8px 11px",
+          "border:1px solid #cbd6e5",
+          "border-radius:9px",
+          "background:#fff",
+          "cursor:pointer",
+          "font-weight:600",
+          "white-space:nowrap"
+        ].join(";");
+        b.onclick=e=>{
+          e.preventDefault();e.stopPropagation();
+          showTool(id);
+        };
+        bar.appendChild(b);
+      });
+
+      const style=document.createElement("style");
+      style.id="teacherToolsTabsV50Style";
+      style.textContent=`
+        #teacherToolsTabsV50 button.active{
+          background:#173b78!important;
+          color:#fff!important;
+          border-color:#173b78!important;
+        }
+        #teacherToolsPanel [data-tt31-section],
+        .teacher-tools-panel [data-tt31-section]{
+          padding-top:12px;
+        }
+      `;
+      document.head.appendChild(style);
+
+      const head=p.querySelector(".teacher-tools-head,.panel-head") || p.firstElementChild;
+      if(head && head.nextSibling)p.insertBefore(bar,head.nextSibling);
+      else p.insertBefore(bar,p.firstChild);
+    }
+
+    const current=activeTool();
+    showTool(current);
+  }
+
+  function fixOriginalTabs(){
+    const p=teacherPanel();
+    if(!p)return;
+
+    // If original tab buttons are present but were hidden by a later layout,
+    // make them visible again too.
+    p.querySelectorAll("[data-tt31]").forEach(b=>{
+      b.style.removeProperty("display");
+      b.style.removeProperty("visibility");
+      b.style.removeProperty("opacity");
+      b.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        showTool(b.dataset.tt31);
+      };
+    });
+  }
+
+  function bindTeacherButton(){
+    const btn=document.getElementById("teacherToolsBtn") ||
+              Array.from(document.querySelectorAll("button")).find(b=>{
+                const t=(b.textContent||"").trim();
+                return t==="🎓 Інструменти" || t==="Інструменти";
+              });
+    const p=teacherPanel();
+    if(!btn || !p)return;
+
+    btn.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      makeTabs();
+      fixOriginalTabs();
+      p.classList.toggle("hidden");
+      p.style.zIndex="6500";
+    };
+  }
+
+  function removeDuplicateClose(){
+    const p=teacherPanel();
+    if(!p)return;
+
+    // Keep the original small X in the header, remove only large artificial duplicate close.
+    Array.from(p.querySelectorAll("button")).forEach(b=>{
+      const txt=(b.textContent||"").trim();
+      if(/Закрити/i.test(txt) && txt!=="×" && txt!=="✕"){
+        if(b.id!=="teacherToolsClose")b.remove();
+      }
+    });
+  }
+
+  function init(){
+    makeTabs();
+    fixOriginalTabs();
+    bindTeacherButton();
+    removeDuplicateClose();
+
+    [400,1000,2000].forEach(ms=>setTimeout(()=>{
+      makeTabs();
+      fixOriginalTabs();
+      bindTeacherButton();
+      removeDuplicateClose();
+    },ms));
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
+  }else{
+    setTimeout(init,250);
+  }
+})();
+
+
+
+/* =========================================================
+   V51: УСІ ВІКНА ЗАВЖДИ НА ПЕРЕДНЬОМУ ПЛАНІ + НАДІЙНИЙ ГОЛОС
+   ========================================================= */
+(function(){
+  let zTop=20000;
+
+  const FLOATING_IDS=[
+    "teacherToolsPanel","aiPanel","calculatorPanel","timerPanel","keyboardPanel",
+    "mediaPanel","elementsPanel","geometryPanel","shapeLibraryPanel","anglePanel",
+    "numberRayPanel","ukrainianPanel","graphBuilderPanel","graphEditorPanel",
+    "diagnosticsPanel","sofiaCompassPanel"
+  ];
+
+  const LAUNCH_MAP={
+    teacherToolsBtn:"teacherToolsPanel",
+    aiBtn:"aiPanel",
+    calculatorBtn:"calculatorPanel",
+    timerBtn:"timerPanel",
+    keyboardBtn:"keyboardPanel",
+    mediaBtn:"mediaPanel",
+    elementsBtn:"elementsPanel",
+    geometryBtn:"geometryPanel",
+    shapeLibraryBtn:"shapeLibraryPanel",
+    angleBtn:"anglePanel",
+    numberRayBtn:"numberRayPanel",
+    ukrainianBtn:"ukrainianPanel",
+    graphBuilderBtn:"graphBuilderPanel"
+  };
+
+  function getPanel(id){
+    return document.getElementById(id);
+  }
+
+  function bringToFront(panel){
+    if(!panel)return;
+    zTop++;
+    panel.style.setProperty("z-index",String(zTop),"important");
+    panel.style.setProperty("position","fixed","important");
+    panel.style.setProperty("isolation","isolate","important");
+  }
+
+  function showPanel(panel){
+    if(!panel)return;
+    panel.classList.remove("hidden");
+    panel.hidden=false;
+    panel.style.removeProperty("display");
+    panel.style.setProperty("visibility","visible","important");
+    panel.style.setProperty("opacity","1","important");
+    panel.style.setProperty("pointer-events","auto","important");
+    bringToFront(panel);
+  }
+
+  function makeAllKnownPanelsFront(){
+    FLOATING_IDS.forEach(id=>{
+      const p=getPanel(id);
+      if(!p)return;
+      if(!p.classList.contains("hidden") && getComputedStyle(p).display!=="none"){
+        bringToFront(p);
+      }
+      p.addEventListener("mousedown",()=>bringToFront(p),true);
+    });
+  }
+
+  // Every launcher raises its target above all ribbons/settings panels.
+  document.addEventListener("click",e=>{
+    const btn=e.target.closest?.("button");
+    if(!btn)return;
+
+    let pid=LAUNCH_MAP[btn.id];
+    if(!pid){
+      const txt=(btn.textContent||"").trim();
+      if(/Інструменти/.test(txt) && getPanel("teacherToolsPanel"))pid="teacherToolsPanel";
+    }
+    if(!pid)return;
+
+    setTimeout(()=>{
+      const p=getPanel(pid);
+      if(p && !p.classList.contains("hidden"))bringToFront(p);
+    },20);
+  },true);
+
+  // Any visible modal-like panel gets raised after DOM changes.
+  const observer=new MutationObserver(()=>{
+    clearTimeout(observer.__t);
+    observer.__t=setTimeout(makeAllKnownPanelsFront,30);
+  });
+
+  /* ---------- ГОЛОСОВЕ ВВЕДЕННЯ ---------- */
+  let recognition=null;
+  let listening=false;
+
+  function voiceButton(){
+    return document.getElementById("voiceBtn");
+  }
+
+  function setVoiceState(on,label){
+    const b=voiceButton();
+    if(!b)return;
+    listening=on;
+    b.textContent=label || (on ? "🎙 Слухаю…" : "🎙 Голос");
+    b.classList.toggle("active",on);
+  }
+
+  function insertVoiceText(text){
+    if(!text)return;
+    try{
+      if(typeof insertTextIntoBoard==="function"){
+        insertTextIntoBoard(text+" ");
+        return;
+      }
+      const canvas=window.fcanvas || (typeof fcanvas!=="undefined" ? fcanvas : null);
+      if(canvas && window.fabric){
+        const obj=new fabric.IText(text,{
+          left:280,top:180,fontSize:27,
+          fill:document.getElementById("colorPicker")?.value||"#17315f"
+        });
+        canvas.add(obj);
+        canvas.setActiveObject(obj);
+        canvas.requestRenderAll();
+        if(typeof autoSave==="function")autoSave();
+      }
+    }catch(err){
+      console.error("Voice insert error",err);
+    }
+  }
+
+  function explainVoiceError(err){
+    const code=err?.error || err?.name || "";
+    if(code==="not-allowed" || code==="NotAllowedError" || code==="service-not-allowed"){
+      alert("Доступ до мікрофона заблоковано. Натисніть значок 🔒 біля адреси сайту → Мікрофон → Дозволити, потім оновіть сторінку.");
+      return;
+    }
+    if(code==="no-speech"){
+      alert("Мовлення не розпізнано. Спробуйте говорити трохи голосніше.");
+      return;
+    }
+    if(code==="audio-capture"){
+      alert("Не знайдено доступного мікрофона. Перевірте підключення мікрофона у Windows.");
+      return;
+    }
+    if(code==="network"){
+      alert("Голосове розпізнавання не змогло підключитися до сервісу. Перевірте інтернет і спробуйте ще раз.");
+      return;
+    }
+    alert("Не вдалося запустити голосове введення. Перевірте дозвіл на мікрофон у браузері.");
+  }
+
+  function stopRecognition(){
+    if(recognition){
+      try{recognition.stop()}catch(e){}
+    }
+    recognition=null;
+    setVoiceState(false,"🎙 Голос");
+  }
+
+  async function startRecognition(){
+    const b=voiceButton();
+    if(!b)return;
+
+    if(listening){
+      stopRecognition();
+      return;
+    }
+
+    if(!window.isSecureContext){
+      alert("Голосове введення працює лише через захищене HTTPS-з'єднання.");
+      return;
+    }
+
+    const SR=window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){
+      alert("Цей браузер не підтримує голосове введення. Відкрийте Sofia Notebook у Google Chrome або Microsoft Edge.");
+      return;
+    }
+
+    // Ask the browser for microphone access explicitly first. This makes the
+    // permission prompt predictable instead of failing silently.
+    try{
+      if(navigator.mediaDevices?.getUserMedia){
+        const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        stream.getTracks().forEach(t=>t.stop());
+      }
+    }catch(err){
+      explainVoiceError(err);
+      setVoiceState(false,"🎙 Голос");
+      return;
+    }
+
+    recognition=new SR();
+    recognition.lang=document.getElementById("subject")?.value==="Англійська мова" ? "en-US" : "uk-UA";
+    recognition.interimResults=true;
+    recognition.continuous=false;
+    recognition.maxAlternatives=1;
+
+    let finalText="";
+    recognition.onstart=()=>setVoiceState(true,"🎙 Слухаю…");
+
+    recognition.onresult=e=>{
+      finalText="";
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const piece=e.results[i][0]?.transcript||"";
+        if(e.results[i].isFinal)finalText+=piece;
+      }
+      if(finalText.trim())insertVoiceText(finalText.trim());
+    };
+
+    recognition.onerror=e=>{
+      console.warn("Speech recognition error",e);
+      if(e.error!=="aborted")explainVoiceError(e);
+      setVoiceState(false,"🎙 Голос");
+      recognition=null;
+    };
+
+    recognition.onend=()=>{
+      setVoiceState(false,"🎙 Голос");
+      recognition=null;
+    };
+
+    try{
+      recognition.start();
+    }catch(err){
+      explainVoiceError(err);
+      setVoiceState(false,"🎙 Голос");
+      recognition=null;
+    }
+  }
+
+  function bindVoice(){
+    const b=voiceButton();
+    if(!b)return;
+    // Replace prior onclick handlers with one reliable handler.
+    b.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      startRecognition();
+    };
+    b.title="Голосове введення українською або англійською відповідно до предмета";
+  }
+
+  function init(){
+    bindVoice();
+    makeAllKnownPanelsFront();
+    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
+
+    [300,900,1800].forEach(ms=>setTimeout(()=>{
+      bindVoice();
+      makeAllKnownPanelsFront();
+    },ms));
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200));
+  }else{
+    setTimeout(init,200);
+  }
+})();
+
+
+
+/* =========================================================
+   V52: 2D / 3D ФІГУРИ ЗАВЖДИ ВИДИМІ + ПАНЕЛЬ ВІДКРИВАЄТЬСЯ СПЕРЕДУ
+   ========================================================= */
+(function(){
+  function ribbonPanel(name){
+    return document.querySelector(`.sofia-ribbon-panel[data-ribbon-panel="${name}"]`);
+  }
+
+  function shapeBtn(){
+    return document.getElementById("shapeLibraryBtn");
+  }
+
+  function shapePanel(){
+    return document.getElementById("shapeLibraryPanel");
+  }
+
+  function ensureShapesButtonVisible(){
+    const btn=shapeBtn();
+    if(!btn)return;
+
+    // Preferred location: "Вставка". If that tab is unavailable, use "Математика".
+    const target=ribbonPanel("insert") || ribbonPanel("math");
+    if(target && btn.parentElement!==target){
+      target.appendChild(btn);
+    }
+
+    btn.style.removeProperty("display");
+    btn.style.removeProperty("visibility");
+    btn.style.removeProperty("opacity");
+    btn.hidden=false;
+    btn.classList.remove("hidden");
+    btn.textContent="⬡ 2D / 3D фігури";
+    btn.title="Відкрити бібліотеку 2D та 3D фігур";
+
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const p=shapePanel();
+      if(!p)return;
+
+      p.classList.remove("hidden");
+      p.hidden=false;
+      p.style.removeProperty("display");
+      p.style.setProperty("visibility","visible","important");
+      p.style.setProperty("opacity","1","important");
+      p.style.setProperty("pointer-events","auto","important");
+      p.style.setProperty("position","fixed","important");
+      p.style.setProperty("z-index","25000","important");
+
+      const r=p.getBoundingClientRect();
+      if(r.left<0 || r.left>window.innerWidth-100)p.style.left="120px";
+      if(r.top<0 || r.top>window.innerHeight-100)p.style.top="140px";
+    };
+  }
+
+  function ensureGeometryVisible(){
+    const btn=document.getElementById("geometryBtn");
+    if(!btn)return;
+    const target=ribbonPanel("insert") || ribbonPanel("math");
+    if(target && btn.parentElement!==target)target.appendChild(btn);
+
+    btn.style.removeProperty("display");
+    btn.style.removeProperty("visibility");
+    btn.style.removeProperty("opacity");
+    btn.hidden=false;
+    btn.classList.remove("hidden");
+    btn.textContent="📐 Прилади";
+  }
+
+  function keepShapePanelFront(){
+    const p=shapePanel();
+    if(!p)return;
+    p.addEventListener("mousedown",()=>{
+      p.style.setProperty("z-index","25000","important");
+    },true);
+  }
+
+  function init(){
+    ensureShapesButtonVisible();
+    ensureGeometryVisible();
+    keepShapePanelFront();
+
+    [300,900,1800].forEach(ms=>setTimeout(()=>{
+      ensureShapesButtonVisible();
+      ensureGeometryVisible();
+    },ms));
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200));
+  }else{
+    setTimeout(init,200);
+  }
+})();
+
+
+
+/* =========================================================
+   V53: ДАТА І ВИД РОБОТИ ЗА ЗАМОВЧУВАННЯМ "ПРОПИСАМИ"
+   ========================================================= */
+(function(){
+  const HEADING_FONT='"Segoe Print","Comic Sans MS",cursive';
+
+  function applyHandwrittenHeading(){
+    if(typeof fcanvas==="undefined")return;
+
+    const dateObj=fcanvas.getObjects().find(o=>o?.systemRole==="dateHeading");
+    const workObj=fcanvas.getObjects().find(o=>o?.systemRole==="workHeading");
+
+    [dateObj,workObj].forEach(o=>{
+      if(!o)return;
+      o.set({
+        fontFamily:HEADING_FONT,
+        fontStyle:"normal",
+        fontWeight:"normal"
+      });
+      o.setCoords?.();
+    });
+
+    if(dateObj)dateObj.set({fontSize:22});
+    if(workObj)workObj.set({fontSize:24});
+
+    fcanvas.requestRenderAll();
+  }
+
+  function ensureWordsDateByDefault(){
+    const dateMode=document.getElementById("dateMode");
+    if(!dateMode)return;
+
+    // For a fresh/default notebook choose the written-out date.
+    // Existing manually selected modes are not overwritten.
+    const saved=localStorage.getItem("sofiaNotebookV12");
+    if(!saved && dateMode.value!=="words"){
+      dateMode.value="words";
+      if(typeof updateHeading==="function")updateHeading();
+    }
+  }
+
+  function init(){
+    ensureWordsDateByDefault();
+    setTimeout(applyHandwrittenHeading,250);
+    setTimeout(applyHandwrittenHeading,700);
+
+    ["dateMode","workType","pageMode"].forEach(id=>{
+      document.getElementById(id)?.addEventListener("change",()=>setTimeout(applyHandwrittenHeading,20));
+    });
+
+    const canvas=typeof fcanvas!=="undefined"?fcanvas:null;
+    canvas?.on?.("object:added",e=>{
+      if(e?.target?.systemRole==="dateHeading" || e?.target?.systemRole==="workHeading"){
+        setTimeout(applyHandwrittenHeading,0);
+      }
+    });
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init);
+  }else{
+    init();
+  }
+})();
+
+
+
+/* =========================================================
+   V54: КОМПЛЕКСНЕ ПРИБИРАННЯ СТРІЧКИ + ВСТАВКА + ПІДПИС ГРАФІКА
+   ========================================================= */
+(function(){
+  const PANEL_MAP={
+    mediaBtn:"mediaPanel",
+    elementsBtn:"elementsPanel",
+    geometryBtn:"geometryPanel",
+    shapeLibraryBtn:"shapeLibraryPanel",
+    angleBtn:"anglePanel",
+    numberRayBtn:"numberRayPanel",
+    graphBuilderBtn:"graphBuilderPanel",
+    ukrainianBtn:"ukrainianPanel",
+    calculatorBtn:"calculatorPanel",
+    timerBtn:"timerPanel",
+    keyboardBtn:"keyboardPanel"
+  };
+
+  function ribbonPanel(name){
+    return document.querySelector(`.sofia-ribbon-panel[data-ribbon-panel="${name}"]`);
+  }
+
+  function showPanel(p){
+    if(!p)return;
+    p.classList.remove("hidden");
+    p.hidden=false;
+    p.style.removeProperty("display");
+    p.style.setProperty("visibility","visible","important");
+    p.style.setProperty("opacity","1","important");
+    p.style.setProperty("pointer-events","auto","important");
+    p.style.setProperty("position","fixed","important");
+    p.style.setProperty("z-index","30000","important");
+  }
+
+  function bindInsertButtons(){
+    const insert=ribbonPanel("insert");
+    if(!insert)return;
+
+    const wanted=[
+      "tableBtn","mediaBtn","elementsBtn","geometryBtn",
+      "shapeLibraryBtn","noteBtn"
+    ];
+
+    wanted.forEach(id=>{
+      const b=document.getElementById(id);
+      if(!b)return;
+      if(b.parentElement!==insert)insert.appendChild(b);
+      b.hidden=false;
+      b.classList.remove("hidden");
+      b.style.removeProperty("display");
+      b.style.removeProperty("visibility");
+      b.style.removeProperty("opacity");
+    });
+
+    // Standard panel launchers.
+    Object.entries(PANEL_MAP).forEach(([bid,pid])=>{
+      const b=document.getElementById(bid);
+      const p=document.getElementById(pid);
+      if(!b || !p)return;
+      b.onclick=e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        showPanel(p);
+      };
+    });
+
+    // Table: use existing implementation when available.
+    const table=document.getElementById("tableBtn");
+    if(table){
+      table.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        if(typeof openTableDialog==="function")return openTableDialog();
+        const p=document.getElementById("tablePanel") || document.getElementById("tableDialog");
+        if(p)return showPanel(p);
+        if(typeof addTable==="function")return addTable();
+      };
+    }
+
+    // Note: preserve the existing note implementation; if a note panel exists, open it.
+    const note=document.getElementById("noteBtn");
+    if(note){
+      note.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        const p=document.getElementById("notePanel");
+        if(p)return showPanel(p);
+        if(typeof addNote==="function")return addNote();
+        if(typeof createNote==="function")return createNote();
+      };
+    }
+  }
+
+  function cleanHome(){
+    const home=ribbonPanel("home");
+    if(!home)return;
+
+    const technicalLabels=[
+      "Верхня панель","Ліва панель","Показати всі","Готово"
+    ];
+
+    home.querySelectorAll("button").forEach(b=>{
+      const txt=(b.textContent||"").trim();
+      if(technicalLabels.includes(txt)){
+        b.remove();
+        return;
+      }
+
+      // Duplicate panel-arranging controls belong to the single settings button,
+      // not to the everyday "Основне" tab.
+      if(txt==="Інструменти" && !b.id && home.querySelector("#teacherToolsBtn")){
+        b.remove();
+      }
+    });
+
+    // Keep only one visible install button. It belongs in the global top area.
+    const installs=Array.from(document.querySelectorAll("#installAppBtn,button")).filter(b=>{
+      return b.id==="installAppBtn" || /Встановити додаток/i.test((b.textContent||"").trim());
+    });
+    installs.slice(1).forEach(b=>b.remove());
+  }
+
+  /* ---------- GRAPH LABEL: remove old top-left label and attach to graph ---------- */
+  function graphObjects(){
+    if(typeof fcanvas==="undefined")return [];
+    return fcanvas.getObjects().filter(o=>{
+      if(!o)return false;
+      return o.graphType || o.isGraph || o.sofiaGraph ||
+        (o.type==="group" && (o.graphFormula || o.formula));
+    });
+  }
+
+  function oldGraphLabels(){
+    if(typeof fcanvas==="undefined")return [];
+    return fcanvas.getObjects().filter(o=>{
+      const t=(o?.text||"").trim();
+      return /^Графік\s*\d*\s*:/i.test(t);
+    });
+  }
+
+  function getGraphColor(g){
+    return g?.stroke ||
+      g?._objects?.find?.(x=>x?.stroke)?.stroke ||
+      document.getElementById("colorPicker")?.value ||
+      "#17315f";
+  }
+
+  function formulaOf(g,index){
+    return g?.formula || g?.graphFormula || g?.equation ||
+      `Графік ${index+1}`;
+  }
+
+  function graphAngle(g){
+    // Linear graphs can carry k/slope. Use it when present.
+    const k=Number(g?.k ?? g?.slope);
+    if(Number.isFinite(k))return Math.atan(k)*180/Math.PI;
+
+    // Otherwise estimate from line endpoints when available.
+    if(g?.type==="line"){
+      const dx=(g.x2||0)-(g.x1||0), dy=(g.y2||0)-(g.y1||0);
+      if(dx || dy)return Math.atan2(dy,dx)*180/Math.PI;
+    }
+    return 0;
+  }
+
+  function labelGraphs(){
+    if(typeof fcanvas==="undefined" || !window.fabric)return;
+
+    // Remove the old fixed labels in the upper-left corner.
+    oldGraphLabels().forEach(o=>{
+      if(!o.sofiaInlineGraphLabel)fcanvas.remove(o);
+    });
+
+    graphObjects().forEach((g,i)=>{
+      if(g.sofiaInlineLabel && fcanvas.getObjects().includes(g.sofiaInlineLabel)){
+        const l=g.sofiaInlineLabel;
+        l.set({
+          fill:getGraphColor(g),
+          angle:graphAngle(g),
+          left:(g.left||0)+(g.width||220)*(g.scaleX||1)*0.55,
+          top:(g.top||0)+(g.height||120)*(g.scaleY||1)*0.45
+        });
+        l.setCoords?.();
+        return;
+      }
+
+      const label=new fabric.Text(formulaOf(g,i),{
+        left:(g.left||0)+(g.width||220)*(g.scaleX||1)*0.55,
+        top:(g.top||0)+(g.height||120)*(g.scaleY||1)*0.45,
+        fontSize:18,
+        fontFamily:"Arial",
+        fill:getGraphColor(g),
+        angle:graphAngle(g),
+        selectable:false,
+        evented:false,
+        originX:"center",
+        originY:"bottom"
+      });
+      label.sofiaInlineGraphLabel=true;
+      label.excludeFromExport=false;
+      g.sofiaInlineLabel=label;
+      fcanvas.add(label);
+      fcanvas.bringToFront(label);
+    });
+
+    fcanvas.requestRenderAll();
+  }
+
+  function bindGraphRelabel(){
+    if(typeof fcanvas==="undefined")return;
+    let t;
+    const schedule=()=>{
+      clearTimeout(t);
+      t=setTimeout(labelGraphs,80);
+    };
+    fcanvas.on("object:added",schedule);
+    fcanvas.on("object:modified",schedule);
+    fcanvas.on("object:moving",schedule);
+    fcanvas.on("object:scaling",schedule);
+    fcanvas.on("object:rotating",schedule);
+  }
+
+  function init(){
+    bindInsertButtons();
+    cleanHome();
+    labelGraphs();
+    bindGraphRelabel();
+
+    [300,900,1800].forEach(ms=>setTimeout(()=>{
+      bindInsertButtons();
+      cleanHome();
+      labelGraphs();
+    },ms));
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
+  }else{
+    setTimeout(init,250);
+  }
+})();
