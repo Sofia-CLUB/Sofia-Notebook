@@ -3722,3 +3722,170 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     document.addEventListener("DOMContentLoaded",init,{once:true});
   else init();
 })();
+
+
+
+/* =========================================================
+   V59 — ПАНЕЛІ ЗАВЖДИ СПЕРЕДУ + СЛУЖБОВІ КНОПКИ У ВКЛАДКАХ
+   База: стабільна v58.
+   ========================================================= */
+(function(){
+  const $59=id=>document.getElementById(id);
+  let zTop=50000;
+
+  function ribbonPanel(name){
+    return document.querySelector(`.v56-panel[data-v56-panel="${name}"]`);
+  }
+
+  /* ---------- 1. ВІКНА НА ПЕРЕДНЬОМУ ПЛАНІ ---------- */
+  const knownPanels=[
+    "panelSettings","toolbarSettingsPanel","diagnosticsPanel",
+    "teacherToolsPanel","aiPanel","calculatorPanel","timerPanel","keyboardPanel",
+    "mediaPanel","elementsPanel","geometryPanel","anglePanel","numberRayPanel",
+    "graphBuilderPanel","graphEditorPanel","ukrainianPanel",
+    "v56FiguresPanel","v56CompassPanel"
+  ];
+
+  function bringFront(panel){
+    if(!panel)return;
+    // Виносимо в body: тоді жодна стрічка/контейнер не може його перекрити
+    // через власний stacking context або overflow.
+    if(panel.parentElement !== document.body){
+      document.body.appendChild(panel);
+    }
+    panel.style.setProperty("position","fixed","important");
+    panel.style.setProperty("z-index",String(++zTop),"important");
+    panel.style.setProperty("isolation","isolate","important");
+    panel.style.setProperty("visibility","visible","important");
+    panel.style.setProperty("opacity","1","important");
+    panel.style.setProperty("pointer-events","auto","important");
+    panel.style.setProperty("max-height","88vh","important");
+    panel.style.setProperty("overflow","auto","important");
+  }
+
+  function visible(el){
+    if(!el)return false;
+    const cs=getComputedStyle(el);
+    return !el.hidden && !el.classList.contains("hidden") && cs.display!=="none" && cs.visibility!=="hidden";
+  }
+
+  function scanPanels(){
+    knownPanels.forEach(id=>{
+      const p=$59(id);
+      if(!p)return;
+      if(visible(p))bringFront(p);
+      if(!p.dataset.v59Front){
+        p.dataset.v59Front="1";
+        p.addEventListener("mousedown",()=>bringFront(p),true);
+      }
+    });
+
+    // Додатково ловимо діалоги без відомого id.
+    document.querySelectorAll('[role="dialog"],.modal,.dialog,.panel-overlay').forEach(p=>{
+      if(visible(p))bringFront(p);
+    });
+  }
+
+  // Після натискання будь-якої кнопки дати панелі час відкритися й підняти її.
+  document.addEventListener("click",()=>{
+    setTimeout(scanPanels,10);
+    setTimeout(scanPanels,80);
+  },true);
+
+  /* ---------- 2. СЛУЖБОВІ КНОПКИ ПЕРЕНОСИМО У ВКЛАДКИ ---------- */
+  function moveToTab(id,tab,label){
+    const b=$59(id);
+    const target=ribbonPanel(tab);
+    if(!b || !target)return;
+    if(label)b.textContent=label;
+    b.classList.add("v56-command");
+    b.hidden=false;
+    b.style.removeProperty("display");
+    b.style.removeProperty("visibility");
+    b.style.removeProperty("opacity");
+    target.appendChild(b);
+  }
+
+  function organizeUtilityButtons(){
+    // Основне
+    moveToTab("fullscreenBtn","home","⛶ Повний екран");
+    moveToTab("clearAllBtn","home","🗑 Очистити все");
+    moveToTab("diagnosticsBtn","home","🛠 Перевірка");
+    moveToTab("panelBtn","home","⚙ Панелі");
+
+    // Вчитель
+    moveToTab("teacherToolsBtn","teacher","🎓 Інструменти");
+    moveToTab("translateTopBtn","teacher","🌐 Перекладач");
+
+    // Кнопка встановлення лишається зверху, як просили раніше.
+    const install=$59("installAppBtn");
+    if(install){
+      const top=document.querySelector("header,.app-header,.topbar,.brandbar");
+      if(top && install.parentElement!==top)top.appendChild(install);
+    }
+
+    // Прибираємо порожній верхній рядок/контейнер, якщо після переносу там нічого корисного.
+    document.querySelectorAll(".top-actions,.header-actions,.quick-actions,.utility-bar").forEach(bar=>{
+      const useful=Array.from(bar.children).some(el=>{
+        if(el.id==="installAppBtn")return true;
+        if(el.tagName==="BUTTON" && visible(el))return true;
+        return false;
+      });
+      if(!useful)bar.style.display="none";
+    });
+  }
+
+  /* ---------- 3. НАЛАШТУВАННЯ ПАНЕЛЕЙ ТЕЖ СПЕРЕДУ ---------- */
+  function bindSettingsFront(){
+    const candidates=[
+      $59("v56ArrangeBtn"),
+      $59("panelBtn"),
+      ...Array.from(document.querySelectorAll("button")).filter(b=>
+        /Впорядкувати|Панел/i.test((b.textContent||"").trim()))
+    ].filter(Boolean);
+
+    candidates.forEach(b=>{
+      if(b.dataset.v59Bound)return;
+      b.dataset.v59Bound="1";
+      b.addEventListener("click",()=>{
+        setTimeout(()=>{
+          const p=$59("panelSettings") || $59("toolbarSettingsPanel") ||
+            Array.from(document.querySelectorAll('[role="dialog"],.modal,.dialog')).find(x=>
+              /Налаштування панелі/i.test(x.textContent||""));
+          if(p)bringFront(p);
+        },30);
+      },true);
+    });
+  }
+
+  /* ---------- 4. ВІДНОВЛЮЄМО ВЕРСІЮ ---------- */
+  function markVersion(){
+    document.documentElement.dataset.sofiaVersion="59";
+    const badge=$59("appVersionBadge");
+    if(badge)badge.textContent="v59";
+  }
+
+  function init(){
+    organizeUtilityButtons();
+    bindSettingsFront();
+    scanPanels();
+    markVersion();
+
+    [250,700,1500,2500].forEach(ms=>setTimeout(()=>{
+      organizeUtilityButtons();
+      bindSettingsFront();
+      scanPanels();
+    },ms));
+
+    const mo=new MutationObserver(()=>{
+      clearTimeout(mo.__v59);
+      mo.__v59=setTimeout(scanPanels,30);
+    });
+    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style","hidden"]});
+  }
+
+  if(document.readyState==="loading")
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+  else
+    setTimeout(init,180);
+})();
