@@ -1,12 +1,6 @@
 const $=id=>document.getElementById(id);
 const notebook=$("notebook");
 const fcanvas=new fabric.Canvas("fabricCanvas",{selection:true,preserveObjectStacking:true});
-window.fcanvas=fcanvas;
-
-/* v34: expose core helpers to independent feature controller */
-window.sofiaCore = window.sofiaCore || {};
-window.sofiaCore.getCanvas = () => fcanvas;
-
 
 
 
@@ -19,7 +13,7 @@ let currentTool="select", isShape=false, start=null, temp=null;
 let history=[], redoHistory=[], pages=[blankPage()], currentPage=0, suppressHistory=false;
 let polyPoints=[], polyPreview=null, keyboardLang="UA";
 
-function blankPage(){return{json:null,paper:"grid",paperSize:25,paperColor:"#9fd5ff"}}
+function blankPage(title=""){return{json:null,paper:"grid",paperSize:25,paperColor:"#9fd5ff",pageTitle:title}}
 
 /* ---------- Час ---------- */
 function updateClock(){$("liveClock").textContent=new Date().toLocaleTimeString("uk-UA",{hour:"2-digit",minute:"2-digit"})}
@@ -1214,35 +1208,82 @@ document.querySelectorAll("[data-aiquick]").forEach(b=>b.onclick=()=>{
   $("aiPrompt").focus();
 });
 async function sendAIMessage(){
-  const text=$("aiPrompt").value.trim();
+  const input=$("aiPrompt");
+  const sendBtn=$("aiSendBtn");
+  const text=input?.value.trim();
+
   if(!text)return;
+
   addAIMessage(text,"user");
-  $("aiPrompt").value="";
-  $("aiSendBtn").disabled=true;
-  $("aiSendBtn").textContent="Думаю…";
+  input.value="";
+  sendBtn.disabled=true;
+  sendBtn.textContent="Думаю…";
+
   try{
     const res=await fetch("/api/chat",{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      cache:"no-store",
+      headers:{
+        "Content-Type":"application/json",
+        "Accept":"application/json"
+      },
       body:JSON.stringify({
         message:text,
         context:{
-          subject:$("subject").value,
-          grade:$("studentClass").value,
-          workType:$("workType").value
+          subject:$("subject")?.value||"",
+          grade:$("studentClass")?.value||"",
+          workType:$("workType")?.value||""
         }
       })
     });
-    if(!res.ok)throw new Error("AI endpoint unavailable");
-    const data=await res.json();
-    lastAIReply=data.reply||data.message||"";
-    addAIMessage(lastAIReply||"Не отримано відповіді.","assistant");
-  }catch(e){
-    lastAIReply="AI ще не підключено до серверної частини. Інтерфейс готовий; наступним кроком потрібно створити /api/chat на захищеному сервері.";
+
+    const raw=await res.text();
+    let data={};
+
+    try{
+      data=raw?JSON.parse(raw):{};
+    }catch(parseError){
+      throw new Error(
+        "Сервер повернув не JSON. Код "+res.status+
+        (raw?": "+raw.slice(0,120):"")
+      );
+    }
+
+    if(!res.ok){
+      throw new Error(
+        data?.error ||
+        data?.message ||
+        ("Помилка сервера "+res.status)
+      );
+    }
+
+    lastAIReply=(
+      data?.reply ||
+      data?.answer ||
+      data?.message ||
+      ""
+    ).trim();
+
+    if(!lastAIReply){
+      throw new Error("AI не повернув текстову відповідь");
+    }
+
+    window.lastAIReply=lastAIReply;
     addAIMessage(lastAIReply,"assistant");
+
+  }catch(e){
+    const message=
+      "Помилка Sofia AI: "+
+      (e?.message||"невідома помилка");
+
+    lastAIReply=message;
+    window.lastAIReply=message;
+    addAIMessage(message,"assistant");
+    console.error("Sofia AI error:",e);
+
   }finally{
-    $("aiSendBtn").disabled=false;
-    $("aiSendBtn").textContent="Надіслати";
+    sendBtn.disabled=false;
+    sendBtn.textContent="Надіслати";
   }
 }
 $("aiSendBtn").onclick=sendAIMessage;
@@ -1252,39 +1293,75 @@ $("aiInsertLastBtn").onclick=()=>{if(lastAIReply)insertTextIntoBoard(lastAIReply
 
 
 
-/* ---------- Сторінки ---------- */
-function savePage(){pages[currentPage]={json:fcanvas.toJSON(),paper:$("paperType").value,paperSize:Number($("paperSize").value),paperColor:$("paperLineColor").value}}
+/* ---------- Сторінки: вкладки, вільний перехід, назви та закриття ---------- */
+function pageDefaultTitle(i){return `Сторінка ${i+1}`}
+function pageTitleAt(i){const p=pages[i]||{};const t=String(p.pageTitle||"").trim();return t||pageDefaultTitle(i)}
+function savePage(){
+  const old=pages[currentPage]||{};
+  pages[currentPage]={json:fcanvas.toJSON(),paper:$("paperType").value,paperSize:Number($("paperSize").value),paperColor:$("paperLineColor").value,pageTitle:old.pageTitle||""}
+}
+function ensurePageTabsUI(){
+  if(document.getElementById("pageTabs"))return;
+  const addBtn=$("addPageBtn");if(!addBtn)return;
+  const wrap=document.createElement("div");wrap.id="pageTabsWrap";wrap.className="page-tabs-wrap";
+  const tabs=document.createElement("div");tabs.id="pageTabs";tabs.className="page-tabs";tabs.setAttribute("aria-label","Сторінки зошита");
+  wrap.appendChild(tabs);addBtn.insertAdjacentElement("afterend",wrap);
+  if(!document.getElementById("sofiaPageTabsStyles")){
+    const style=document.createElement("style");style.id="sofiaPageTabsStyles";style.textContent=`
+      .page-tabs-wrap{display:inline-flex;align-items:center;max-width:min(70vw,980px);vertical-align:middle;margin-left:8px}
+      .page-tabs{display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;max-width:100%;padding:3px 2px 5px;scrollbar-width:thin}
+      .page-tab{display:inline-flex;align-items:center;gap:3px;flex:0 0 auto;min-height:34px;padding:3px 5px 3px 10px;border:1px solid rgba(15,23,42,.18);border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.08)}
+      .page-tab.active{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.14);font-weight:700}
+      .page-tab-title{appearance:none;border:0;background:transparent;padding:3px 4px;cursor:pointer;font:inherit;color:inherit;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+      .page-tab-rename,.page-tab-close{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:7px;background:transparent;cursor:pointer;font-size:15px;line-height:1}
+      .page-tab-rename:hover{background:rgba(37,99,235,.10)}
+      .page-tab-close:hover{background:rgba(220,38,38,.12);color:#b91c1c}
+      @media (max-width:800px){.page-tabs-wrap{display:flex;max-width:100%;width:100%;margin:6px 0 0}.page-tabs{width:100%}.page-tab-title{max-width:125px}}
+    `;document.head.appendChild(style);
+  }
+}
+function renamePage(i){
+  if(i<0||i>=pages.length)return;savePage();
+  const value=prompt("Назва сторінки:",pageTitleAt(i));if(value===null)return;
+  pages[i].pageTitle=value.trim();updatePageIndicator();autoSave();
+}
+function goToPage(i){if(i===currentPage||i<0||i>=pages.length)return;savePage();loadPage(i);autoSave()}
+function closePage(i){
+  if(pages.length===1){alert("Має залишитися хоча б одна сторінка.");return}
+  const title=pageTitleAt(i);if(!confirm(`Закрити й видалити «${title}»?`))return;
+  if(i===currentPage)savePage();pages.splice(i,1);
+  if(i<currentPage)currentPage--;else if(i===currentPage)currentPage=Math.min(currentPage,pages.length-1);
+  loadPage(currentPage);autoSave();
+}
+function renderPageTabs(){
+  ensurePageTabsUI();const box=document.getElementById("pageTabs");if(!box)return;box.innerHTML="";
+  pages.forEach((p,i)=>{
+    const tab=document.createElement("div");tab.className="page-tab"+(i===currentPage?" active":"");tab.dataset.pageIndex=String(i);
+    const title=document.createElement("button");title.type="button";title.className="page-tab-title";title.textContent=pageTitleAt(i);title.title=`Перейти: ${pageTitleAt(i)}`;title.onclick=()=>goToPage(i);title.ondblclick=e=>{e.preventDefault();renamePage(i)};
+    const rename=document.createElement("button");rename.type="button";rename.className="page-tab-rename";rename.textContent="✎";rename.title="Перейменувати сторінку";rename.onclick=e=>{e.stopPropagation();renamePage(i)};
+    const close=document.createElement("button");close.type="button";close.className="page-tab-close";close.textContent="×";close.title="Закрити / видалити сторінку";close.onclick=e=>{e.stopPropagation();closePage(i)};
+    tab.append(title,rename,close);box.appendChild(tab);
+  });
+  requestAnimationFrame(()=>box.querySelector(".page-tab.active")?.scrollIntoView({block:"nearest",inline:"nearest"}));
+}
 function loadPage(i){
   currentPage=i;const p=pages[i]||blankPage();$("paperType").value=p.paper||"grid";$("paperSize").value=String(p.paperSize||25);$("paperSizeValue").textContent=$("paperSize").value;$("paperLineColor").value=p.paperColor||"#9fd5ff";applyPaper();
   suppressHistory=true;fcanvas.clear();
   if(p.json)fcanvas.loadFromJSON(p.json,()=>{
-    fcanvas.getObjects().forEach(o=>{
-      if(o.isEraserMask){
-        o.set({
-          globalCompositeOperation:"destination-out",
-          selectable:false,
-          evented:false,
-          objectCaching:false
-        });
-      }
-    });
-    normalizeEraserLayerOrder();
-    fcanvas.renderAll();suppressHistory=false;
-    ensureHeadingObjects();
-    history=[canvasState()];redoHistory=[];setTool("select")
+    fcanvas.getObjects().forEach(o=>{if(o.isEraserMask){o.set({globalCompositeOperation:"destination-out",selectable:false,evented:false,objectCaching:false})}});
+    normalizeEraserLayerOrder();fcanvas.renderAll();suppressHistory=false;ensureHeadingObjects();history=[canvasState()];redoHistory=[];setTool("select")
   });
-  else{
-    suppressHistory=false;
-    ensureHeadingObjects();
-    history=[];pushHistory();setTool("select")
-  }
+  else{suppressHistory=false;ensureHeadingObjects();history=[];pushHistory();setTool("select")}
   updatePageIndicator();
 }
-function updatePageIndicator(){$("pageIndicator").textContent=`Сторінка ${currentPage+1} з ${pages.length}`;$("prevPageBtn").disabled=currentPage===0;$("nextPageBtn").disabled=currentPage===pages.length-1}
+function updatePageIndicator(){
+  $("pageIndicator").textContent=`${pageTitleAt(currentPage)} · ${currentPage+1} з ${pages.length}`;
+  $("prevPageBtn").disabled=currentPage===0;$("nextPageBtn").disabled=currentPage===pages.length-1;renderPageTabs();
+}
 $("addPageBtn").onclick=()=>{savePage();pages.push(blankPage());loadPage(pages.length-1);autoSave()};
-$("deletePageBtn").onclick=()=>{if(pages.length===1){alert("Має залишитися хоча б одна сторінка.");return}if(!confirm("Видалити поточну сторінку?"))return;pages.splice(currentPage,1);currentPage=Math.min(currentPage,pages.length-1);loadPage(currentPage);autoSave()};
-$("prevPageBtn").onclick=()=>{if(currentPage>0){savePage();loadPage(currentPage-1)}};
-$("nextPageBtn").onclick=()=>{if(currentPage<pages.length-1){savePage();loadPage(currentPage+1)}};
+$("deletePageBtn").onclick=()=>closePage(currentPage);
+$("prevPageBtn").onclick=()=>{if(currentPage>0)goToPage(currentPage-1)};
+$("nextPageBtn").onclick=()=>{if(currentPage<pages.length-1)goToPage(currentPage+1)};
 updatePageIndicator();
 
 /* ---------- Збереження ---------- */
@@ -1399,48 +1476,6 @@ $("subject").onchange=()=>{
     return "AI-інтерфейс працює. Для повноцінних відповідей рівня ChatGPT потрібно підключити захищений серверний API. Поки що я можу вставляти локальні шаблони та заготовки для уроку.";
   };
 
-  const sendBtn=byId("aiSendBtn");
-  if(sendBtn){
-    sendBtn.onclick=async()=>{
-      const input=byId("aiPrompt");
-      const text=input?.value.trim();
-      if(!text)return;
-      if(typeof addAIMessage==="function")addAIMessage(text,"user");
-      if(input)input.value="";
-      sendBtn.disabled=true;sendBtn.textContent="Думаю…";
-      let reply="";
-      try{
-        const res=await fetch("/api/chat",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            message:text,
-            context:{
-              subject:byId("subject")?.value||"",
-              grade:byId("studentClass")?.value||"",
-              workType:byId("workType")?.value||""
-            }
-          })
-        });
-        if(!res.ok)throw new Error("no backend");
-        const data=await res.json();
-        reply=data.reply||data.message||"";
-      }catch(err){
-        reply=window.localSofiaAI(text);
-      }
-      window.lastAIReply=reply;
-      if(typeof addAIMessage==="function")addAIMessage(reply,"assistant");
-      else{
-        const box=byId("aiMessages");
-        if(box){
-          const d=document.createElement("div");
-          d.className="ai-message assistant";
-          d.textContent=reply;box.appendChild(d);
-        }
-      }
-      sendBtn.disabled=false;sendBtn.textContent="Надіслати";
-    };
-  }
   const insertLast=byId("aiInsertLastBtn");
   if(insertLast){
     insertLast.onclick=()=>{
@@ -2079,7 +2114,7 @@ $("installAppBtn")?.addEventListener("click",async()=>{
     alert("У Chrome або Edge відкрийте меню ⋮ → «Встановити Sofia Notebook PRO» / «Встановити цей сайт як програму». Після першого онлайн-відкриття основні файли зберігаються для офлайн-роботи.");
   }
 });
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=37",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=38",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
@@ -2496,4 +2531,3 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   document.documentElement.dataset.sofiaVersion="28";
   if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
 })();
-
