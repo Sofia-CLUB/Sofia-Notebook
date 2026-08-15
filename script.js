@@ -2532,295 +2532,602 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
 })();
 
-
-
 /* =========================================================
-   V40: АВТОРСЬКИЙ ПІДПИС + РЕЖИМ ВПОРЯДКУВАННЯ КНОПОК
+   V41: WORD-ПОДІБНА СТРІЧКА КОМАНД + ВІЛЬНЕ ВПОРЯДКУВАННЯ
    ========================================================= */
 (function(){
-  const STORAGE_KEY="sofiaNotebookButtonOrderV40";
+  const LAYOUT_KEY="sofiaRibbonLayoutV41";
+  const ACTIVE_TAB_KEY="sofiaRibbonActiveTabV41";
   let arrangeMode=false;
-  let draggedBtn=null;
+  let dragged=null;
 
-  function addAuthorSignature(){
+  const tabs=[
+    {id:"home", label:"Основне", icon:"⌂"},
+    {id:"insert", label:"Вставка", icon:"＋"},
+    {id:"draw", label:"Малювання", icon:"✎"},
+    {id:"math", label:"Математика", icon:"∑"},
+    {id:"teacher", label:"Вчитель", icon:"🎓"},
+    {id:"ai", label:"AI", icon:"✨"}
+  ];
+
+  const exactCategory={
+    saveBtn:"home", undoBtn:"home", redoBtn:"home",
+    deleteSelectedBtn:"home", clearPageBtn:"home", clearAllBtn:"home",
+    fullscreenBtn:"home", installAppBtn:"home", diagnosticsBtn:"home",
+    keyboardBtn:"home", voiceBtn:"home",
+
+    mediaBtn:"insert", elementsBtn:"insert", geometryBtn:"insert",
+    shapeLibraryBtn:"insert", noteBtn:"insert",
+
+    correctionMarkerBtn:"draw", groupBtn:"draw", ungroupBtn:"draw",
+    explodeShapeBtn:"draw", editVerticesBtn:"draw",
+
+    angleBtn:"math", numberRayBtn:"math", graphBuilderBtn:"math",
+    pointBtn:"math", vertexLabelBtn:"math", calculatorBtn:"math",
+
+    timerBtn:"teacher", ukrainianBtn:"teacher",
+
+    aiBtn:"ai"
+  };
+
+  const NEVER_MOVE_IDS=new Set([
+    "arrangeButtonsBtn","resetButtonsOrderBtn",
+    "addPageBtn","deletePageBtn","prevPageBtn","nextPageBtn",
+    "pageTabRenameBtn","pageTabCloseBtn"
+  ]);
+
+  const OVERLAY_SELECTORS=[
+    "#keyboardPanel","#timerPanel","#calculatorPanel","#aiPanel","#mediaPanel",
+    "#elementsPanel","#geometryPanel","#shapeLibraryPanel","#graphBuilderPanel",
+    "#numberRayPanel","#graphEditorPanel","#diagnosticsPanel","#runtimeErrorPanel",
+    ".modal",".dialog","[role='dialog']"
+  ].join(",");
+
+  function css(){
+    if(document.getElementById("sofiaRibbonV41Style"))return;
+    const s=document.createElement("style");
+    s.id="sofiaRibbonV41Style";
+    s.textContent=`
+      #sofiaRibbonV41{
+        position:relative;
+        z-index:1200;
+        width:100%;
+        background:#fff;
+        border-bottom:1px solid #dce5f2;
+        box-shadow:0 2px 8px rgba(15,23,42,.06);
+      }
+      .sofia-ribbon-head{
+        min-height:42px;
+        display:flex;
+        align-items:center;
+        gap:4px;
+        padding:4px 8px 0;
+        border-bottom:1px solid #e5eaf2;
+      }
+      .sofia-ribbon-tabs{
+        display:flex;
+        align-items:end;
+        gap:2px;
+        flex:1 1 auto;
+        min-width:0;
+        overflow-x:auto;
+        scrollbar-width:thin;
+      }
+      .sofia-ribbon-tab{
+        border:0;
+        border-radius:8px 8px 0 0;
+        background:transparent;
+        padding:9px 13px 8px;
+        cursor:pointer;
+        font:600 14px/1.1 inherit;
+        white-space:nowrap;
+      }
+      .sofia-ribbon-tab:hover{background:#f1f5fb}
+      .sofia-ribbon-tab.active{
+        color:#173b78;
+        background:#eef4ff;
+        box-shadow:inset 0 -2px 0 #2859a6;
+      }
+      .sofia-ribbon-actions{
+        display:flex;
+        gap:6px;
+        align-items:center;
+        flex:0 0 auto;
+        padding-bottom:4px;
+      }
+      #arrangeButtonsBtn{
+        border:1px solid #2859a6!important;
+        background:#173b78!important;
+        color:#fff!important;
+        border-radius:9px!important;
+        padding:8px 11px!important;
+        font-weight:700!important;
+        cursor:pointer!important;
+        white-space:nowrap;
+      }
+      #arrangeButtonsBtn.active{
+        background:#147a46!important;
+        border-color:#147a46!important;
+      }
+      #resetButtonsOrderBtn{
+        border:1px solid #c8d2e0!important;
+        background:#fff!important;
+        border-radius:9px!important;
+        padding:8px 10px!important;
+        cursor:pointer!important;
+        white-space:nowrap;
+      }
+      .sofia-ribbon-body{padding:7px 9px 9px}
+      .sofia-ribbon-panel{
+        display:none;
+        align-items:flex-start;
+        align-content:flex-start;
+        flex-wrap:wrap;
+        gap:7px;
+        width:100%;
+        min-height:44px;
+        overflow:visible!important;
+      }
+      .sofia-ribbon-panel.active{display:flex}
+      .sofia-ribbon-panel > button{
+        flex:0 0 auto!important;
+        max-width:none!important;
+        overflow:visible!important;
+        visibility:visible!important;
+        opacity:1!important;
+      }
+      .sofia-ribbon-panel .sofia-command{
+        min-height:38px!important;
+        height:auto!important;
+        padding:7px 11px!important;
+        margin:0!important;
+        white-space:nowrap!important;
+        border-radius:9px!important;
+      }
+      body.sofia-arrange-v41 .sofia-ribbon-panel.active{
+        min-height:88px;
+        padding:5px;
+        border:2px dashed rgba(40,89,166,.35);
+        border-radius:10px;
+        background:#f8fbff;
+      }
+      body.sofia-arrange-v41 .sofia-command{
+        cursor:grab!important;
+        outline:1px dashed rgba(40,89,166,.48)!important;
+        outline-offset:2px!important;
+        user-select:none!important;
+      }
+      body.sofia-arrange-v41 .sofia-command:active{cursor:grabbing!important}
+      body.sofia-arrange-v41 .sofia-ribbon-tab{
+        outline:1px dashed rgba(40,89,166,.35);
+        outline-offset:-2px;
+      }
+      .sofia-ribbon-drop-marker{
+        width:4px;height:38px;border-radius:3px;background:#2859a6;display:inline-block;
+      }
+      #sofiaArrangeHelpV41{
+        position:fixed;
+        left:50%;
+        bottom:34px;
+        transform:translateX(-50%);
+        z-index:10000;
+        max-width:min(760px,92vw);
+        padding:9px 14px;
+        border-radius:10px;
+        background:rgba(15,23,42,.94);
+        color:#fff;
+        font:600 13px/1.3 inherit;
+        box-shadow:0 5px 22px rgba(0,0,0,.22);
+        pointer-events:none;
+        text-align:center;
+      }
+      #sofiaAuthorSignature{
+        position:fixed;right:14px;bottom:8px;z-index:9998;
+        font-size:12px;font-weight:600;letter-spacing:.15px;opacity:.55;
+        pointer-events:none;user-select:none;white-space:nowrap;
+      }
+      @media(max-width:900px){
+        .sofia-ribbon-head{align-items:flex-start;flex-wrap:wrap}
+        .sofia-ribbon-tabs{order:2;width:100%}
+        .sofia-ribbon-actions{margin-left:auto}
+        .sofia-ribbon-tab{padding:8px 10px}
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function author(){
     if(document.getElementById("sofiaAuthorSignature"))return;
-    const el=document.createElement("div");
-    el.id="sofiaAuthorSignature";
-    el.textContent="Sofia Notebook © Parasochka";
-    el.style.cssText=[
-      "position:fixed",
-      "right:14px",
-      "bottom:8px",
-      "z-index:9998",
-      "font-size:12px",
-      "font-weight:600",
-      "letter-spacing:.15px",
-      "opacity:.55",
-      "pointer-events:none",
-      "user-select:none",
-      "white-space:nowrap"
-    ].join(";");
-    document.body.appendChild(el);
+    const a=document.createElement("div");
+    a.id="sofiaAuthorSignature";
+    a.textContent="Sofia Notebook © Parasochka";
+    document.body.appendChild(a);
   }
 
-  function getArrangeButton(){
-    return document.getElementById("arrangeButtonsBtn");
-  }
+  function createRibbon(){
+    if(document.getElementById("sofiaRibbonV41"))return;
 
-  function addArrangeControls(){
-    if(getArrangeButton())return;
+    const root=document.createElement("section");
+    root.id="sofiaRibbonV41";
 
-    const btn=document.createElement("button");
-    btn.type="button";
-    btn.id="arrangeButtonsBtn";
-    btn.textContent="🔀 Впорядкувати кнопки";
-    btn.title="Увімкнути переміщення кнопок мишкою";
-    btn.style.cssText="margin-left:6px;";
+    const head=document.createElement("div");
+    head.className="sofia-ribbon-head";
+
+    const tabBox=document.createElement("div");
+    tabBox.className="sofia-ribbon-tabs";
+
+    tabs.forEach(t=>{
+      const b=document.createElement("button");
+      b.type="button";
+      b.className="sofia-ribbon-tab";
+      b.dataset.ribbonTab=t.id;
+      b.textContent=`${t.icon} ${t.label}`;
+      b.addEventListener("click",e=>{
+        e.preventDefault();
+        if(arrangeMode && dragged){
+          moveDraggedToTab(t.id);
+          return;
+        }
+        activateTab(t.id);
+      });
+      b.addEventListener("dragover",e=>{
+        if(arrangeMode && dragged){e.preventDefault();b.classList.add("active-drop")}
+      });
+      b.addEventListener("dragleave",()=>b.classList.remove("active-drop"));
+      b.addEventListener("drop",e=>{
+        if(!arrangeMode || !dragged)return;
+        e.preventDefault();
+        b.classList.remove("active-drop");
+        moveDraggedToTab(t.id);
+      });
+      tabBox.appendChild(b);
+    });
+
+    const actions=document.createElement("div");
+    actions.className="sofia-ribbon-actions";
+
+    const arrange=document.createElement("button");
+    arrange.type="button";
+    arrange.id="arrangeButtonsBtn";
+    arrange.textContent="🔀 Впорядкувати";
 
     const reset=document.createElement("button");
     reset.type="button";
     reset.id="resetButtonsOrderBtn";
-    reset.textContent="↺ Стандартний порядок";
-    reset.title="Повернути початковий порядок кнопок";
-    reset.style.cssText="margin-left:4px;display:none;";
+    reset.textContent="↺ Стандартно";
+    reset.title="Повернути стандартний розподіл команд";
+    reset.style.display="none";
 
-    const anchor=document.getElementById("addPageBtn") ||
-                 document.getElementById("saveBtn") ||
-                 document.querySelector("header button, .toolbar button, button");
+    actions.append(arrange,reset);
+    head.append(tabBox,actions);
 
-    if(anchor && anchor.parentElement){
-      anchor.parentElement.appendChild(btn);
-      anchor.parentElement.appendChild(reset);
+    const body=document.createElement("div");
+    body.className="sofia-ribbon-body";
+    tabs.forEach(t=>{
+      const p=document.createElement("div");
+      p.className="sofia-ribbon-panel";
+      p.dataset.ribbonPanel=t.id;
+      body.appendChild(p);
+    });
+
+    root.append(head,body);
+
+    const pageViewport=document.getElementById("pageViewport");
+    const pageControls=document.getElementById("addPageBtn")?.parentElement;
+    const existingToolArea=findToolArea();
+
+    if(existingToolArea && existingToolArea.parentElement){
+      existingToolArea.parentElement.insertBefore(root,existingToolArea);
+    }else if(pageControls && pageControls.parentElement){
+      pageControls.parentElement.insertBefore(root,pageControls);
+    }else if(pageViewport && pageViewport.parentElement){
+      pageViewport.parentElement.insertBefore(root,pageViewport);
     }else{
-      const box=document.createElement("div");
-      box.style.cssText="position:fixed;top:8px;right:8px;z-index:9999;";
-      box.append(btn,reset);
-      document.body.appendChild(box);
+      document.body.insertBefore(root,document.body.firstChild);
     }
 
-    btn.addEventListener("click", e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      setArrangeMode(!arrangeMode);
-    });
+    arrange.onclick=e=>{
+      e.preventDefault(); e.stopPropagation();
+      setArrange(!arrangeMode);
+    };
+    reset.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      if(!confirm("Повернути стандартний порядок і розподіл команд по вкладках?"))return;
+      localStorage.removeItem(LAYOUT_KEY);
+      rebuildDefaultLayout();
+      saveLayout();
+      setArrange(false);
+    };
 
-    reset.addEventListener("click", e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      if(!confirm("Повернути стандартний порядок кнопок?"))return;
-      localStorage.removeItem(STORAGE_KEY);
-      location.reload();
-    });
+    const remembered=localStorage.getItem(ACTIVE_TAB_KEY)||"home";
+    activateTab(tabs.some(t=>t.id===remembered)?remembered:"home");
   }
 
-  function eligibleButton(btn){
+  function findToolArea(){
+    const ids=["correctionMarkerBtn","mediaBtn","elementsBtn","geometryBtn","shapeLibraryBtn"];
+    for(const id of ids){
+      const b=document.getElementById(id);
+      if(b && b.parentElement)return b.parentElement;
+    }
+    return null;
+  }
+
+  function isOverlayButton(btn){
+    return !!btn.closest(OVERLAY_SELECTORS);
+  }
+
+  function isPageTabButton(btn){
+    return !!btn.closest("#pageTabs,.page-tab");
+  }
+
+  function canBeCommand(btn){
     if(!(btn instanceof HTMLButtonElement))return false;
+    if(!btn.isConnected)return false;
+    if(NEVER_MOVE_IDS.has(btn.id))return false;
     if(btn.id==="arrangeButtonsBtn" || btn.id==="resetButtonsOrderBtn")return false;
-    if(btn.closest("#pageTabs"))return false;
-    if(btn.closest(".page-tab"))return false;
-    return true;
+    if(btn.closest("#sofiaRibbonV41"))return false;
+    if(isOverlayButton(btn) || isPageTabButton(btn))return false;
+
+    // Do not steal tiny calculator/keyboard/internal editing buttons.
+    if(btn.hasAttribute("data-calc") || btn.hasAttribute("data-mathinsert"))return false;
+    if(btn.id && /(Close|Start|Pause|Reset|Plus|Insert|Duplicate|Reload|Finish)/i.test(btn.id))return false;
+
+    // Known app commands are always eligible.
+    if(btn.id && exactCategory[btn.id])return true;
+
+    // Dynamically include visible teacher/top-toolbar command buttons.
+    const rect=btn.getBoundingClientRect();
+    if(rect.width<20 || rect.height<20)return false;
+    const txt=(btn.textContent||"").trim();
+    if(!txt || txt==="×" || txt==="✕")return false;
+
+    // Only controls located above the notebook page are treated as ribbon commands.
+    const page=document.getElementById("pageViewport");
+    const pageTop=page? page.getBoundingClientRect().top : window.innerHeight;
+    return rect.top < pageTop + 5;
   }
 
-  function buttonKey(btn){
+  function key(btn){
     if(btn.id)return "id:"+btn.id;
-    const attrs=["data-tool","data-calc","data-mathinsert","data-action","data-insert"];
-    for(const a of attrs){
+    for(const a of ["data-tool","data-action","data-command"]){
       if(btn.hasAttribute(a))return a+":"+btn.getAttribute(a);
     }
-    const txt=(btn.textContent||"").trim().replace(/\s+/g," ").slice(0,80);
-    return "txt:"+txt;
+    return "text:"+(btn.textContent||"").trim().replace(/\s+/g," ").slice(0,90);
   }
 
-  function elementPath(el){
-    if(!el)return "";
-    if(el.id)return "#"+el.id;
-    const parts=[];
-    let cur=el;
-    while(cur && cur!==document.body && parts.length<5){
-      let p=cur.tagName.toLowerCase();
-      if(cur.classList && cur.classList.length){
-        p+="."+Array.from(cur.classList).slice(0,2).join(".");
-      }
-      const parent=cur.parentElement;
-      if(parent){
-        const same=Array.from(parent.children).filter(x=>x.tagName===cur.tagName);
-        if(same.length>1)p+=`:nth-of-type(${same.indexOf(cur)+1})`;
-      }
-      parts.unshift(p);
-      cur=parent;
-    }
-    return parts.join(">");
+  function inferCategory(btn){
+    if(btn.id && exactCategory[btn.id])return exactCategory[btn.id];
+    const t=((btn.id||"")+" "+(btn.textContent||"")+" "+(btn.title||"")).toLowerCase();
+
+    if(/ai|штуч|чат|генер|зображенн/.test(t))return "ai";
+    if(/граф|кут|числов|матем|точк|вершин|калькулятор|формул/.test(t))return "math";
+    if(/фото|відео|файл|елемент|прилад|фігур|встав|посилан|таблиц/.test(t))return "insert";
+    if(/ручк|маркер|ліні|крив|стріл|прямокут|коло|трикут|малю|колір|товщ/.test(t))return "draw";
+    if(/таймер|переклад|перевір|розбір|картк|тест|колес|вчител/.test(t))return "teacher";
+    return "home";
   }
 
-  function containerKey(parent){
-    return parent.id ? "#"+parent.id : elementPath(parent);
+  function panel(id){
+    return document.querySelector(`.sofia-ribbon-panel[data-ribbon-panel="${id}"]`);
   }
 
-  function getSavedOrders(){
-    try{
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
-    }catch(e){
-      return {};
-    }
+  function rememberOrigin(btn){
+    if(btn.dataset.sofiaOriginSaved)return;
+    const parent=btn.parentElement;
+    if(!parent)return;
+    btn.dataset.sofiaOriginSaved="1";
+    btn.__sofiaOriginParent=parent;
+    btn.__sofiaOriginNext=btn.nextSibling;
   }
 
-  function saveContainerOrder(parent){
-    const buttons=Array.from(parent.children).filter(eligibleButton);
-    if(buttons.length<2)return;
-    const orders=getSavedOrders();
-    orders[containerKey(parent)]=buttons.map(buttonKey);
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(orders));
+  function decorate(btn){
+    rememberOrigin(btn);
+    btn.classList.add("sofia-command");
+    btn.dataset.sofiaCommandKey=key(btn);
+    btn.draggable=arrangeMode;
   }
 
-  function restoreOrders(){
-    const orders=getSavedOrders();
-    if(!orders || typeof orders!=="object")return;
+  function moveIntoRibbon(btn,cat){
+    const p=panel(cat)||panel("home");
+    if(!p)return;
+    decorate(btn);
+    p.appendChild(btn);
+  }
 
-    document.querySelectorAll("button").forEach(btn=>{
-      if(!eligibleButton(btn))return;
-      const parent=btn.parentElement;
-      if(!parent)return;
-      const key=containerKey(parent);
-      const order=orders[key];
-      if(!Array.isArray(order)||!order.length)return;
+  function collectCommands(){
+    const saved=loadLayout();
+    const assignments=saved.assignments||{};
 
-      const children=Array.from(parent.children);
-      const candidates=children.filter(eligibleButton);
-      const map=new Map(candidates.map(b=>[buttonKey(b),b]));
-      const ordered=order.map(k=>map.get(k)).filter(Boolean);
-      candidates.forEach(b=>{if(!ordered.includes(b))ordered.push(b)});
+    const candidates=Array.from(document.querySelectorAll("button")).filter(canBeCommand);
+    candidates.forEach(btn=>{
+      const k=key(btn);
+      moveIntoRibbon(btn,assignments[k]||inferCategory(btn));
+    });
 
-      if(ordered.length<2)return;
+    applySavedOrder(saved);
+    ensureEssentialCommands();
+  }
 
-      // Reorder only buttons while preserving non-button elements as much as possible.
-      const firstButton=candidates[0];
-      let cursor=firstButton;
-      ordered.forEach((b,idx)=>{
-        if(idx===0){
-          if(b!==firstButton) parent.insertBefore(b,firstButton);
-          cursor=b;
-        }else{
-          cursor.insertAdjacentElement("afterend",b);
-          cursor=b;
-        }
-      });
+  function ensureEssentialCommands(){
+    // Undo/redo are deliberately forced into the visible "Основне" set
+    // when no custom assignment exists, so they cannot remain hidden off-screen.
+    ["undoBtn","redoBtn","saveBtn","deleteSelectedBtn"].forEach(id=>{
+      const b=document.getElementById(id);
+      if(!b)return;
+      if(!b.closest("#sofiaRibbonV41"))moveIntoRibbon(b,"home");
     });
   }
 
-  function setButtonVisual(btn,on){
-    btn.draggable=on;
-    if(on){
-      btn.dataset.sofiaArrange="1";
-      btn.style.cursor="grab";
-      btn.style.outline="1px dashed rgba(37,99,235,.45)";
-      btn.style.outlineOffset="2px";
-    }else{
-      btn.draggable=false;
-      delete btn.dataset.sofiaArrange;
-      btn.style.cursor="";
-      btn.style.outline="";
-      btn.style.outlineOffset="";
-    }
+  function loadLayout(){
+    try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}
+    catch(e){return {}}
   }
 
-  function setArrangeMode(on){
+  function applySavedOrder(saved){
+    const orders=saved.orders||{};
+    tabs.forEach(t=>{
+      const p=panel(t.id);
+      if(!p)return;
+      const order=orders[t.id];
+      if(!Array.isArray(order))return;
+      const map=new Map(Array.from(p.querySelectorAll(":scope > button.sofia-command")).map(b=>[key(b),b]));
+      order.forEach(k=>{const b=map.get(k);if(b)p.appendChild(b)});
+    });
+  }
+
+  function saveLayout(){
+    const out={assignments:{},orders:{}};
+    tabs.forEach(t=>{
+      const p=panel(t.id);
+      const buttons=p?Array.from(p.querySelectorAll(":scope > button.sofia-command")):[];
+      out.orders[t.id]=buttons.map(key);
+      buttons.forEach(b=>out.assignments[key(b)]=t.id);
+    });
+    localStorage.setItem(LAYOUT_KEY,JSON.stringify(out));
+  }
+
+  function activateTab(id){
+    document.querySelectorAll(".sofia-ribbon-tab").forEach(b=>b.classList.toggle("active",b.dataset.ribbonTab===id));
+    document.querySelectorAll(".sofia-ribbon-panel").forEach(p=>p.classList.toggle("active",p.dataset.ribbonPanel===id));
+    localStorage.setItem(ACTIVE_TAB_KEY,id);
+  }
+
+  function help(on){
+    let h=document.getElementById("sofiaArrangeHelpV41");
+    if(on && !h){
+      h=document.createElement("div");
+      h.id="sofiaArrangeHelpV41";
+      h.textContent="Перетягуйте команди в будь-яке місце. Щоб перенести команду в іншу вкладку — перетягніть її прямо на назву вкладки.";
+      document.body.appendChild(h);
+    }else if(!on && h)h.remove();
+  }
+
+  function setArrange(on){
     arrangeMode=on;
-    document.body.classList.toggle("sofia-arrange-mode",on);
+    document.body.classList.toggle("sofia-arrange-v41",on);
+    document.querySelectorAll(".sofia-command").forEach(b=>b.draggable=on);
+    const b=document.getElementById("arrangeButtonsBtn");
+    if(b){
+      b.textContent=on?"✓ Готово":"🔀 Впорядкувати";
+      b.classList.toggle("active",on);
+    }
+    const r=document.getElementById("resetButtonsOrderBtn");
+    if(r)r.style.display=on?"":"none";
+    help(on);
+    if(!on)saveLayout();
+  }
 
-    document.querySelectorAll("button").forEach(btn=>{
-      if(eligibleButton(btn))setButtonVisual(btn,on);
+  function moveDraggedToTab(tabId){
+    if(!dragged)return;
+    const p=panel(tabId);
+    if(!p)return;
+    p.appendChild(dragged);
+    activateTab(tabId);
+    saveLayout();
+  }
+
+  function rebuildDefaultLayout(){
+    document.querySelectorAll(".sofia-command").forEach(btn=>{
+      const cat=inferCategory(btn);
+      const p=panel(cat)||panel("home");
+      p?.appendChild(btn);
     });
-
-    const ctl=getArrangeButton();
-    const reset=document.getElementById("resetButtonsOrderBtn");
-    if(ctl){
-      ctl.textContent=on ? "✓ Готово" : "🔀 Впорядкувати кнопки";
-      ctl.style.fontWeight=on ? "700" : "";
-    }
-    if(reset)reset.style.display=on ? "" : "none";
-
-    let badge=document.getElementById("arrangeModeBadge");
-    if(on){
-      if(!badge){
-        badge=document.createElement("div");
-        badge.id="arrangeModeBadge";
-        badge.textContent="Перетягуйте кнопки мишкою. Натисніть «✓ Готово», коли завершите.";
-        badge.style.cssText=[
-          "position:fixed","left:50%","bottom:34px","transform:translateX(-50%)",
-          "z-index:10000","padding:8px 14px","border-radius:10px",
-          "background:rgba(15,23,42,.92)","color:white","font-size:13px",
-          "box-shadow:0 4px 18px rgba(0,0,0,.18)","pointer-events:none"
-        ].join(";");
-        document.body.appendChild(badge);
-      }
-    }else if(badge){
-      badge.remove();
-    }
   }
 
   document.addEventListener("dragstart",e=>{
-    const btn=e.target.closest && e.target.closest("button");
-    if(!arrangeMode || !btn || !eligibleButton(btn))return;
-    draggedBtn=btn;
-    btn.style.opacity=".45";
+    const b=e.target.closest?.("button.sofia-command");
+    if(!arrangeMode || !b)return;
+    dragged=b;
+    b.style.opacity=".45";
     if(e.dataTransfer){
       e.dataTransfer.effectAllowed="move";
-      e.dataTransfer.setData("text/plain",buttonKey(btn));
+      e.dataTransfer.setData("text/plain",key(b));
     }
   },true);
 
   document.addEventListener("dragend",e=>{
-    const btn=e.target.closest && e.target.closest("button");
-    if(btn)btn.style.opacity="";
-    if(draggedBtn && draggedBtn.parentElement)saveContainerOrder(draggedBtn.parentElement);
-    draggedBtn=null;
+    const b=e.target.closest?.("button.sofia-command");
+    if(b)b.style.opacity="";
+    dragged=null;
+    saveLayout();
   },true);
 
   document.addEventListener("dragover",e=>{
-    if(!arrangeMode || !draggedBtn)return;
-    const target=e.target.closest && e.target.closest("button");
-    if(!target || target===draggedBtn || !eligibleButton(target))return;
-    if(target.parentElement!==draggedBtn.parentElement)return;
-    e.preventDefault();
-
-    const rect=target.getBoundingClientRect();
-    const horizontal = target.parentElement.scrollWidth > target.parentElement.clientWidth ||
-                       getComputedStyle(target.parentElement).display.includes("flex");
-    const before = horizontal ? e.clientX < rect.left+rect.width/2
-                              : e.clientY < rect.top+rect.height/2;
-    if(before) target.parentElement.insertBefore(draggedBtn,target);
-    else target.insertAdjacentElement("afterend",draggedBtn);
+    if(!arrangeMode || !dragged)return;
+    const target=e.target.closest?.("button.sofia-command");
+    const p=e.target.closest?.(".sofia-ribbon-panel");
+    if(target && target!==dragged){
+      e.preventDefault();
+      const r=target.getBoundingClientRect();
+      const before=e.clientX < r.left+r.width/2;
+      if(before)target.parentElement.insertBefore(dragged,target);
+      else target.insertAdjacentElement("afterend",dragged);
+      return;
+    }
+    if(p){
+      e.preventDefault();
+      if(dragged.parentElement!==p)p.appendChild(dragged);
+    }
   },true);
 
   document.addEventListener("drop",e=>{
-    if(!arrangeMode || !draggedBtn)return;
-    e.preventDefault();
-    if(draggedBtn.parentElement)saveContainerOrder(draggedBtn.parentElement);
+    if(!arrangeMode || !dragged)return;
+    const p=e.target.closest?.(".sofia-ribbon-panel");
+    if(p){
+      e.preventDefault();
+      if(dragged.parentElement!==p)p.appendChild(dragged);
+      saveLayout();
+    }
   },true);
 
-  // In arrange mode buttons should not perform their normal actions.
+  // During arranging, prevent a normal command from executing when clicked.
   document.addEventListener("click",e=>{
     if(!arrangeMode)return;
-    const btn=e.target.closest && e.target.closest("button");
-    if(!btn || !eligibleButton(btn))return;
+    const b=e.target.closest?.("button.sofia-command");
+    if(!b)return;
     e.preventDefault();
     e.stopImmediatePropagation();
   },true);
 
-  function refreshArrangeState(){
-    if(!arrangeMode)return;
-    document.querySelectorAll("button").forEach(btn=>{
-      if(eligibleButton(btn) && btn.dataset.sofiaArrange!=="1")setButtonVisual(btn,true);
+  function cleanupOldToolbarOverflow(){
+    // Existing toolbar rows no longer need to hide commands horizontally.
+    const page=document.getElementById("pageViewport");
+    if(!page)return;
+    const pageTop=page.getBoundingClientRect().top;
+    document.querySelectorAll("body *").forEach(el=>{
+      if(!(el instanceof HTMLElement))return;
+      const cs=getComputedStyle(el);
+      const r=el.getBoundingClientRect();
+      if(r.top<pageTop && r.width>400 && (cs.overflowX==="auto" || cs.overflowX==="scroll")){
+        if(!el.closest("#sofiaRibbonV41") && !el.closest("#pageTabsWrap")){
+          el.style.overflowX="visible";
+          el.style.flexWrap="wrap";
+          el.style.maxHeight="none";
+        }
+      }
     });
   }
 
-  const observer=new MutationObserver(()=>refreshArrangeState());
-
   function init(){
-    addAuthorSignature();
-    addArrangeControls();
-    restoreOrders();
-    observer.observe(document.body,{childList:true,subtree:true});
+    css();
+    author();
+    createRibbon();
+
+    // Wait until all the existing Sofia controls and teacher tools have initialized.
+    setTimeout(()=>{
+      collectCommands();
+      cleanupOldToolbarOverflow();
+    },300);
+
+    // Catch teacher-tool buttons that appear later.
+    const mo=new MutationObserver(()=>{
+      clearTimeout(mo.__t);
+      mo.__t=setTimeout(()=>{
+        collectCommands();
+        if(arrangeMode)document.querySelectorAll(".sofia-command").forEach(b=>b.draggable=true);
+      },120);
+    });
+    mo.observe(document.body,{childList:true,subtree:true});
   }
 
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
