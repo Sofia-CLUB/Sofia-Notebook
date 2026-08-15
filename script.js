@@ -3829,3 +3829,94 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     setTimeout(init,180);
   }
 })();
+
+
+
+/* V61 — "Панель" і "Перевірка функцій" завжди поверх стрічки */
+(function(){
+"use strict";
+let TOP=2147483000;
+
+function visible(el){
+  if(!el)return false;
+  const c=getComputedStyle(el);
+  return !el.hidden && c.display!=="none" && c.visibility!=="hidden";
+}
+function title(el){
+  return (el?.textContent||"").replace(/\s+/g," ").trim();
+}
+function isWanted(el){
+  const t=title(el);
+  return /Налаштування панелі|Перевірка функцій/i.test(t);
+}
+function lift(el){
+  if(!el||!visible(el)||!isWanted(el))return;
+  if(el.parentElement!==document.body) document.body.appendChild(el);
+  el.style.setProperty("position","fixed","important");
+  el.style.setProperty("z-index",String(++TOP),"important");
+  el.style.setProperty("isolation","isolate","important");
+  el.style.setProperty("pointer-events","auto","important");
+  el.style.setProperty("visibility","visible","important");
+  el.style.setProperty("opacity","1","important");
+  el.style.setProperty("max-height","calc(100vh - 32px)","important");
+  el.style.setProperty("overflow","auto","important");
+  let r=el.getBoundingClientRect();
+  if(r.top<16) el.style.setProperty("top","16px","important");
+  r=el.getBoundingClientRect();
+  if(r.right>innerWidth-16){
+    el.style.setProperty("right","16px","important");
+    el.style.setProperty("left","auto","important");
+  }
+  r=el.getBoundingClientRect();
+  if(r.bottom>innerHeight-16){
+    el.style.setProperty("bottom","16px","important");
+    if(r.height<innerHeight-32) el.style.setProperty("top","auto","important");
+  }
+}
+function closestDialog(node){
+  let p=node;
+  for(let i=0;i<7 && p && p!==document.body;i++,p=p.parentElement){
+    if(!visible(p))continue;
+    const r=p.getBoundingClientRect();
+    if(isWanted(p) && r.width>=300 && r.height>=100 &&
+       r.width<innerWidth*.95 && r.height<innerHeight*.98) return p;
+  }
+  return null;
+}
+function scan(){
+  ["panelSettings","toolbarSettingsPanel","diagnosticsPanel","diagnosticsModal"]
+    .forEach(id=>lift(document.getElementById(id)));
+
+  document.querySelectorAll("h1,h2,h3,h4,strong,b,div,section").forEach(n=>{
+    const t=title(n);
+    if(!/Налаштування панелі|Перевірка функцій/i.test(t))return;
+    const d=closestDialog(n);
+    if(d)lift(d);
+  });
+}
+function bind(){
+  document.querySelectorAll("button").forEach(b=>{
+    const t=title(b);
+    if(!/Панель|Впорядкувати|Перевірка/i.test(t) || b.dataset.v61)return;
+    b.dataset.v61="1";
+    b.addEventListener("click",()=>{
+      [0,20,80,180].forEach(ms=>setTimeout(scan,ms));
+    },true);
+  });
+}
+function init(){
+  bind(); scan();
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo._v61);
+    mo._v61=setTimeout(()=>{bind();scan()},25);
+  });
+  mo.observe(document.body,{childList:true,subtree:true,attributes:true,
+    attributeFilter:["style","class","hidden"]});
+  const badge=document.getElementById("appVersionBadge");
+  if(badge)badge.textContent="v61";
+  document.documentElement.dataset.sofiaVersion="61";
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else setTimeout(init,180);
+})();
