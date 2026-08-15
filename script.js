@@ -7,7 +7,7 @@ const fcanvas=new fabric.Canvas("fabricCanvas",{selection:true,preserveObjectSta
 // Зберігаємо службові властивості текстів у JSON сторінки
 const _fabricToObject=fabric.Object.prototype.toObject;
 fabric.Object.prototype.toObject=function(propertiesToInclude){
-  return _fabricToObject.call(this,(propertiesToInclude||[]).concat(["systemRole","isHeadingText","isEraserMask","graphObject","graphMeta","graphName"]));
+  return _fabricToObject.call(this,(propertiesToInclude||[]).concat(["systemRole","isHeadingText","isEraserMask","graphObject","graphMeta","graphName","isInstrument","isGraphFormulaLabel","sofiaNote","sofiaTable"]));
 };
 let currentTool="select", isShape=false, start=null, temp=null;
 let history=[], redoHistory=[], pages=[blankPage()], currentPage=0, suppressHistory=false;
@@ -59,7 +59,8 @@ function makeHeadingText(text,role,top,fontSize=24,fontWeight="normal"){
     left:fcanvas.getWidth()/2,
     top,
     originX:"center",
-    fontFamily:"Georgia",
+    fontFamily:"Times New Roman",
+    fontStyle:"italic",
     fontSize,
     fontWeight,
     fill:"#17315f",
@@ -86,7 +87,7 @@ function ensureHeadingObjects(){
   }
 
   if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,22,"normal");
-  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",56,24,"bold");
+  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",56,24,"normal");
 
   // При зміні селектора оновлюємо лише сам текст, але об'єкт лишається редагованим
   dateObj.set({text:headingDate()});
@@ -268,11 +269,13 @@ function normalizeEraserLayerOrder(){
   const objects=fcanvas.getObjects().slice();
   const masks=objects.filter(o=>o.isEraserMask);
   const texts=objects.filter(o=>isProtectedTextObject(o));
+  const instruments=objects.filter(o=>o.isInstrument);
 
-  // Спочатку маски мають бути над усією графікою...
+  // Маски стирають звичайну графіку.
   masks.forEach(m=>fcanvas.bringToFront(m));
-  // ...але текст завжди малюється після масок і тому лишається цілим.
+  // Текст і вимірювальні прилади завжди лишаються над маскою гумки.
   texts.forEach(t=>fcanvas.bringToFront(t));
+  instruments.forEach(i=>fcanvas.bringToFront(i));
   fcanvas.requestRenderAll();
 }
 
@@ -1086,7 +1089,7 @@ $("shapeLibraryBtn").onclick=()=>$("shapeLibraryPanel").classList.toggle("hidden
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
 
 function groupInstrument(objects,left=220,top=210){
-  const g=new fabric.Group(objects,{left,top,selectable:true,evented:true,transparentCorners:false,cornerColor:"#17315f",cornerStyle:"circle"});
+  const g=new fabric.Group(objects,{left,top,selectable:true,evented:true,transparentCorners:false,cornerColor:"#17315f",cornerStyle:"circle",erasable:false,isInstrument:true});
   fcanvas.add(g);fcanvas.setActiveObject(g);pushHistory();autoSave();setTool("select");$("geometryPanel").classList.add("hidden");return g;
 }
 function textObj(txt,left,top,size=11,extra={}){
@@ -2560,3310 +2563,723 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
 })();
 
+
 /* =========================================================
-   V41: WORD-ПОДІБНА СТРІЧКА КОМАНД + ВІЛЬНЕ ВПОРЯДКУВАННЯ
+   V56 CLEAN — ОДНА СТАБІЛЬНА СТРІЧКА БЕЗ ДУБЛІКАТІВ
    ========================================================= */
 (function(){
-  const LAYOUT_KEY="sofiaRibbonLayoutV41";
-  const ACTIVE_TAB_KEY="sofiaRibbonActiveTabV41";
-  let arrangeMode=false;
-  let dragged=null;
+  "use strict";
 
-  const tabs=[
-    {id:"home", label:"Основне", icon:"⌂"},
-    {id:"insert", label:"Вставка", icon:"＋"},
-    {id:"draw", label:"Малювання", icon:"✎"},
-    {id:"math", label:"Математика", icon:"∑"},
-    {id:"teacher", label:"Вчитель", icon:"🎓"},
-    {id:"ai", label:"AI", icon:"✨"}
+  const $v=id=>document.getElementById(id);
+  const RIBBON_ORDER_KEY="sofiaRibbonOrderV56";
+  let zTop=20000;
+  let arrangeMode=false;
+  let draggedCommand=null;
+
+  const tabDefs=[
+    ["home","⌂ Основне"],
+    ["insert","+ Вставка"],
+    ["draw","✎ Малювання"],
+    ["math","∑ Математика"],
+    ["teacher","🎓 Вчитель"],
+    ["ai","✨ AI"]
   ];
 
-  const exactCategory={
-    saveBtn:"home", undoBtn:"home", redoBtn:"home",
-    deleteSelectedBtn:"home", clearPageBtn:"home", clearAllBtn:"home",
-    fullscreenBtn:"home", installAppBtn:"home", diagnosticsBtn:"home",
-    keyboardBtn:"home", voiceBtn:"home",
-
-    mediaBtn:"insert", elementsBtn:"insert", geometryBtn:"insert",
-    shapeLibraryBtn:"insert", noteBtn:"insert",
-
-    correctionMarkerBtn:"draw", groupBtn:"draw", ungroupBtn:"draw",
-    explodeShapeBtn:"draw", editVerticesBtn:"draw",
-
-    angleBtn:"math", numberRayBtn:"math", graphBuilderBtn:"math",
-    pointBtn:"math", vertexLabelBtn:"math", calculatorBtn:"math",
-
-    timerBtn:"teacher", ukrainianBtn:"teacher",
-
-    aiBtn:"ai"
-  };
-
-  const NEVER_MOVE_IDS=new Set([
-    "arrangeButtonsBtn","resetButtonsOrderBtn",
-    "addPageBtn","deletePageBtn","prevPageBtn","nextPageBtn",
-    "pageTabRenameBtn","pageTabCloseBtn"
-  ]);
-
-  const OVERLAY_SELECTORS=[
-    "#keyboardPanel","#timerPanel","#calculatorPanel","#aiPanel","#mediaPanel",
-    "#elementsPanel","#geometryPanel","#shapeLibraryPanel","#graphBuilderPanel",
-    "#numberRayPanel","#graphEditorPanel","#diagnosticsPanel","#runtimeErrorPanel",
-    ".modal",".dialog","[role='dialog']"
-  ].join(",");
-
-  function css(){
-    if(document.getElementById("sofiaRibbonV41Style"))return;
+  /* ---------- CSS ---------- */
+  function addCss(){
+    if($v("sofiaV56Css"))return;
     const s=document.createElement("style");
-    s.id="sofiaRibbonV41Style";
+    s.id="sofiaV56Css";
     s.textContent=`
-      #sofiaRibbonV41{
-        position:relative;
-        z-index:1200;
-        width:100%;
-        background:#fff;
-        border-bottom:1px solid #dce5f2;
-        box-shadow:0 2px 8px rgba(15,23,42,.06);
+      #sofiaRibbonV56{
+        position:relative;z-index:1200;background:#fff;
+        border:1px solid #dde6f2;border-radius:14px;
+        margin:8px 10px;padding:0;box-shadow:0 2px 8px rgba(15,23,42,.05)
       }
-      .sofia-ribbon-head{
-        min-height:42px;
-        display:flex;
-        align-items:center;
-        gap:4px;
-        padding:4px 8px 0;
-        border-bottom:1px solid #e5eaf2;
+      .v56-ribbon-head{display:flex;align-items:center;gap:4px;border-bottom:1px solid #e5ebf3;padding:5px 8px 0}
+      .v56-tabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:thin}
+      .v56-tab{border:0;background:transparent;border-radius:9px 9px 0 0;padding:9px 13px;cursor:pointer;font:600 15px/1.1 inherit;white-space:nowrap}
+      .v56-tab.active{background:#edf3ff;color:#173b78;box-shadow:inset 0 -2px 0 #2b5eaa}
+      .v56-arrange{border:1px solid #1d4e91;background:#173b78;color:#fff;border-radius:9px;padding:8px 11px;font-weight:700;cursor:pointer;white-space:nowrap}
+      .v56-body{padding:9px 10px}
+      .v56-panel{display:none;flex-wrap:wrap;gap:8px;align-items:center;min-height:42px}
+      .v56-panel.active{display:flex}
+      .v56-panel>button,.v56-command{
+        min-height:38px!important;padding:7px 12px!important;margin:0!important;
+        white-space:nowrap!important;border-radius:9px!important;max-width:none!important
       }
-      .sofia-ribbon-tabs{
-        display:flex;
-        align-items:end;
-        gap:2px;
-        flex:1 1 auto;
-        min-width:0;
-        overflow-x:auto;
-        scrollbar-width:thin;
+      body.v56-arranging .v56-command{cursor:grab!important;outline:1px dashed #2b5eaa!important;outline-offset:2px!important}
+      body.v56-arranging .v56-panel.active{padding:6px;border:2px dashed rgba(43,94,170,.35);border-radius:10px}
+      .v56-control{display:inline-flex;align-items:center;gap:6px;border:1px solid #d5deeb;border-radius:9px;padding:5px 8px;background:#fff}
+      .v56-control select{border:0;background:transparent;font:inherit;min-width:145px}
+      .v56-floating{
+        position:fixed!important;z-index:20000!important;background:#fff!important;
+        box-shadow:0 14px 42px rgba(15,23,42,.28)!important;border-radius:14px!important;
+        max-width:min(94vw,1050px);max-height:88vh;overflow:auto!important
       }
-      .sofia-ribbon-tab{
-        border:0;
-        border-radius:8px 8px 0 0;
-        background:transparent;
-        padding:9px 13px 8px;
-        cursor:pointer;
-        font:600 14px/1.1 inherit;
-        white-space:nowrap;
+      .v56-figures-panel,.v56-compass-panel{
+        position:fixed;left:110px;top:165px;z-index:22000;background:#fff;
+        border:1px solid #d9e2ef;border-radius:14px;box-shadow:0 14px 42px rgba(15,23,42,.25);
+        padding:14px;width:min(390px,90vw)
       }
-      .sofia-ribbon-tab:hover{background:#f1f5fb}
-      .sofia-ribbon-tab.active{
-        color:#173b78;
-        background:#eef4ff;
-        box-shadow:inset 0 -2px 0 #2859a6;
-      }
-      .sofia-ribbon-actions{
-        display:flex;
-        gap:6px;
-        align-items:center;
-        flex:0 0 auto;
-        padding-bottom:4px;
-      }
-      #arrangeButtonsBtn{
-        border:1px solid #2859a6!important;
-        background:#173b78!important;
-        color:#fff!important;
-        border-radius:9px!important;
-        padding:8px 11px!important;
-        font-weight:700!important;
-        cursor:pointer!important;
-        white-space:nowrap;
-      }
-      #arrangeButtonsBtn.active{
-        background:#147a46!important;
-        border-color:#147a46!important;
-      }
-      #resetButtonsOrderBtn{
-        border:1px solid #c8d2e0!important;
-        background:#fff!important;
-        border-radius:9px!important;
-        padding:8px 10px!important;
-        cursor:pointer!important;
-        white-space:nowrap;
-      }
-      .sofia-ribbon-body{padding:7px 9px 9px}
-      .sofia-ribbon-panel{
-        display:none;
-        align-items:flex-start;
-        align-content:flex-start;
-        flex-wrap:wrap;
-        gap:7px;
-        width:100%;
-        min-height:44px;
-        overflow:visible!important;
-      }
-      .sofia-ribbon-panel.active{display:flex}
-      .sofia-ribbon-panel > button{
-        flex:0 0 auto!important;
-        max-width:none!important;
-        overflow:visible!important;
-        visibility:visible!important;
-        opacity:1!important;
-      }
-      .sofia-ribbon-panel .sofia-command{
-        min-height:38px!important;
-        height:auto!important;
-        padding:7px 11px!important;
-        margin:0!important;
-        white-space:nowrap!important;
-        border-radius:9px!important;
-      }
-      body.sofia-arrange-v41 .sofia-ribbon-panel.active{
-        min-height:88px;
-        padding:5px;
-        border:2px dashed rgba(40,89,166,.35);
-        border-radius:10px;
-        background:#f8fbff;
-      }
-      body.sofia-arrange-v41 .sofia-command{
-        cursor:grab!important;
-        outline:1px dashed rgba(40,89,166,.48)!important;
-        outline-offset:2px!important;
-        user-select:none!important;
-      }
-      body.sofia-arrange-v41 .sofia-command:active{cursor:grabbing!important}
-      body.sofia-arrange-v41 .sofia-ribbon-tab{
-        outline:1px dashed rgba(40,89,166,.35);
-        outline-offset:-2px;
-      }
-      .sofia-ribbon-drop-marker{
-        width:4px;height:38px;border-radius:3px;background:#2859a6;display:inline-block;
-      }
-      #sofiaArrangeHelpV41{
-        position:fixed;
-        left:50%;
-        bottom:34px;
-        transform:translateX(-50%);
-        z-index:10000;
-        max-width:min(760px,92vw);
-        padding:9px 14px;
-        border-radius:10px;
-        background:rgba(15,23,42,.94);
-        color:#fff;
-        font:600 13px/1.3 inherit;
-        box-shadow:0 5px 22px rgba(0,0,0,.22);
-        pointer-events:none;
-        text-align:center;
-      }
-      #sofiaAuthorSignature{
-        position:fixed;right:14px;bottom:8px;z-index:9998;
-        font-size:12px;font-weight:600;letter-spacing:.15px;opacity:.55;
-        pointer-events:none;user-select:none;white-space:nowrap;
-      }
-      @media(max-width:900px){
-        .sofia-ribbon-head{align-items:flex-start;flex-wrap:wrap}
-        .sofia-ribbon-tabs{order:2;width:100%}
-        .sofia-ribbon-actions{margin-left:auto}
-        .sofia-ribbon-tab{padding:8px 10px}
-      }
+      .v56-panel-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px;margin-bottom:12px;cursor:move;user-select:none}
+      .v56-panel-head button{margin-left:auto;width:32px;height:32px;border:0;border-radius:8px;background:#f4f6fa;cursor:pointer;font-size:18px}
+      .v56-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .v56-grid button{min-height:42px;border:1px solid #ccd7e6;border-radius:9px;background:#fff;cursor:pointer}
+      .v56-grid button:hover{background:#f4f8ff}
+      .v56-section-title{font-weight:800;margin:10px 0 7px}
+      .v56-compass-panel label{display:grid;gap:6px;font-weight:700}
+      .v56-compass-panel input{padding:9px;border:1px solid #cbd6e5;border-radius:8px;font:inherit}
+      .v56-compass-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+      .v56-compass-actions button{padding:8px 11px;border:1px solid #cbd6e5;border-radius:8px;background:#fff;cursor:pointer}
+      .v56-compass-actions .primary{background:#173b78;color:#fff;border-color:#173b78}
+      .v56-status{margin-top:10px;padding:9px;border-radius:8px;background:#f3f7ff;font-size:13px}
+      #sofiaAuthorSignature{position:fixed;right:14px;bottom:8px;z-index:9998;font-size:12px;font-weight:600;opacity:.55;pointer-events:none;user-select:none}
+      .v56-wheel-max{position:absolute;right:48px;top:10px;z-index:30010;border:1px solid #cbd6e5;background:#173b78;color:#fff;border-radius:8px;padding:7px 10px;cursor:pointer;font-weight:700}
+      .v56-maximized{left:10px!important;top:10px!important;width:calc(100vw - 20px)!important;height:calc(100vh - 20px)!important;max-width:none!important;max-height:none!important;z-index:30000!important}
+      @media(max-width:800px){.v56-ribbon-head{flex-wrap:wrap}.v56-tabs{width:100%;order:2}.v56-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     `;
     document.head.appendChild(s);
   }
 
-  function author(){
-    if(document.getElementById("sofiaAuthorSignature"))return;
+  /* ---------- Author ---------- */
+  function addAuthor(){
+    if($v("sofiaAuthorSignature"))return;
     const a=document.createElement("div");
     a.id="sofiaAuthorSignature";
     a.textContent="Sofia Notebook © Parasochka";
     document.body.appendChild(a);
   }
 
+  /* ---------- Top install button ---------- */
+  function moveInstallTop(){
+    const b=$v("installAppBtn");
+    if(!b)return;
+    b.textContent="⬇ Встановити додаток";
+    const target=document.querySelector("header,.app-header,.topbar,.brandbar");
+    if(target && b.parentElement!==target)target.appendChild(b);
+  }
+
+  /* ---------- Ribbon ---------- */
   function createRibbon(){
-    if(document.getElementById("sofiaRibbonV41"))return;
+    if($v("sofiaRibbonV56"))return;
 
     const root=document.createElement("section");
-    root.id="sofiaRibbonV41";
+    root.id="sofiaRibbonV56";
 
     const head=document.createElement("div");
-    head.className="sofia-ribbon-head";
+    head.className="v56-ribbon-head";
 
-    const tabBox=document.createElement("div");
-    tabBox.className="sofia-ribbon-tabs";
-
-    tabs.forEach(t=>{
+    const tabs=document.createElement("div");
+    tabs.className="v56-tabs";
+    tabDefs.forEach(([id,label])=>{
       const b=document.createElement("button");
-      b.type="button";
-      b.className="sofia-ribbon-tab";
-      b.dataset.ribbonTab=t.id;
-      b.textContent=`${t.icon} ${t.label}`;
-      b.addEventListener("click",e=>{
-        e.preventDefault();
-        if(arrangeMode && dragged){
-          moveDraggedToTab(t.id);
-          return;
-        }
-        activateTab(t.id);
-      });
-      b.addEventListener("dragover",e=>{
-        if(arrangeMode && dragged){e.preventDefault();b.classList.add("active-drop")}
-      });
-      b.addEventListener("dragleave",()=>b.classList.remove("active-drop"));
-      b.addEventListener("drop",e=>{
-        if(!arrangeMode || !dragged)return;
-        e.preventDefault();
-        b.classList.remove("active-drop");
-        moveDraggedToTab(t.id);
-      });
-      tabBox.appendChild(b);
+      b.type="button";b.className="v56-tab";b.dataset.v56Tab=id;b.textContent=label;
+      b.onclick=()=>activateTab(id);
+      tabs.appendChild(b);
     });
-
-    const actions=document.createElement("div");
-    actions.className="sofia-ribbon-actions";
 
     const arrange=document.createElement("button");
     arrange.type="button";
-    arrange.id="arrangeButtonsBtn";
-    arrange.textContent="🔀 Впорядкувати";
+    arrange.id="v56ArrangeBtn";
+    arrange.className="v56-arrange";
+    arrange.textContent="⚙ Впорядкувати";
+    arrange.onclick=()=>setArrange(!arrangeMode);
 
-    const reset=document.createElement("button");
-    reset.type="button";
-    reset.id="resetButtonsOrderBtn";
-    reset.textContent="↺ Стандартно";
-    reset.title="Повернути стандартний розподіл команд";
-    reset.style.display="none";
-
-    actions.append(arrange,reset);
-    head.append(tabBox,actions);
+    head.append(tabs,arrange);
 
     const body=document.createElement("div");
-    body.className="sofia-ribbon-body";
-    tabs.forEach(t=>{
+    body.className="v56-body";
+    tabDefs.forEach(([id])=>{
       const p=document.createElement("div");
-      p.className="sofia-ribbon-panel";
-      p.dataset.ribbonPanel=t.id;
+      p.className="v56-panel";
+      p.dataset.v56Panel=id;
       body.appendChild(p);
     });
 
     root.append(head,body);
 
-    const pageViewport=document.getElementById("pageViewport");
-    const pageControls=document.getElementById("addPageBtn")?.parentElement;
-    const existingToolArea=findToolArea();
+    const pageControls=$v("addPageBtn")?.parentElement;
+    const pageViewport=$v("pageViewport");
+    if(pageControls?.parentElement)pageControls.parentElement.insertBefore(root,pageControls);
+    else if(pageViewport?.parentElement)pageViewport.parentElement.insertBefore(root,pageViewport);
+    else document.body.prepend(root);
 
-    if(existingToolArea && existingToolArea.parentElement){
-      existingToolArea.parentElement.insertBefore(root,existingToolArea);
-    }else if(pageControls && pageControls.parentElement){
-      pageControls.parentElement.insertBefore(root,pageControls);
-    }else if(pageViewport && pageViewport.parentElement){
-      pageViewport.parentElement.insertBefore(root,pageViewport);
-    }else{
-      document.body.insertBefore(root,document.body.firstChild);
-    }
-
-    arrange.onclick=e=>{
-      e.preventDefault(); e.stopPropagation();
-      setArrange(!arrangeMode);
-    };
-    reset.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      if(!confirm("Повернути стандартний порядок і розподіл команд по вкладках?"))return;
-      localStorage.removeItem(LAYOUT_KEY);
-      rebuildDefaultLayout();
-      saveLayout();
-      setArrange(false);
-    };
-
-    const remembered=localStorage.getItem(ACTIVE_TAB_KEY)||"home";
-    activateTab(tabs.some(t=>t.id===remembered)?remembered:"home");
+    activateTab("home");
   }
 
-  function findToolArea(){
-    const ids=["correctionMarkerBtn","mediaBtn","elementsBtn","geometryBtn","shapeLibraryBtn"];
-    for(const id of ids){
-      const b=document.getElementById(id);
-      if(b && b.parentElement)return b.parentElement;
-    }
-    return null;
-  }
-
-  function isOverlayButton(btn){
-    return !!btn.closest(OVERLAY_SELECTORS);
-  }
-
-  function isPageTabButton(btn){
-    return !!btn.closest("#pageTabs,.page-tab");
-  }
-
-  function canBeCommand(btn){
-    if(!(btn instanceof HTMLButtonElement))return false;
-    if(!btn.isConnected)return false;
-    if(NEVER_MOVE_IDS.has(btn.id))return false;
-    if(btn.id==="arrangeButtonsBtn" || btn.id==="resetButtonsOrderBtn")return false;
-    if(btn.closest("#sofiaRibbonV41"))return false;
-
-    // V46: the original left vertical toolbar belongs to the canvas and must stay there.
-    // These buttons already have their own setTool(...) handlers.
-    if(btn.matches(".side-tool[data-tool]") || btn.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar"))return false;
-
-    if(isOverlayButton(btn) || isPageTabButton(btn))return false;
-
-    // Do not steal tiny calculator/keyboard/internal editing buttons.
-    if(btn.hasAttribute("data-calc") || btn.hasAttribute("data-mathinsert"))return false;
-    if(btn.id && /(Close|Start|Pause|Reset|Plus|Insert|Duplicate|Reload|Finish)/i.test(btn.id))return false;
-
-    // Known app commands are always eligible.
-    if(btn.id && exactCategory[btn.id])return true;
-
-    // Dynamically include visible teacher/top-toolbar command buttons.
-    const rect=btn.getBoundingClientRect();
-    if(rect.width<20 || rect.height<20)return false;
-    const txt=(btn.textContent||"").trim();
-    if(!txt || txt==="×" || txt==="✕")return false;
-
-    // Only controls located above the notebook page are treated as ribbon commands.
-    const page=document.getElementById("pageViewport");
-    const pageTop=page? page.getBoundingClientRect().top : window.innerHeight;
-    return rect.top < pageTop + 5;
-  }
-
-  function key(btn){
-    if(btn.id)return "id:"+btn.id;
-    for(const a of ["data-tool","data-action","data-command"]){
-      if(btn.hasAttribute(a))return a+":"+btn.getAttribute(a);
-    }
-    return "text:"+(btn.textContent||"").trim().replace(/\s+/g," ").slice(0,90);
-  }
-
-  function inferCategory(btn){
-    if(btn.id && exactCategory[btn.id])return exactCategory[btn.id];
-    const t=((btn.id||"")+" "+(btn.textContent||"")+" "+(btn.title||"")).toLowerCase();
-
-    if(/ai|штуч|чат|генер|зображенн/.test(t))return "ai";
-    if(/граф|кут|числов|матем|точк|вершин|калькулятор|формул/.test(t))return "math";
-    if(/фото|відео|файл|елемент|прилад|фігур|встав|посилан|таблиц/.test(t))return "insert";
-    if(/ручк|маркер|ліні|крив|стріл|прямокут|коло|трикут|малю|колір|товщ/.test(t))return "draw";
-    if(/таймер|переклад|перевір|розбір|картк|тест|колес|вчител/.test(t))return "teacher";
-    return "home";
-  }
-
-  function panel(id){
-    return document.querySelector(`.sofia-ribbon-panel[data-ribbon-panel="${id}"]`);
-  }
-
-  function rememberOrigin(btn){
-    if(btn.dataset.sofiaOriginSaved)return;
-    const parent=btn.parentElement;
-    if(!parent)return;
-    btn.dataset.sofiaOriginSaved="1";
-    btn.__sofiaOriginParent=parent;
-    btn.__sofiaOriginNext=btn.nextSibling;
-  }
-
-  function decorate(btn){
-    rememberOrigin(btn);
-    btn.classList.add("sofia-command");
-    btn.dataset.sofiaCommandKey=key(btn);
-    btn.draggable=arrangeMode;
-  }
-
-  function moveIntoRibbon(btn,cat){
-    const p=panel(cat)||panel("home");
-    if(!p)return;
-    decorate(btn);
-    p.appendChild(btn);
-  }
-
-  function collectCommands(){
-    const saved=loadLayout();
-    const assignments=saved.assignments||{};
-
-    const candidates=Array.from(document.querySelectorAll("button")).filter(canBeCommand);
-    candidates.forEach(btn=>{
-      const k=key(btn);
-      moveIntoRibbon(btn,assignments[k]||inferCategory(btn));
-    });
-
-    applySavedOrder(saved);
-    ensureEssentialCommands();
-  }
-
-  function ensureEssentialCommands(){
-    // Undo/redo are deliberately forced into the visible "Основне" set
-    // when no custom assignment exists, so they cannot remain hidden off-screen.
-    ["undoBtn","redoBtn","saveBtn","deleteSelectedBtn"].forEach(id=>{
-      const b=document.getElementById(id);
-      if(!b)return;
-      if(!b.closest("#sofiaRibbonV41"))moveIntoRibbon(b,"home");
-    });
-  }
-
-  function loadLayout(){
-    try{return JSON.parse(localStorage.getItem(LAYOUT_KEY)||"{}")||{}}
-    catch(e){return {}}
-  }
-
-  function applySavedOrder(saved){
-    const orders=saved.orders||{};
-    tabs.forEach(t=>{
-      const p=panel(t.id);
-      if(!p)return;
-      const order=orders[t.id];
-      if(!Array.isArray(order))return;
-      const map=new Map(Array.from(p.querySelectorAll(":scope > button.sofia-command")).map(b=>[key(b),b]));
-      order.forEach(k=>{const b=map.get(k);if(b)p.appendChild(b)});
-    });
-  }
-
-  function saveLayout(){
-    const out={assignments:{},orders:{}};
-    tabs.forEach(t=>{
-      const p=panel(t.id);
-      const buttons=p?Array.from(p.querySelectorAll(":scope > button.sofia-command")):[];
-      out.orders[t.id]=buttons.map(key);
-      buttons.forEach(b=>out.assignments[key(b)]=t.id);
-    });
-    localStorage.setItem(LAYOUT_KEY,JSON.stringify(out));
-  }
+  function panel(id){return document.querySelector(`.v56-panel[data-v56-panel="${id}"]`)}
 
   function activateTab(id){
-    document.querySelectorAll(".sofia-ribbon-tab").forEach(b=>b.classList.toggle("active",b.dataset.ribbonTab===id));
-    document.querySelectorAll(".sofia-ribbon-panel").forEach(p=>p.classList.toggle("active",p.dataset.ribbonPanel===id));
-    localStorage.setItem(ACTIVE_TAB_KEY,id);
+    document.querySelectorAll(".v56-tab").forEach(b=>b.classList.toggle("active",b.dataset.v56Tab===id));
+    document.querySelectorAll(".v56-panel").forEach(p=>p.classList.toggle("active",p.dataset.v56Panel===id));
   }
 
-  function help(on){
-    let h=document.getElementById("sofiaArrangeHelpV41");
-    if(on && !h){
-      h=document.createElement("div");
-      h.id="sofiaArrangeHelpV41";
-      h.textContent="Перетягуйте команди в будь-яке місце. Щоб перенести команду в іншу вкладку — перетягніть її прямо на назву вкладки.";
-      document.body.appendChild(h);
-    }else if(!on && h)h.remove();
+  function moveButton(id,tab,label){
+    const b=$v(id);
+    if(!b)return null;
+    if(label)b.textContent=label;
+    b.hidden=false;
+    b.classList.remove("hidden");
+    b.style.removeProperty("display");
+    b.style.removeProperty("visibility");
+    b.style.removeProperty("opacity");
+    b.classList.add("v56-command");
+    panel(tab)?.appendChild(b);
+    return b;
   }
 
-  function setArrange(on){
-    arrangeMode=on;
-    document.body.classList.toggle("sofia-arrange-v41",on);
-    document.querySelectorAll(".sofia-command").forEach(b=>b.draggable=on);
-    const b=document.getElementById("arrangeButtonsBtn");
-    if(b){
-      b.textContent=on?"✓ Готово":"🔀 Впорядкувати";
-      b.classList.toggle("active",on);
+  function makeButton(id,label,tab,handler){
+    let b=$v(id);
+    if(!b){
+      b=document.createElement("button");b.type="button";b.id=id;
     }
-    const r=document.getElementById("resetButtonsOrderBtn");
-    if(r)r.style.display=on?"":"none";
-    help(on);
-    if(!on)saveLayout();
+    b.textContent=label;b.className="v56-command";
+    b.onclick=handler;
+    panel(tab)?.appendChild(b);
+    return b;
   }
 
-  function moveDraggedToTab(tabId){
-    if(!dragged)return;
-    const p=panel(tabId);
+  function buildRibbonCommands(){
+    // ОСНОВНЕ — only everyday commands.
+    moveButton("saveBtn","home","💾 Зберегти");
+    moveButton("undoBtn","home","↶ Назад");
+    moveButton("redoBtn","home","↷ Вперед");
+    moveButton("deleteSelectedBtn","home","✕ Видалити вибране");
+    moveButton("clearPageBtn","home","Очистити сторінку");
+    moveButton("keyboardBtn","home","⌨ Клавіатура");
+    moveButton("voiceBtn","home","🎙 Голос");
+
+    // Font selector for date/work title.
+    if(!$v("v56HeadingFontControl")){
+      const wrap=document.createElement("span");
+      wrap.id="v56HeadingFontControl";wrap.className="v56-control";
+      wrap.innerHTML=`<b>Шрифт заголовка</b>
+        <select id="v56HeadingFont">
+          <option>Times New Roman</option>
+          <option>Arial</option>
+          <option>Georgia</option>
+          <option>Calibri</option>
+          <option>Segoe Print</option>
+          <option>Comic Sans MS</option>
+        </select>
+        <label style="display:flex;gap:4px;align-items:center"><input id="v56HeadingItalic" type="checkbox" checked> Курсив</label>`;
+      panel("home")?.appendChild(wrap);
+      $v("v56HeadingFont").onchange=applyHeadingFont;
+      $v("v56HeadingItalic").onchange=applyHeadingFont;
+    }
+
+    // ВСТАВКА
+    moveButton("mediaBtn","insert","📎 Фото / відео / файл");
+    moveButton("elementsBtn","insert","✦ Елементи");
+    moveButton("geometryBtn","insert","📐 Прилади");
+    moveButton("noteBtn","insert","▣ Замітка");
+
+    makeButton("v56TableBtn","▦ Таблиця","insert",createTable);
+
+    // МАЛЮВАННЯ — left toolbar already has pen/eraser/shapes; keep only advanced tools.
+    moveButton("correctionMarkerBtn","draw","✓ Маркер перевірки");
+    moveButton("groupBtn","draw","🔗 Групувати");
+    moveButton("ungroupBtn","draw","🔓 Розгрупувати");
+    moveButton("explodeShapeBtn","draw","✂ Розкласти фігуру");
+    moveButton("editVerticesBtn","draw","◆ Змінювати кути");
+    makeButton("v56FiguresBtn","⬡ Фігури","draw",openFigures);
+
+    // МАТЕМАТИКА
+    moveButton("calculatorBtn","math","🧮 Калькулятор");
+    moveButton("angleBtn","math","∠ Побудувати кут");
+    moveButton("numberRayBtn","math","↦ Числовий промінь");
+    moveButton("graphBuilderBtn","math","📈 Побудова графіка");
+    moveButton("pointBtn","math","• Точка");
+    moveButton("vertexLabelBtn","math","A Вершина");
+
+    // ВЧИТЕЛЬ — clean shortcuts; no duplicated inner teacher-tool buttons.
+    makeTeacherShortcut("v56Wheel","🎡 Колесо","wheel");
+    makeTeacherShortcut("v56Cards","🃏 Картки","cards");
+    makeTeacherShortcut("v56Test","✅ Тест","test");
+    makeTeacherShortcut("v56Lists","☷ Списки","lists");
+    makeTeacherShortcut("v56Translate","🌐 Перекладач","translate");
+    moveButton("timerBtn","teacher","⏱ Таймер");
+    moveButton("ukrainianBtn","teacher","UA Розбір");
+
+    // AI — only two commands.
+    moveButton("aiBtn","ai","✨ AI чат");
+    makeButton("v56AiImage","🖼 Зображення","ai",()=>openTeacherTool("image"));
+
+    restoreOrder();
+  }
+
+  /* ---------- Remove obsolete ribbon content / controls ---------- */
+  function hideOldTopDuplicates(){
+    // Old shape button is replaced by one clean "Фігури".
+    const oldShape=$v("shapeLibraryBtn");
+    if(oldShape){oldShape.style.display="none";oldShape.hidden=true}
+
+    // Old compass/circle controls should never appear in the ribbon.
+    ["sofiaCompassPick","sofiaCompassBuild","sofiaCompassMax","sofiaCompassClose"].forEach(id=>{
+      const b=$v(id);if(b && b.closest("#sofiaRibbonV56"))b.remove();
+    });
+
+    // Hide old technical panel controls if present.
+    const badLabels=new Set(["Верхня панель","Ліва панель","Показати всі","Готово","Панель"]);
+    document.querySelectorAll("button").forEach(b=>{
+      if(b.closest("#sofiaRibbonV56"))return;
+      const t=(b.textContent||"").trim();
+      if(badLabels.has(t))b.style.display="none";
+    });
+  }
+
+  /* ---------- Panel helpers ---------- */
+  function bringFront(p){
     if(!p)return;
-    p.appendChild(dragged);
-    activateTab(tabId);
-    saveLayout();
+    p.classList.add("v56-floating");
+    p.style.setProperty("z-index",String(++zTop),"important");
   }
 
-  function rebuildDefaultLayout(){
-    document.querySelectorAll(".sofia-command").forEach(btn=>{
-      const cat=inferCategory(btn);
-      const p=panel(cat)||panel("home");
-      p?.appendChild(btn);
-    });
+  function showPanel(id){
+    const p=$v(id);if(!p)return false;
+    p.classList.remove("hidden");p.hidden=false;p.style.removeProperty("display");
+    bringFront(p);return true;
   }
 
-  document.addEventListener("dragstart",e=>{
-    const b=e.target.closest?.("button.sofia-command");
-    if(!arrangeMode || !b)return;
-    dragged=b;
-    b.style.opacity=".45";
-    if(e.dataTransfer){
-      e.dataTransfer.effectAllowed="move";
-      e.dataTransfer.setData("text/plain",key(b));
-    }
-  },true);
-
-  document.addEventListener("dragend",e=>{
-    const b=e.target.closest?.("button.sofia-command");
-    if(b)b.style.opacity="";
-    dragged=null;
-    saveLayout();
-  },true);
-
-  document.addEventListener("dragover",e=>{
-    if(!arrangeMode || !dragged)return;
-    const target=e.target.closest?.("button.sofia-command");
-    const p=e.target.closest?.(".sofia-ribbon-panel");
-    if(target && target!==dragged){
-      e.preventDefault();
-      const r=target.getBoundingClientRect();
-      const before=e.clientX < r.left+r.width/2;
-      if(before)target.parentElement.insertBefore(dragged,target);
-      else target.insertAdjacentElement("afterend",dragged);
-      return;
-    }
-    if(p){
-      e.preventDefault();
-      if(dragged.parentElement!==p)p.appendChild(dragged);
-    }
-  },true);
-
-  document.addEventListener("drop",e=>{
-    if(!arrangeMode || !dragged)return;
-    const p=e.target.closest?.(".sofia-ribbon-panel");
-    if(p){
-      e.preventDefault();
-      if(dragged.parentElement!==p)p.appendChild(dragged);
-      saveLayout();
-    }
-  },true);
-
-  // During arranging, prevent a normal command from executing when clicked.
-  document.addEventListener("click",e=>{
-    if(!arrangeMode)return;
-    const b=e.target.closest?.("button.sofia-command");
-    if(!b)return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-  },true);
-
-  function cleanupOldToolbarOverflow(){
-    // Existing toolbar rows no longer need to hide commands horizontally.
-    const page=document.getElementById("pageViewport");
-    if(!page)return;
-    const pageTop=page.getBoundingClientRect().top;
-    document.querySelectorAll("body *").forEach(el=>{
-      if(!(el instanceof HTMLElement))return;
-      const cs=getComputedStyle(el);
-      const r=el.getBoundingClientRect();
-      if(r.top<pageTop && r.width>400 && (cs.overflowX==="auto" || cs.overflowX==="scroll")){
-        if(!el.closest("#sofiaRibbonV41") && !el.closest("#pageTabsWrap")){
-          el.style.overflowX="visible";
-          el.style.flexWrap="wrap";
-          el.style.maxHeight="none";
-        }
-      }
-    });
+  function togglePanel(id){
+    const p=$v(id);if(!p)return false;
+    const hidden=p.classList.contains("hidden")||p.hidden||getComputedStyle(p).display==="none";
+    if(hidden)showPanel(id);else p.classList.add("hidden");
+    return true;
   }
 
-  function init(){
-    css();
-    author();
-    createRibbon();
-
-    // Wait until all the existing Sofia controls and teacher tools have initialized.
-    setTimeout(()=>{
-      collectCommands();
-      cleanupOldToolbarOverflow();
-    },300);
-
-    // Catch teacher-tool buttons that appear later.
-    const mo=new MutationObserver(()=>{
-      clearTimeout(mo.__t);
-      mo.__t=setTimeout(()=>{
-        collectCommands();
-        if(arrangeMode)document.querySelectorAll(".sofia-command").forEach(b=>b.draggable=true);
-      },120);
-    });
-    mo.observe(document.body,{childList:true,subtree:true});
-  }
-
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
-  else init();
-})();
-
-
-
-/* =========================================================
-   V42: ПІДПИС ГРАФІКА ВЗДОВЖ ЛІНІЇ
-   ========================================================= */
-(function(){
-  function graphObjects(){
-    if(typeof fcanvas==="undefined")return [];
-    return fcanvas.getObjects().filter(o=>o && o.graphObject);
-  }
-
-  function getGraphColor(obj){
-    if(!obj)return "#2563eb";
-    if(obj.stroke)return obj.stroke;
-    if(obj._objects){
-      const line=obj._objects.find(x=>x && x.stroke);
-      if(line && line.stroke)return line.stroke;
-    }
-    return "#2563eb";
-  }
-
-  function getGraphAngle(obj){
-    // Prefer an existing explicit angle if available.
-    if(obj && Number.isFinite(obj.angle) && Math.abs(obj.angle)>0.01)return obj.angle;
-
-    // Try to infer the angle from graph metadata (linear graph y = ax + b).
-    const meta=obj?.graphMeta||{};
-    const a=Number(meta.a ?? meta.k ?? meta.slope);
-    if(Number.isFinite(a)){
-      return -Math.atan(a) * 180 / Math.PI;
-    }
-
-    // Fallback: estimate from bounding box.
-    const w=(obj?.width||1)*(obj?.scaleX||1);
-    const h=(obj?.height||0)*(obj?.scaleY||1);
-    if(w>0 && h>0){
-      return -Math.atan2(h,w)*180/Math.PI;
-    }
-    return 0;
-  }
-
-  function findGraphLabelFor(obj){
-    const id=obj?.graphMeta?.id || obj?.graphName || obj?.name || null;
-    return fcanvas.getObjects().find(x =>
-      x && x.sofiaGraphInlineLabel &&
-      ((id && x.sofiaGraphFor===id) || x.sofiaGraphTarget===obj)
-    );
-  }
-
-  function removeGraphInlineLabels(){
-    if(typeof fcanvas==="undefined")return;
-    fcanvas.getObjects().filter(o=>o?.sofiaGraphInlineLabel).forEach(o=>fcanvas.remove(o));
-  }
-
-  function labelTextFor(obj,idx){
-    const name=(obj?.graphName || obj?.graphMeta?.name || `Графік ${idx+1}`).trim();
-    const formula=(obj?.graphMeta?.formula || obj?.formula || "").trim();
-    return formula ? `${name}: ${formula}` : name;
-  }
-
-  function placeLabel(obj,idx){
-    if(typeof fabric==="undefined" || typeof fcanvas==="undefined" || !obj)return;
-
-    const existing=findGraphLabelFor(obj);
-    const color=getGraphColor(obj);
-    const text=labelTextFor(obj,idx);
-
-    const center=obj.getCenterPoint ? obj.getCenterPoint() : {
-      x:(obj.left||0)+((obj.width||0)*(obj.scaleX||1))/2,
-      y:(obj.top||0)+((obj.height||0)*(obj.scaleY||1))/2
+  function bindCorePanels(){
+    const map={
+      mediaBtn:"mediaPanel",
+      elementsBtn:"elementsPanel",
+      geometryBtn:"geometryPanel",
+      angleBtn:"anglePanel",
+      numberRayBtn:"numberRayPanel",
+      graphBuilderBtn:"graphBuilderPanel",
+      calculatorBtn:"calculatorPanel",
+      timerBtn:"timerPanel",
+      ukrainianBtn:"ukrainianPanel",
+      keyboardBtn:"keyboardPanel",
+      aiBtn:"aiPanel"
     };
-
-    const angle=getGraphAngle(obj);
-
-    // Shift slightly above the graph so it does not cover the line.
-    const rad=angle*Math.PI/180;
-    const normalX=Math.sin(rad);
-    const normalY=-Math.cos(rad);
-    const offset=18;
-    const left=center.x + normalX*offset;
-    const top=center.y + normalY*offset;
-
-    const id=obj?.graphMeta?.id || obj?.graphName || obj?.name || `graph-${idx}`;
-
-    let label=existing;
-    if(!label){
-      label=new fabric.Text(text,{
-        left,top,
-        originX:"center",
-        originY:"center",
-        angle,
-        fontSize:18,
-        fontWeight:"600",
-        fill:color,
-        backgroundColor:"rgba(255,255,255,0.72)",
-        padding:3,
-        selectable:false,
-        evented:false,
-        objectCaching:false,
-        excludeFromExport:false
-      });
-      label.sofiaGraphInlineLabel=true;
-      label.sofiaGraphFor=id;
-      label.sofiaGraphTarget=obj;
-      fcanvas.add(label);
-    }else{
-      label.set({
-        text,
-        left,top,
-        angle,
-        fill:color,
-        backgroundColor:"rgba(255,255,255,0.72)"
-      });
-    }
-    label.bringToFront();
-  }
-
-  function refreshGraphInlineLabels(){
-    if(typeof fcanvas==="undefined")return;
-    const graphs=graphObjects();
-    if(!graphs.length)return;
-    graphs.forEach((g,i)=>placeLabel(g,i));
-    fcanvas.requestRenderAll();
-  }
-
-  function hideOldTopGraphLabels(){
-    if(typeof fcanvas==="undefined")return;
-    fcanvas.getObjects().forEach(o=>{
-      if(!o || o.sofiaGraphInlineLabel)return;
-      const txt=(o.text||"").trim();
-      if(/^Графік\s*\d+/i.test(txt) && !o.graphObject){
-        // Hide the old detached label that appears at the top.
-        o.visible=false;
-      }
+    Object.entries(map).forEach(([bid,pid])=>{
+      const b=$v(bid),p=$v(pid);if(!b||!p)return;
+      b.onclick=e=>{e.preventDefault();e.stopPropagation();togglePanel(pid)};
     });
+
+    // Note: create immediately on board.
+    const note=$v("noteBtn");
+    if(note)note.onclick=e=>{e.preventDefault();e.stopPropagation();createNote()};
   }
 
-  function refreshAll(){
+  /* ---------- Note ---------- */
+  function createNote(){
+    if(typeof fcanvas==="undefined"||!window.fabric)return;
+    const t=new fabric.Textbox("Замітка",{
+      left:360,top:260,width:260,fontSize:22,fill:"#273142",
+      backgroundColor:"#fff19a",padding:14,fontFamily:"Arial",editable:true
+    });
+    t.sofiaNote=true;
+    fcanvas.add(t);fcanvas.setActiveObject(t);t.enterEditing?.();
+    fcanvas.requestRenderAll();
+    try{pushHistory();autoSave();setTool("select")}catch(e){}
+  }
+
+  /* ---------- Table ---------- */
+  function createTable(){
+    if(typeof fcanvas==="undefined"||!window.fabric)return;
+    let rows=Number(prompt("Кількість рядків:","3"));
+    if(!Number.isFinite(rows))return;
+    let cols=Number(prompt("Кількість стовпців:","3"));
+    if(!Number.isFinite(cols))return;
+    rows=Math.max(1,Math.min(20,Math.floor(rows)));
+    cols=Math.max(1,Math.min(12,Math.floor(cols)));
+    const cw=92,ch=44,w=cols*cw,h=rows*ch;
+    const c=$v("colorPicker")?.value||"#17315f";
+    const sw=Math.max(1,Number($v("lineWidth")?.value||2));
+    const parts=[];
+    for(let r=0;r<=rows;r++)parts.push(new fabric.Line([0,r*ch,w,r*ch],{stroke:c,strokeWidth:sw,selectable:false,evented:false}));
+    for(let k=0;k<=cols;k++)parts.push(new fabric.Line([k*cw,0,k*cw,h],{stroke:c,strokeWidth:sw,selectable:false,evented:false}));
+    const g=new fabric.Group(parts,{left:300,top:220,selectable:true,evented:true,sofiaTable:true});
+    fcanvas.add(g);fcanvas.setActiveObject(g);fcanvas.requestRenderAll();
+    try{pushHistory();autoSave();setTool("select")}catch(e){}
+  }
+
+  /* ---------- Figures ---------- */
+  function ensureFiguresPanel(){
+    if($v("v56FiguresPanel"))return;
+    const p=document.createElement("div");
+    p.id="v56FiguresPanel";p.className="v56-figures-panel";p.style.display="none";
+    p.innerHTML=`
+      <div class="v56-panel-head"><span>⬡ Фігури</span><button id="v56FiguresClose">×</button></div>
+      <div class="v56-section-title">2D фігури</div>
+      <div class="v56-grid">
+        <button data-v56-shape="circle">Коло</button>
+        <button data-v56-shape="ellipse">Овал</button>
+        <button data-v56-shape="square">Квадрат</button>
+        <button data-v56-shape="rect">Прямокутник</button>
+        <button data-v56-shape="triangle">Трикутник</button>
+        <button data-v56-shape="star">Зірка</button>
+        <button data-v56-shape="parallelogram">Паралелограм</button>
+        <button data-v56-shape="rhombus">Ромб</button>
+        <button data-v56-shape="trapezoid">Трапеція</button>
+      </div>
+      <div class="v56-section-title">3D фігури</div>
+      <div class="v56-grid">
+        <button data-v56-shape="cube">Куб</button>
+        <button data-v56-shape="cuboid">Паралелепіпед</button>
+        <button data-v56-shape="pyramid">Піраміда</button>
+        <button data-v56-shape="cylinder">Циліндр</button>
+        <button data-v56-shape="cone">Конус</button>
+        <button data-v56-shape="sphere">Сфера</button>
+        <button data-v56-shape="prism">Призма</button>
+      </div>`;
+    document.body.appendChild(p);
+    $v("v56FiguresClose").onclick=()=>p.style.display="none";
+    p.querySelectorAll("[data-v56-shape]").forEach(b=>b.onclick=()=>addFigure(b.dataset.v56Shape));
+    makeDraggable(p,p.querySelector(".v56-panel-head"));
+  }
+
+  function openFigures(){
+    ensureFiguresPanel();
+    const p=$v("v56FiguresPanel");p.style.display="block";bringFront(p);
+  }
+
+  function addFigure(type){
+    const close=()=>{$v("v56FiguresPanel").style.display="none"};
     try{
-      hideOldTopGraphLabels();
-      refreshGraphInlineLabels();
-    }catch(e){
-      console.warn("Sofia graph inline label:",e);
-    }
+      if(type==="circle" && typeof addBasicElement==="function"){addBasicElement("circle");close();return}
+      if(type==="triangle" && typeof addBasicElement==="function"){addBasicElement("triangle");close();return}
+      if(type==="star" && typeof addBasicElement==="function"){addBasicElement("star");close();return}
+      if(["square","parallelogram","rhombus","trapezoid"].includes(type) && typeof add2D==="function"){add2D(type);close();return}
+      if(type==="cube" && typeof addCube==="function"){addCube();close();return}
+      if(type==="cuboid" && typeof addCuboid==="function"){addCuboid();close();return}
+      if(type==="pyramid" && typeof addPyramid==="function"){addPyramid();close();return}
+      if(type==="cylinder" && typeof addCylinder==="function"){addCylinder();close();return}
+      if(type==="cone" && typeof addCone==="function"){addCone();close();return}
+      if(type==="sphere" && typeof addSphere==="function"){addSphere();close();return}
+      if(type==="prism" && typeof addPrism==="function"){addPrism();close();return}
+
+      // Fallbacks for rectangle / ellipse.
+      const c=$v("colorPicker")?.value||"#17315f",sw=Math.max(1,Number($v("lineWidth")?.value||2));
+      let obj=null;
+      if(type==="rect")obj=new fabric.Rect({left:340,top:240,width:210,height:120,fill:"transparent",stroke:c,strokeWidth:sw});
+      if(type==="ellipse")obj=new fabric.Ellipse({left:340,top:240,rx:105,ry:65,fill:"transparent",stroke:c,strokeWidth:sw});
+      if(obj){fcanvas.add(obj);fcanvas.setActiveObject(obj);pushHistory();autoSave();setTool("select")}
+      close();
+    }catch(err){alert("Не вдалося додати фігуру: "+err.message)}
   }
 
-  function hook(){
-    if(typeof fcanvas==="undefined")return;
+  /* ---------- Real compass ---------- */
+  const compassState={active:false,center:null,preview:[],radiusCm:3};
 
-    ["object:moving","object:scaling","object:rotating","object:modified"].forEach(evt=>{
-      fcanvas.on(evt,e=>{
-        if(e?.target?.graphObject)refreshAll();
-      });
+  function ensureCompassPanel(){
+    if($v("v56CompassPanel"))return;
+    const p=document.createElement("div");
+    p.id="v56CompassPanel";p.className="v56-compass-panel";p.style.display="none";
+    p.innerHTML=`
+      <div class="v56-panel-head"><span>📐 Циркуль</span><button id="v56CompassClose">×</button></div>
+      <label>Радіус кола (см)
+        <input id="v56CompassRadius" type="number" min="0.1" step="0.01" value="3">
+      </label>
+      <div class="v56-compass-actions">
+        <button data-v56-r="1">1 см</button><button data-v56-r="2">2 см</button>
+        <button data-v56-r="3">3 см</button><button data-v56-r="5">5 см</button>
+      </div>
+      <div class="v56-compass-actions">
+        <button id="v56CompassPick" class="primary">1. Вибрати центр</button>
+        <button id="v56CompassDraw">2. Побудувати коло</button>
+      </div>
+      <div id="v56CompassStatus" class="v56-status">Можна вводити десятковий радіус: 2,5; 3,75; 5,25 см.</div>`;
+    document.body.appendChild(p);
+    makeDraggable(p,p.querySelector(".v56-panel-head"));
+
+    const input=$v("v56CompassRadius");
+    input.oninput=()=>{
+      const v=parseFloat(String(input.value).replace(",","."));
+      if(Number.isFinite(v)&&v>0){compassState.radiusCm=v;if(compassState.center)drawCompassPreview()}
+    };
+    p.querySelectorAll("[data-v56-r]").forEach(b=>b.onclick=()=>{
+      compassState.radiusCm=Number(b.dataset.v56R);input.value=String(compassState.radiusCm);
+      if(compassState.center)drawCompassPreview();
     });
-
-    fcanvas.on("object:added",e=>{
-      if(e?.target?.graphObject){
-        setTimeout(refreshAll,30);
-      }
-    });
-
-    fcanvas.on("object:removed",e=>{
-      if(e?.target?.graphObject){
-        setTimeout(refreshAll,30);
-      }
-    });
-
-    // Refresh after page load and after graph editor changes.
-    const oldLoadPage = typeof loadPage==="function" ? loadPage : null;
-    if(oldLoadPage && !window.__sofiaLoadPageV42){
-      window.__sofiaLoadPageV42=true;
-      const wrapped=function(i){
-        const r=oldLoadPage(i);
-        setTimeout(refreshAll,180);
-        return r;
-      };
-      try{window.loadPage=wrapped}catch(e){}
-    }
-
-    document.addEventListener("input",e=>{
-      const id=e.target?.id||"";
-      if(/Graph(Name|Shift|Param|Formula|Expression)/i.test(id)){
-        setTimeout(refreshAll,80);
-      }
-    });
-
-    document.addEventListener("change",e=>{
-      const id=e.target?.id||"";
-      if(/Graph(Name|Shift|Param|Formula|Expression)/i.test(id)){
-        setTimeout(refreshAll,80);
-      }
-    });
-
-    setTimeout(refreshAll,500);
+    $v("v56CompassPick").onclick=()=>{
+      compassState.active=true;compassState.center=null;clearCompassPreview();
+      $v("v56CompassStatus").textContent="Клікніть на аркуші у точці центра кола.";
+    };
+    $v("v56CompassDraw").onclick=buildCompassCircle;
+    $v("v56CompassClose").onclick=closeCompass;
   }
 
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(hook,300));
-  }else{
-    setTimeout(hook,300);
-  }
-})();
-
-
-
-/* =========================================================
-   V43: КОЛІР ГРАФІКА = ОБРАНИЙ КОЛІР НА ПАНЕЛІ
-   ========================================================= */
-(function(){
-  function selectedGraphColor(){
-    const candidates=[
-      document.getElementById("colorPicker"),
-      document.getElementById("lineColor"),
-      document.getElementById("strokeColor"),
-      document.querySelector('input[type="color"][id*="color" i]')
-    ].filter(Boolean);
-    return candidates[0]?.value || "#1e3a68";
+  function openCompass(){
+    ensureCompassPanel();
+    const p=$v("v56CompassPanel");p.style.display="block";bringFront(p);
   }
 
-  function recolorGraphObject(obj,color){
-    if(!obj)return;
-
-    if(obj.set){
-      if(obj.stroke && obj.stroke!=="transparent")obj.set("stroke",color);
-      if(obj.fill && obj.fill!=="transparent" && obj.type!=="text") {
-        // Do not force-fill graph shapes; only replace fills that are already used as strokes/markers.
-        if(obj.type==="circle" && (obj.radius||0)<=8)obj.set("fill",color);
-      }
-    }
-
-    if(Array.isArray(obj._objects)){
-      obj._objects.forEach(child=>recolorGraphObject(child,color));
-    }
-
-    obj.graphColor=color;
-    if(obj.graphMeta && typeof obj.graphMeta==="object"){
-      obj.graphMeta.color=color;
-      obj.graphMeta.stroke=color;
-    }
-  }
-
-  function recolorNewestGraphs(beforeSet){
-    if(typeof fcanvas==="undefined")return;
-    const color=selectedGraphColor();
-    fcanvas.getObjects().forEach(obj=>{
-      if(obj?.graphObject && !beforeSet.has(obj)){
-        recolorGraphObject(obj,color);
-      }
-    });
-
-    // Keep the inline graph labels synchronized with graph color.
-    fcanvas.getObjects().forEach(label=>{
-      if(!label?.sofiaGraphInlineLabel)return;
-      const target=label.sofiaGraphTarget;
-      if(target && !beforeSet.has(target)){
-        label.set("fill",color);
-      }
-    });
-
-    fcanvas.requestRenderAll();
-    if(typeof autoSave==="function")setTimeout(autoSave,20);
-  }
-
-  function wrapGraphBuilder(){
-    // Capture click that actually creates/inserts a graph, independent of the current
-    // graph-builder implementation or button id.
-    document.addEventListener("click",e=>{
-      const btn=e.target.closest?.("button");
-      if(!btn || typeof fcanvas==="undefined")return;
-
-      const id=(btn.id||"").toLowerCase();
-      const txt=(btn.textContent||"").trim().toLowerCase();
-
-      const isGraphCreate =
-        /insertgraph|addgraph|buildgraph|creategraph/.test(id) ||
-        /(побудувати|додати|вставити|створити).*(графік)|графік.*(побудувати|додати|вставити|створити)/.test(txt);
-
-      if(!isGraphCreate)return;
-
-      const before=new Set(fcanvas.getObjects());
-      // Existing Sofia handler runs after/beside this listener. Recolor after it finishes.
-      setTimeout(()=>recolorNewestGraphs(before),60);
-      setTimeout(()=>recolorNewestGraphs(before),180);
-    },true);
-  }
-
-  function syncExistingSelectedGraphOnColorChange(){
-    document.addEventListener("input",e=>{
-      const input=e.target;
-      if(!(input instanceof HTMLInputElement) || input.type!=="color")return;
-      if(typeof fcanvas==="undefined")return;
-
-      const active=fcanvas.getActiveObject?.();
-      if(active?.graphObject){
-        const c=input.value;
-        recolorGraphObject(active,c);
-        const label=fcanvas.getObjects().find(x=>x?.sofiaGraphInlineLabel && x.sofiaGraphTarget===active);
-        if(label)label.set("fill",c);
-        fcanvas.requestRenderAll();
-      }
-    });
-  }
-
-  function init(){
-    wrapGraphBuilder();
-    syncExistingSelectedGraphOnColorChange();
-  }
-
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
-  else init();
-})();
-
-
-
-/* =========================================================
-   V44: РОБОЧИЙ ЦИРКУЛЬ + ПЛАВАЮЧІ ВІКНА ІНСТРУМЕНТІВ
-   ========================================================= */
-(function(){
-  const CM_TO_PX = 37.7952755906; // CSS px per cm at 96 dpi
-
-  /* ---------- Плаваючі вікна: передній план, рух, максимум ---------- */
-  const PANEL_SELECTORS=[
-    "#teacherToolsPanel","#aiPanel","#calculatorPanel","#timerPanel","#keyboardPanel",
-    "#mediaPanel","#elementsPanel","#geometryPanel","#shapeLibraryPanel","#graphBuilderPanel",
-    "#numberRayPanel","#graphEditorPanel","#diagnosticsPanel"
-  ];
-
-  let topZ = 3000;
-
-  function ensureFloatingStyles(){
-    if(document.getElementById("sofiaFloatingWindowsV44"))return;
-    const s=document.createElement("style");
-    s.id="sofiaFloatingWindowsV44";
-    s.textContent=`
-      .sofia-floating-window{
-        position:fixed!important;
-        z-index:3000;
-        max-width:min(92vw,980px);
-        max-height:88vh;
-        overflow:auto!important;
-        box-shadow:0 14px 42px rgba(15,23,42,.28)!important;
-        border-radius:14px!important;
-        background:#fff!important;
-      }
-      .sofia-floating-window.sofia-maximized{
-        left:10px!important;
-        top:10px!important;
-        width:calc(100vw - 20px)!important;
-        height:calc(100vh - 20px)!important;
-        max-width:none!important;
-        max-height:none!important;
-        overflow:auto!important;
-      }
-      .sofia-floating-head{
-        cursor:move!important;
-        user-select:none!important;
-      }
-      .sofia-window-actions{
-        display:inline-flex;
-        align-items:center;
-        gap:4px;
-        margin-left:auto;
-      }
-      .sofia-window-action{
-        width:30px;height:30px;
-        border:0;border-radius:7px;
-        background:transparent;
-        cursor:pointer;
-        font-size:18px;
-        line-height:1;
-      }
-      .sofia-window-action:hover{background:#eef3fa}
-      .sofia-compass-panel{
-        position:fixed;
-        left:90px;
-        top:170px;
-        width:330px;
-        z-index:3200;
-        background:#fff;
-        border:1px solid #dce5f2;
-        border-radius:14px;
-        box-shadow:0 14px 42px rgba(15,23,42,.24);
-        padding:14px;
-      }
-      .sofia-compass-head{
-        display:flex;align-items:center;gap:8px;
-        font-weight:800;font-size:18px;
-        cursor:move;user-select:none;
-        margin-bottom:12px;
-      }
-      .sofia-compass-grid{display:grid;gap:10px}
-      .sofia-compass-grid label{display:grid;gap:5px;font-size:13px;font-weight:600}
-      .sofia-compass-grid input{
-        padding:8px 10px;border:1px solid #cad5e5;border-radius:8px;font:inherit;
-      }
-      .sofia-compass-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-      .sofia-compass-actions button{
-        padding:8px 10px;border-radius:8px;border:1px solid #cbd6e5;background:#fff;cursor:pointer
-      }
-      .sofia-compass-actions button.primary{background:#173b78;color:#fff;border-color:#173b78}
-      .sofia-compass-status{
-        margin-top:10px;padding:8px 10px;border-radius:8px;background:#f4f8ff;font-size:12px
-      }
-    `;
-    document.head.appendChild(s);
-  }
-
-  function bringFront(el){
-    topZ++;
-    el.style.zIndex=String(topZ);
-  }
-
-  function makeDraggable(panel,handle){
-    if(panel.dataset.sofiaDraggableV44)return;
-    panel.dataset.sofiaDraggableV44="1";
-    let down=false, sx=0, sy=0, sl=0, st=0;
-
-    handle.addEventListener("mousedown",e=>{
-      if(e.button!==0 || e.target.closest("button,input,select,textarea"))return;
-      if(panel.classList.contains("sofia-maximized"))return;
-      down=true;
-      bringFront(panel);
-      const r=panel.getBoundingClientRect();
-      sx=e.clientX; sy=e.clientY; sl=r.left; st=r.top;
-      e.preventDefault();
-    });
-
-    window.addEventListener("mousemove",e=>{
-      if(!down)return;
-      const nx=Math.max(0,Math.min(window.innerWidth-panel.offsetWidth,sl+(e.clientX-sx)));
-      const ny=Math.max(0,Math.min(window.innerHeight-panel.offsetHeight,st+(e.clientY-sy)));
-      panel.style.left=nx+"px";
-      panel.style.top=ny+"px";
-      panel.style.right="auto";
-      panel.style.bottom="auto";
-    });
-
-    window.addEventListener("mouseup",()=>down=false);
-  }
-
-  function enhancePanel(panel){
-    if(!panel || panel.dataset.sofiaFloatingV44)return;
-    panel.dataset.sofiaFloatingV44="1";
-    panel.classList.add("sofia-floating-window");
-
-    const head=panel.querySelector(
-      ".teacher-tools-head,.panel-head,.modal-head,.graph-editor-head,.runtime-error-head,h2,h3"
-    ) || panel.firstElementChild || panel;
-
-    head.classList.add("sofia-floating-head");
-    makeDraggable(panel,head);
-
-    let actions=head.querySelector(".sofia-window-actions");
-    if(!actions){
-      actions=document.createElement("span");
-      actions.className="sofia-window-actions";
-
-      const max=document.createElement("button");
-      max.type="button";
-      max.className="sofia-window-action";
-      max.textContent="□";
-      max.title="На весь екран";
-      max.onclick=e=>{
-        e.stopPropagation();
-        panel.classList.toggle("sofia-maximized");
-        max.textContent=panel.classList.contains("sofia-maximized")?"❐":"□";
-        bringFront(panel);
-      };
-      actions.appendChild(max);
-
-      head.appendChild(actions);
-    }
-
-    panel.addEventListener("mousedown",()=>bringFront(panel),true);
-  }
-
-  function scanPanels(){
-    PANEL_SELECTORS.forEach(sel=>enhancePanel(document.querySelector(sel)));
-  }
-
-  /* ---------- Робочий циркуль ---------- */
-  let compassCenter=null;
-  let compassRadiusCm=3;
-  let compassMode=false;
-  let compassPreview=null;
-  let compassNeedle=null;
-  let compassArm1=null;
-  let compassArm2=null;
-  let compassJoint=null;
-
-  function getCanvasPoint(evt){
-    if(typeof fcanvas==="undefined")return null;
-    const p=fcanvas.getPointer(evt.e||evt);
-    return {x:p.x,y:p.y};
+  function closeCompass(){
+    compassState.active=false;compassState.center=null;clearCompassPreview();
+    const p=$v("v56CompassPanel");if(p)p.style.display="none";
   }
 
   function clearCompassPreview(){
     if(typeof fcanvas==="undefined")return;
-    [compassPreview,compassNeedle,compassArm1,compassArm2,compassJoint].forEach(o=>{
-      if(o)fcanvas.remove(o);
-    });
-    compassPreview=compassNeedle=compassArm1=compassArm2=compassJoint=null;
+    compassState.preview.forEach(o=>fcanvas.remove(o));compassState.preview=[];
     fcanvas.requestRenderAll();
   }
 
-  function drawCompassVisual(center,rPx){
+  function drawCompassPreview(){
+    if(!compassState.center||typeof fcanvas==="undefined")return;
     clearCompassPreview();
-    const color=document.getElementById("colorPicker")?.value || "#173b78";
-
-    compassPreview=new fabric.Circle({
-      left:center.x-rPx,top:center.y-rPx,radius:rPx,
-      fill:"transparent",stroke:color,strokeWidth:2,
-      strokeDashArray:[7,5],selectable:false,evented:false
-    });
-
-    compassNeedle=new fabric.Circle({
-      left:center.x-4,top:center.y-4,radius:4,fill:"#d33",stroke:"#fff",strokeWidth:1,
-      selectable:false,evented:false
-    });
-
-    const joint={x:center.x,y:center.y-rPx*0.55};
-    const pencil={x:center.x+rPx,y:center.y};
-    compassArm1=new fabric.Line([center.x,center.y,joint.x,joint.y],{
-      stroke:"#555",strokeWidth:4,selectable:false,evented:false
-    });
-    compassArm2=new fabric.Line([joint.x,joint.y,pencil.x,pencil.y],{
-      stroke:"#777",strokeWidth:4,selectable:false,evented:false
-    });
-    compassJoint=new fabric.Circle({
-      left:joint.x-6,top:joint.y-6,radius:6,fill:"#2d6cdf",stroke:"#fff",strokeWidth:1,
-      selectable:false,evented:false
-    });
-
-    fcanvas.add(compassPreview,compassArm1,compassArm2,compassNeedle,compassJoint);
-    compassPreview.sendToBack();
+    const r=compassState.radiusCm*37.7952755906,c=$v("colorPicker")?.value||"#17315f";
+    const {x,y}=compassState.center;
+    const preview=new fabric.Circle({left:x-r,top:y-r,radius:r,fill:"transparent",stroke:c,strokeWidth:2,strokeDashArray:[7,5],selectable:false,evented:false});
+    const needle=new fabric.Circle({left:x-4,top:y-4,radius:4,fill:"#d63d3d",stroke:"#fff",strokeWidth:1,selectable:false,evented:false});
+    const joint={x:x,y:y-r*.55}, pencil={x:x+r,y:y};
+    const arm1=new fabric.Line([x,y,joint.x,joint.y],{stroke:"#5c6572",strokeWidth:5,selectable:false,evented:false});
+    const arm2=new fabric.Line([joint.x,joint.y,pencil.x,pencil.y],{stroke:"#7a8491",strokeWidth:5,selectable:false,evented:false});
+    const pivot=new fabric.Circle({left:joint.x-6,top:joint.y-6,radius:6,fill:"#2d6cdf",stroke:"#fff",strokeWidth:1,selectable:false,evented:false});
+    compassState.preview=[preview,arm1,arm2,needle,pivot];
+    compassState.preview.forEach(o=>fcanvas.add(o));
     fcanvas.requestRenderAll();
   }
 
-  function finalizeCompassCircle(){
-    if(!compassCenter || typeof fcanvas==="undefined")return;
-    const rPx=compassRadiusCm*CM_TO_PX;
-    const color=document.getElementById("colorPicker")?.value || "#173b78";
-    const sw=Number(document.getElementById("lineWidth")?.value||2);
-
+  function buildCompassCircle(){
+    if(!compassState.center){
+      $v("v56CompassStatus").textContent="Спочатку натисніть «Вибрати центр» і клікніть на аркуші.";
+      return;
+    }
+    const r=compassState.radiusCm*37.7952755906,c=$v("colorPicker")?.value||"#17315f",sw=Math.max(1,Number($v("lineWidth")?.value||2));
+    const {x,y}=compassState.center;
     clearCompassPreview();
-
-    const circle=new fabric.Circle({
-      left:compassCenter.x-rPx,
-      top:compassCenter.y-rPx,
-      radius:rPx,
-      fill:"transparent",
-      stroke:color,
-      strokeWidth:sw,
-      selectable:true,
-      evented:true
-    });
-    circle.sofiaCompassCircle=true;
-    circle.radiusCm=compassRadiusCm;
-
-    const centerDot=new fabric.Circle({
-      left:compassCenter.x-3,top:compassCenter.y-3,radius:3,
-      fill:color,selectable:false,evented:false
-    });
-
-    fcanvas.add(circle,centerDot);
-    fcanvas.setActiveObject(circle);
-    fcanvas.requestRenderAll();
-    if(typeof pushHistory==="function")pushHistory();
-    if(typeof autoSave==="function")autoSave();
+    const circle=new fabric.Circle({left:x-r,top:y-r,radius:r,fill:"transparent",stroke:c,strokeWidth:sw,selectable:true,evented:true});
+    circle.radiusCm=compassState.radiusCm;
+    fcanvas.add(circle);fcanvas.setActiveObject(circle);fcanvas.requestRenderAll();
+    try{pushHistory();autoSave();setTool("select")}catch(e){}
+    $v("v56CompassStatus").textContent=`Готово: радіус ${String(compassState.radiusCm).replace(".",",")} см.`;
+    compassState.center=null;compassState.active=false;
   }
 
-  function createCompassPanel(){
-    if(document.getElementById("sofiaCompassPanel"))return;
-    const p=document.createElement("div");
-    p.id="sofiaCompassPanel";
-    p.className="sofia-compass-panel";
-    p.style.display="none";
-    p.innerHTML=`
-      <div class="sofia-compass-head">
-        <span>📐 Циркуль</span>
-        <span style="margin-left:auto;display:flex;gap:4px">
-          <button type="button" id="sofiaCompassMax" title="На весь екран">□</button>
-          <button type="button" id="sofiaCompassClose" title="Закрити">×</button>
-        </span>
-      </div>
-      <div class="sofia-compass-grid">
-        <label>Радіус кола (см)
-          <input id="sofiaCompassRadius" type="number" min="0.1" step="0.01" value="3">
-        </label>
-        <div class="sofia-compass-actions">
-          <button type="button" data-r="1">1 см</button>
-          <button type="button" data-r="2">2 см</button>
-          <button type="button" data-r="3">3 см</button>
-          <button type="button" data-r="5">5 см</button>
-        </div>
-        <div class="sofia-compass-actions">
-          <button type="button" id="sofiaCompassPick" class="primary">1. Вибрати центр</button>
-          <button type="button" id="sofiaCompassBuild">2. Побудувати коло</button>
-        </div>
-        <div id="sofiaCompassStatus" class="sofia-compass-status">
-          Введіть радіус, у тому числі десятковий: 2,5; 3,75; 5,25 см.
-        </div>
-      </div>
-    `;
-    document.body.appendChild(p);
-
-    makeDraggable(p,p.querySelector(".sofia-compass-head"));
-    p.addEventListener("mousedown",()=>bringFront(p),true);
-
-    const radius=p.querySelector("#sofiaCompassRadius");
-    radius.addEventListener("input",()=>{
-      const v=parseFloat(String(radius.value).replace(",","."));
-      if(Number.isFinite(v) && v>0){
-        compassRadiusCm=v;
-        if(compassCenter)drawCompassVisual(compassCenter,compassRadiusCm*CM_TO_PX);
-      }
-    });
-
-    p.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{
-      compassRadiusCm=Number(b.dataset.r);
-      radius.value=String(compassRadiusCm);
-      if(compassCenter)drawCompassVisual(compassCenter,compassRadiusCm*CM_TO_PX);
-    });
-
-    p.querySelector("#sofiaCompassPick").onclick=()=>{
-      compassMode=true;
-      compassCenter=null;
-      clearCompassPreview();
-      p.querySelector("#sofiaCompassStatus").textContent="Клікніть на аркуші в точці, де має бути центр кола.";
-    };
-
-    p.querySelector("#sofiaCompassBuild").onclick=()=>{
-      if(!compassCenter){
-        p.querySelector("#sofiaCompassStatus").textContent="Спочатку виберіть центр кола.";
-        return;
-      }
-      finalizeCompassCircle();
-      p.querySelector("#sofiaCompassStatus").textContent=`Коло побудовано. Радіус: ${compassRadiusCm.toString().replace(".",",")} см.`;
-      compassCenter=null;
-      compassMode=false;
-    };
-
-    p.querySelector("#sofiaCompassClose").onclick=()=>{
-      p.style.display="none";
-      compassMode=false;
-      clearCompassPreview();
-    };
-
-    p.querySelector("#sofiaCompassMax").onclick=()=>{
-      p.classList.toggle("sofia-maximized");
-    };
-  }
-
-  function openCompass(){
-    createCompassPanel();
-    const p=document.getElementById("sofiaCompassPanel");
-    p.style.display="block";
-    bringFront(p);
-  }
-
-  function hookCompassButton(){
+  function bindCompass(){
+    // Old geometry-panel compass button now opens the real compass instead of adding a picture.
     document.addEventListener("click",e=>{
-      const b=e.target.closest?.("button");
+      const b=e.target.closest?.('[data-instrument="compass"]');
       if(!b)return;
-      const id=(b.id||"").toLowerCase();
-      const txt=(b.textContent||"").trim().toLowerCase();
-
-      // V55: react ONLY to the real compass launcher, never to controls
-      // inside the compass window (Close / Pick / Build / Max).
-      const isCompassLauncher =
-        b.dataset?.instrument==="compass" ||
-        id==="compassbtn" ||
-        id==="opencompassbtn" ||
-        txt==="циркуль" ||
-        txt==="📐 циркуль";
-
-      if(isCompassLauncher){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        openCompass();
-      }
+      e.preventDefault();e.stopImmediatePropagation();openCompass();
     },true);
 
     if(typeof fcanvas!=="undefined"){
       fcanvas.on("mouse:down",opt=>{
-        if(!compassMode)return;
-        const p=getCanvasPoint(opt);
-        if(!p)return;
-        compassCenter=p;
-        drawCompassVisual(compassCenter,compassRadiusCm*CM_TO_PX);
-        const st=document.getElementById("sofiaCompassStatus");
-        if(st)st.textContent=`Центр вибрано. Радіус ${compassRadiusCm.toString().replace(".",",")} см. Натисніть «Побудувати коло».`;
+        if(!compassState.active)return;
+        compassState.center=fcanvas.getPointer(opt.e);
+        compassState.active=false;
+        drawCompassPreview();
+        $v("v56CompassStatus").textContent=`Центр вибрано. Радіус ${String(compassState.radiusCm).replace(".",",")} см. Натисніть «Побудувати коло».`;
       });
     }
   }
 
-  function init(){
-    ensureFloatingStyles();
-    createCompassPanel();
-    setTimeout(scanPanels,300);
-    setTimeout(scanPanels,1000);
-    hookCompassButton();
+  /* ---------- Graph migration ---------- */
+  let graphMigrationBusy=false;
+  function migrateOldGraphs(){
+    if(graphMigrationBusy||typeof fcanvas==="undefined"||typeof createGraphGroup!=="function")return;
+    graphMigrationBusy=true;
+    try{
+      // Remove old standalone labels.
+      fcanvas.getObjects().filter(o=>/^Графік\s*\d+\s*:/i.test((o?.text||"").trim())).forEach(o=>fcanvas.remove(o));
 
-    const mo=new MutationObserver(()=>scanPanels());
-    mo.observe(document.body,{childList:true,subtree:true});
-  }
+      const graphs=fcanvas.getObjects().slice().filter(o=>o?.graphObject&&o.graphMeta);
+      graphs.forEach(g=>{
+        const badChild=g._objects?.some?.(x=>/^Графік\s*\d*\s*:/i.test((x?.text||"").trim()));
+        const hasFormula=g._objects?.some?.(x=>x?.isGraphFormulaLabel);
+        if(!badChild && hasFormula)return;
 
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
-  else init();
-})();
-
-
-
-/* =========================================================
-   V46: ВІДНОВЛЕННЯ ЛІВОЇ ПАНЕЛІ + НАДІЙНЕ ВІДКРИТТЯ ПАНЕЛЕЙ
-   ========================================================= */
-(function(){
-  const PANEL_MAP={
-    elementsBtn:"elementsPanel",
-    geometryBtn:"geometryPanel",
-    shapeLibraryBtn:"shapeLibraryPanel",
-    angleBtn:"anglePanel",
-    numberRayBtn:"numberRayPanel",
-    ukrainianBtn:"ukrainianPanel",
-    graphBuilderBtn:"graphBuilderPanel",
-    mediaBtn:"mediaPanel",
-    aiBtn:"aiPanel",
-    calculatorBtn:"calculatorPanel",
-    timerBtn:"timerPanel",
-    keyboardBtn:"keyboardPanel"
-  };
-
-  let z=5000;
-
-  function leftToolbar(){
-    const first=document.querySelector(".side-tool[data-tool]");
-    if(!first)return null;
-    let p=first.parentElement;
-    // Usually all side tools share one vertical parent. Walk only while the
-    // parent remains a compact toolbar, never up to the whole page.
-    while(p && p!==document.body){
-      const count=p.querySelectorAll(":scope > .side-tool[data-tool]").length;
-      if(count>=3)return p;
-      p=p.parentElement;
-    }
-    return first.parentElement;
-  }
-
-  function restoreLeftToolbar(){
-    const bar=leftToolbar();
-    if(!bar)return;
-
-    bar.hidden=false;
-    bar.classList.remove("hidden","collapsed","is-hidden","panel-hidden");
-    bar.style.removeProperty("display");
-    bar.style.setProperty("visibility","visible","important");
-    bar.style.setProperty("opacity","1","important");
-    bar.style.setProperty("pointer-events","auto","important");
-    bar.style.setProperty("z-index","1150","important");
-
-    // The left tools themselves must never be draggable ribbon commands.
-    bar.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-      btn.classList.remove("sofia-command");
-      btn.draggable=false;
-      btn.style.removeProperty("outline");
-      btn.style.removeProperty("outline-offset");
-      btn.style.removeProperty("cursor");
-      btn.style.removeProperty("display");
-      btn.style.removeProperty("visibility");
-      btn.style.removeProperty("opacity");
-    });
-  }
-
-  function front(panel){
-    if(!panel)return;
-    panel.style.setProperty("z-index",String(++z),"important");
-  }
-
-  function openPanel(panel){
-    if(!panel)return;
-    panel.classList.remove("hidden");
-    panel.hidden=false;
-    panel.style.removeProperty("display");
-    panel.style.setProperty("visibility","visible","important");
-    panel.style.setProperty("opacity","1","important");
-    panel.style.setProperty("pointer-events","auto","important");
-    front(panel);
-
-    // V44 floating-window behavior, but without changing the tool's own content.
-    panel.classList.add("sofia-floating-window");
-    if(!panel.style.left && !panel.classList.contains("sofia-maximized")){
-      const r=panel.getBoundingClientRect();
-      if(r.left<0 || r.left>window.innerWidth-80)panel.style.left="120px";
-      if(r.top<0 || r.top>window.innerHeight-80)panel.style.top="140px";
-    }
-  }
-
-  function closePanel(panel){
-    if(!panel)return;
-    panel.classList.add("hidden");
-  }
-
-  function togglePanel(panel){
-    if(!panel)return;
-    const isHidden=panel.classList.contains("hidden") ||
-      getComputedStyle(panel).display==="none" ||
-      panel.hidden;
-    if(isHidden)openPanel(panel);
-    else closePanel(panel);
-  }
-
-  // These are panel-launcher buttons only. Handle them in one place so moving
-  // them between ribbon tabs cannot break their command.
-  document.addEventListener("click",e=>{
-    const btn=e.target.closest?.("button");
-    if(!btn || !PANEL_MAP[btn.id])return;
-
-    const panel=document.getElementById(PANEL_MAP[btn.id]);
-    if(!panel)return;
-
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    togglePanel(panel);
-  },true);
-
-  // Ensure any opened tool window rises above the notebook/ribbon.
-  document.addEventListener("mousedown",e=>{
-    const panel=e.target.closest?.(
-      "#elementsPanel,#geometryPanel,#shapeLibraryPanel,#anglePanel,#numberRayPanel,"+
-      "#ukrainianPanel,#graphBuilderPanel,#mediaPanel,#aiPanel,#calculatorPanel,"+
-      "#timerPanel,#keyboardPanel,#teacherToolsPanel"
-    );
-    if(panel)front(panel);
-  },true);
-
-  function repair(){
-    restoreLeftToolbar();
-
-    // Remove ribbon styling if a previously saved browser state had affected side tools.
-    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-      btn.classList.remove("sofia-command");
-      btn.draggable=false;
-    });
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>{
-      repair();
-      setTimeout(repair,350);
-      setTimeout(repair,1000);
-    });
-  }else{
-    repair();
-    setTimeout(repair,350);
-    setTimeout(repair,1000);
-  }
-})();
-
-
-
-/* =========================================================
-   V47: ПОВНИЙ ЕКРАН ЛИШЕ ДЛЯ КОЛЕСА ФОРТУНИ
-   + ЧІТКІ КНОПКИ ЗАКРИТИ / ВИЙТИ З ПОВНОГО ЕКРАНУ
-   ========================================================= */
-(function(){
-  function hideFullscreenOnOtherPanels(){
-    document.querySelectorAll(".sofia-floating-window").forEach(panel=>{
-      if(panel.id==="teacherToolsPanel")return;
-      panel.querySelectorAll(".sofia-window-action").forEach(btn=>{
-        const title=(btn.title||"").toLowerCase();
-        const txt=(btn.textContent||"").trim();
-        if(title.includes("весь екран") || txt==="□" || txt==="❐"){
-          btn.style.display="none";
-        }
+        const idx=fcanvas.getObjects().indexOf(g);
+        const meta=JSON.parse(JSON.stringify(g.graphMeta));
+        fcanvas.remove(g);
+        const ng=createGraphGroup(meta);
+        fcanvas.insertAt(ng,idx>=0?idx:fcanvas.getObjects().length,false);
       });
-    });
-  }
-
-  function isWheelActive(panel){
-    if(!panel)return false;
-
-    const activeTab = panel.querySelector(
-      '[data-tool-tab].active,[data-tab].active,.teacher-tool-tab.active,.teacher-tools-tab.active,.active[data-panel]'
-    );
-    if(activeTab && /колес/i.test(activeTab.textContent||""))return true;
-
-    // fallback: visible wheel-related content
-    const visibleWheel = Array.from(panel.querySelectorAll("*")).find(el=>{
-      const txt=(el.textContent||"").trim();
-      if(!/крутити колесо|колесо фортуни/i.test(txt))return false;
-      const cs=getComputedStyle(el);
-      return cs.display!=="none" && cs.visibility!=="hidden";
-    });
-    return !!visibleWheel;
-  }
-
-  function teacherPanel(){
-    return document.getElementById("teacherToolsPanel") ||
-           document.querySelector(".teacher-tools-panel");
-  }
-
-  function ensureControls(){
-    const panel=teacherPanel();
-    if(!panel)return;
-
-    let head=panel.querySelector(".teacher-tools-head,.panel-head,h2,h3") || panel.firstElementChild || panel;
-    if(!head)return;
-
-    let box=document.getElementById("fortuneWindowControlsV47");
-    if(!box){
-      box=document.createElement("div");
-      box.id="fortuneWindowControlsV47";
-      box.style.cssText=[
-        "margin-left:auto",
-        "display:inline-flex",
-        "align-items:center",
-        "gap:6px",
-        "position:sticky",
-        "top:0",
-        "z-index:10020"
-      ].join(";");
-
-      const full=document.createElement("button");
-      full.type="button";
-      full.id="fortuneFullscreenBtnV47";
-      full.textContent="⛶ На весь екран";
-      full.title="Розгорнути колесо фортуни";
-      full.style.cssText="padding:7px 10px;border-radius:8px;border:1px solid #cbd6e5;background:#fff;cursor:pointer;font-weight:600;";
-
-      const close=document.createElement("button");
-      close.type="button";
-      close.id="fortuneCloseBtnV47";
-      close.textContent="✕ Закрити";
-      close.title="Закрити інструменти вчителя";
-      close.style.cssText="padding:7px 10px;border-radius:8px;border:1px solid #f0b8b8;background:#fff5f5;color:#b42323;cursor:pointer;font-weight:600;";
-
-      box.append(full,close);
-      head.appendChild(box);
-
-      full.addEventListener("click",e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        if(!isWheelActive(panel))return;
-
-        const nowMax=!panel.classList.contains("sofia-maximized");
-        panel.classList.toggle("sofia-maximized",nowMax);
-        full.textContent=nowMax ? "↙ Вийти з повного екрану" : "⛶ На весь екран";
-        full.title=nowMax ? "Повернути звичайний розмір" : "Розгорнути колесо фортуни";
-        panel.style.zIndex="10010";
-      });
-
-      close.addEventListener("click",e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        panel.classList.remove("sofia-maximized");
-        full.textContent="⛶ На весь екран";
-        panel.classList.add("hidden");
-      });
-    }
-
-    updateVisibility();
-  }
-
-  function updateVisibility(){
-    const panel=teacherPanel();
-    const box=document.getElementById("fortuneWindowControlsV47");
-    const full=document.getElementById("fortuneFullscreenBtnV47");
-    if(!panel || !box || !full)return;
-
-    // Close is always available. Fullscreen is ONLY for the wheel.
-    const wheel=isWheelActive(panel);
-    full.style.display=wheel ? "" : "none";
-
-    // If user leaves the wheel tab while maximized, automatically return to normal.
-    if(!wheel && panel.classList.contains("sofia-maximized")){
-      panel.classList.remove("sofia-maximized");
-      full.textContent="⛶ На весь екран";
-    }
-  }
-
-  function removeOldTeacherMaxButton(){
-    const panel=teacherPanel();
-    if(!panel)return;
-    panel.querySelectorAll(".sofia-window-action").forEach(btn=>{
-      const title=(btn.title||"").toLowerCase();
-      const txt=(btn.textContent||"").trim();
-      if(title.includes("весь екран") || txt==="□" || txt==="❐"){
-        btn.style.display="none";
-      }
-    });
-  }
-
-  function init(){
-    hideFullscreenOnOtherPanels();
-    ensureControls();
-    removeOldTeacherMaxButton();
-
-    document.addEventListener("click",e=>{
-      const panel=teacherPanel();
-      if(panel && panel.contains(e.target)){
-        setTimeout(()=>{
-          ensureControls();
-          updateVisibility();
-          removeOldTeacherMaxButton();
-        },30);
-      }
-    },true);
-
-    document.addEventListener("keydown",e=>{
-      if(e.key!=="Escape")return;
-      const panel=teacherPanel();
-      const full=document.getElementById("fortuneFullscreenBtnV47");
-      if(panel?.classList.contains("sofia-maximized")){
-        panel.classList.remove("sofia-maximized");
-        if(full)full.textContent="⛶ На весь екран";
-      }
-    });
-
-    const mo=new MutationObserver(()=>{
-      hideFullscreenOnOtherPanels();
-      ensureControls();
-      removeOldTeacherMaxButton();
-      updateVisibility();
-    });
-    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
-  }else{
-    setTimeout(init,250);
-  }
-})();
-
-
-
-/* =========================================================
-   V48: ОДНА КНОПКА ЗАКРИТИ + НАДІЙНИЙ FULLSCREEN ДЛЯ КОЛЕСА
-   ========================================================= */
-(function(){
-  function panel(){
-    return document.getElementById("teacherToolsPanel") ||
-           document.querySelector(".teacher-tools-panel");
-  }
-
-  function wheelIsOpen(p){
-    if(!p)return false;
-    const txt=(p.innerText||p.textContent||"").toLowerCase();
-    return txt.includes("крутити колесо") ||
-           txt.includes("прибрати переможця") ||
-           txt.includes("учасники / слова / завдання") ||
-           txt.includes("колесо фортуни");
-  }
-
-  function removeDuplicateV47Controls(){
-    const old=document.getElementById("fortuneWindowControlsV47");
-    if(old)old.remove();
-
-    // Remove old artificial close/fullscreen controls from previous versions,
-    // but keep the app's original close X.
-    const p=panel();
-    if(!p)return;
-    p.querySelectorAll(".sofia-window-action").forEach(b=>{
-      const t=(b.title||"").toLowerCase();
-      const x=(b.textContent||"").trim();
-      if(t.includes("весь екран") || x==="□" || x==="❐") b.remove();
-    });
-  }
-
-  function getHead(p){
-    return p.querySelector(".teacher-tools-head,.panel-head,h2,h3") ||
-           p.firstElementChild || p;
-  }
-
-  function ensureFullscreenButton(){
-    const p=panel();
-    if(!p)return;
-
-    removeDuplicateV47Controls();
-
-    let btn=document.getElementById("fortuneFullscreenBtnV48");
-    if(!btn){
-      btn=document.createElement("button");
-      btn.type="button";
-      btn.id="fortuneFullscreenBtnV48";
-      btn.textContent="⛶ На весь екран";
-      btn.title="Розгорнути колесо фортуни на весь екран";
-      btn.style.cssText=[
-        "margin-left:8px",
-        "padding:7px 10px",
-        "border-radius:8px",
-        "border:1px solid #cbd6e5",
-        "background:#173b78",
-        "color:#fff",
-        "cursor:pointer",
-        "font-weight:700",
-        "white-space:nowrap",
-        "position:relative",
-        "z-index:10050"
-      ].join(";");
-
-      const head=getHead(p);
-      const originalClose =
-        head.querySelector("[data-close],.close,.panel-close,.teacher-tools-close") ||
-        Array.from(head.querySelectorAll("button")).find(b=>{
-          const t=(b.textContent||"").trim();
-          return t==="×" || t==="✕" || /закрити/i.test(b.title||"");
-        });
-
-      if(originalClose) head.insertBefore(btn,originalClose);
-      else head.appendChild(btn);
-
-      btn.addEventListener("click",e=>{
-        e.preventDefault();
-        e.stopPropagation();
-
-        const maximize=!p.classList.contains("sofia-maximized");
-        p.classList.toggle("sofia-maximized",maximize);
-
-        if(maximize){
-          p.style.setProperty("left","10px","important");
-          p.style.setProperty("top","10px","important");
-          p.style.setProperty("right","10px","important");
-          p.style.setProperty("bottom","10px","important");
-          p.style.setProperty("width","calc(100vw - 20px)","important");
-          p.style.setProperty("height","calc(100vh - 20px)","important");
-          p.style.setProperty("max-width","none","important");
-          p.style.setProperty("max-height","none","important");
-          p.style.setProperty("z-index","10040","important");
-          btn.textContent="↙ Вийти з повного екрану";
-          btn.title="Повернути звичайний розмір";
-        }else{
-          ["left","top","right","bottom","width","height","max-width","max-height"].forEach(k=>{
-            p.style.removeProperty(k);
-          });
-          btn.textContent="⛶ На весь екран";
-          btn.title="Розгорнути колесо фортуни на весь екран";
-        }
-      });
-    }
-
-    // Fullscreen button is shown only while the fortune-wheel content is open.
-    btn.style.display=wheelIsOpen(p) ? "" : "none";
-  }
-
-  function exitFullscreen(){
-    const p=panel();
-    const btn=document.getElementById("fortuneFullscreenBtnV48");
-    if(!p)return;
-    p.classList.remove("sofia-maximized");
-    ["left","top","right","bottom","width","height","max-width","max-height"].forEach(k=>{
-      p.style.removeProperty(k);
-    });
-    if(btn){
-      btn.textContent="⛶ На весь екран";
-      btn.title="Розгорнути колесо фортуни на весь екран";
-    }
-  }
-
-  document.addEventListener("keydown",e=>{
-    if(e.key==="Escape")exitFullscreen();
-  });
-
-  document.addEventListener("click",e=>{
-    const p=panel();
-    if(!p)return;
-
-    // If original close X is clicked while maximized, reset the fullscreen state.
-    if(p.contains(e.target)){
-      const b=e.target.closest?.("button");
-      if(b){
-        const t=(b.textContent||"").trim();
-        if(t==="×" || t==="✕") setTimeout(exitFullscreen,0);
-      }
-      setTimeout(ensureFullscreenButton,30);
-    }
-  },true);
-
-  function init(){
-    ensureFullscreenButton();
-    const mo=new MutationObserver(()=>{
-      clearTimeout(mo.__t);
-      mo.__t=setTimeout(ensureFullscreenButton,60);
-    });
-    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,300));
-  }else{
-    setTimeout(init,300);
-  }
-})();
-
-
-
-/* =========================================================
-   V49: СИСТЕМНІ ВИПРАВЛЕННЯ
-   - циркуль реально малює
-   - клавіатура UA/EN без затримки
-   - "Встановити додаток" зверху
-   - стирачка не стирає прилади/системні об'єкти
-   - "Розбір" показує потрібні кнопки
-   ========================================================= */
-(function(){
-  /* ---------- 1. ПЕРЕНОС "ВСТАНОВИТИ ДОДАТОК" У ВЕРХ ---------- */
-  function moveInstallTop(){
-    const btn=document.getElementById("installAppBtn");
-    if(!btn)return;
-
-    const topCandidates=[
-      document.querySelector(".top-actions"),
-      document.querySelector(".header-actions"),
-      document.querySelector("header"),
-      document.querySelector(".app-header"),
-      document.querySelector(".topbar")
-    ].filter(Boolean);
-
-    const target=topCandidates[0];
-    if(target && btn.parentElement!==target){
-      target.appendChild(btn);
-    }
-  }
-
-  /* ---------- 2. ШВИДКА КЛАВІАТУРА UA / EN ---------- */
-  const KEYS_UA=["1","2","3","4","5","6","7","8","9","0","-","=",
-    "й","ц","у","к","е","н","г","ш","щ","з","х","ї",
-    "ф","і","в","а","п","р","о","л","д","ж","є",
-    "я","ч","с","м","и","т","ь","б","ю",",",".","?"];
-  const KEYS_EN=["1","2","3","4","5","6","7","8","9","0","-","=",
-    "q","w","e","r","t","y","u","i","o","p","[","]",
-    "a","s","d","f","g","h","j","k","l",";","'",
-    "z","x","c","v","b","n","m",",",".","?"];
-
-  let v49KeyboardLang="UA";
-
-  function keyboardPanel(){ return document.getElementById("keyboardPanel"); }
-  function keyboardBox(){ return document.getElementById("keyboardKeys"); }
-
-  function insertKeyText(v){
-    if(v==="BACK"){
-      const o=window.fcanvas?.getActiveObject?.() || (typeof fcanvas!=="undefined" ? fcanvas.getActiveObject() : null);
-      if(o && ["i-text","textbox"].includes(o.type)){
-        const p=o.selectionStart||0;
-        if(p>0)o.removeChars(p-1,p);
-        o.setSelectionStart(Math.max(0,p-1));
-        o.setSelectionEnd(Math.max(0,p-1));
-        fcanvas.requestRenderAll();
-        if(typeof autoSave==="function")autoSave();
-      }
-      return;
-    }
-    if(typeof insertTextIntoBoard==="function")insertTextIntoBoard(v);
-  }
-
-  function renderFastKeyboard(){
-    const box=keyboardBox();
-    if(!box)return;
-    box.innerHTML="";
-    const keys=v49KeyboardLang==="UA"?KEYS_UA:KEYS_EN;
-
-    const frag=document.createDocumentFragment();
-    keys.forEach(k=>{
-      const b=document.createElement("button");
-      b.type="button";
-      b.className="key-btn";
-      b.textContent=k;
-      b.onclick=()=>insertKeyText(k);
-      frag.appendChild(b);
-    });
-    [["Пробіл"," "],["Enter","\n"],["⌫","BACK"]].forEach(([label,val])=>{
-      const b=document.createElement("button");
-      b.type="button";
-      b.className="key-btn special "+(label==="Пробіл"?"space":"");
-      b.textContent=label;
-      b.onclick=()=>insertKeyText(val);
-      frag.appendChild(b);
-    });
-    box.appendChild(frag);
-
-    const lang=document.getElementById("keyboardLangBtn");
-    if(lang){
-      lang.textContent=v49KeyboardLang;
-      lang.title="Змінити мову клавіатури";
-    }
-  }
-
-  function bindKeyboard(){
-    const btn=document.getElementById("keyboardBtn");
-    const lang=document.getElementById("keyboardLangBtn");
-    const close=document.getElementById("keyboardCloseBtn");
-
-    if(btn){
-      btn.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        const p=keyboardPanel();
-        if(!p)return;
-        renderFastKeyboard();
-        p.classList.toggle("hidden");
-        p.style.zIndex="6000";
-      };
-    }
-    if(lang){
-      lang.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        v49KeyboardLang=v49KeyboardLang==="UA"?"EN":"UA";
-        renderFastKeyboard();
-      };
-    }
-    if(close){
-      close.onclick=()=>keyboardPanel()?.classList.add("hidden");
-    }
-  }
-
-  /* ---------- 3. РОЗБІР УКРАЇНСЬКОЇ МОВИ ---------- */
-  function ensureUkrainianButtons(){
-    const panel=document.getElementById("ukrainianPanel");
-    if(!panel)return;
-
-    if(panel.querySelector("[data-ukmark],[data-wordmark]"))return;
-
-    const wrap=document.createElement("div");
-    wrap.id="ukrainianToolsV49";
-    wrap.style.cssText="display:grid;gap:14px;padding:14px;";
-
-    const syntax=document.createElement("div");
-    syntax.innerHTML=`
-      <div style="font-weight:800;margin-bottom:8px">Синтаксичний розбір</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <button type="button" data-ukmark="subject">Підмет — одна лінія</button>
-        <button type="button" data-ukmark="predicate">Присудок — дві лінії</button>
-        <button type="button" data-ukmark="object">Додаток — пунктир</button>
-        <button type="button" data-ukmark="attribute">Означення — хвиляста</button>
-        <button type="button" data-ukmark="adverbial">Обставина — штрих-пунктир</button>
-      </div>`;
-
-    const word=document.createElement("div");
-    word.innerHTML=`
-      <div style="font-weight:800;margin-bottom:8px">Будова слова</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <button type="button" data-wordmark="root">Корінь</button>
-        <button type="button" data-wordmark="prefix">Префікс</button>
-        <button type="button" data-wordmark="suffix">Суфікс</button>
-        <button type="button" data-wordmark="ending">Закінчення</button>
-        <button type="button" data-wordmark="stem">Основа</button>
-      </div>`;
-
-    wrap.append(syntax,word);
-    panel.appendChild(wrap);
-
-    panel.querySelectorAll("[data-ukmark]").forEach(b=>{
-      b.onclick=()=>{
-        const kind=b.dataset.ukmark;
-        if(typeof addUkLine==="function"){
-          addUkLine(kind);
-        }else{
-          // fallback
-          const c=document.getElementById("colorPicker")?.value||"#17315f";
-          const sw=Math.max(2,Number(document.getElementById("lineWidth")?.value||2));
-          const o=[];
-          if(kind==="subject")o.push(new fabric.Line([0,0,150,0],{stroke:c,strokeWidth:sw}));
-          if(kind==="predicate"){
-            o.push(new fabric.Line([0,-4,150,-4],{stroke:c,strokeWidth:sw}),
-                   new fabric.Line([0,4,150,4],{stroke:c,strokeWidth:sw}));
-          }
-          if(kind==="object")o.push(new fabric.Line([0,0,150,0],{stroke:c,strokeWidth:sw,strokeDashArray:[8,6]}));
-          if(kind==="attribute"){
-            let p="M 0 0"; for(let x=10;x<=150;x+=10)p+=` L ${x} ${(x/10)%2?6:-6}`;
-            o.push(new fabric.Path(p,{stroke:c,strokeWidth:sw,fill:"transparent"}));
-          }
-          if(kind==="adverbial")o.push(new fabric.Line([0,0,150,0],{stroke:c,strokeWidth:sw,strokeDashArray:[12,5,2,5]}));
-          if(typeof groupAndPlace==="function")groupAndPlace(o,360,420);
-        }
-      };
-    });
-
-    panel.querySelectorAll("[data-wordmark]").forEach(b=>{
-      b.onclick=()=>{
-        const map={root:"∩",prefix:"⌜",suffix:"⌃",ending:"□",stem:"⌒"};
-        const t=new fabric.Text(map[b.dataset.wordmark],{
-          left:380,top:380,fontSize:54,
-          fill:document.getElementById("colorPicker")?.value||"#17315f"
-        });
-        fcanvas.add(t);
-        fcanvas.setActiveObject(t);
-        if(typeof pushHistory==="function")pushHistory();
-        if(typeof autoSave==="function")autoSave();
-      };
-    });
-  }
-
-  function bindUkrainian(){
-    const btn=document.getElementById("ukrainianBtn");
-    if(!btn)return;
-    btn.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      const p=document.getElementById("ukrainianPanel");
-      if(!p)return;
-      ensureUkrainianButtons();
-      p.classList.toggle("hidden");
-      p.style.zIndex="6200";
-    };
-  }
-
-  /* ---------- 4. ЦИРКУЛЬ: НАДІЙНЕ МАЛЮВАННЯ ---------- */
-  function fixCompass(){
-    const panel=document.getElementById("sofiaCompassPanel");
-    if(!panel || typeof fcanvas==="undefined")return;
-
-    const radius=document.getElementById("sofiaCompassRadius");
-    const pick=document.getElementById("sofiaCompassPick");
-    const build=document.getElementById("sofiaCompassBuild");
-    const status=document.getElementById("sofiaCompassStatus");
-
-    if(!radius || !pick || !build)return;
-
-    let center=null;
-    let selecting=false;
-
-    function radiusCm(){
-      const v=parseFloat(String(radius.value||"").replace(",","."));
-      return Number.isFinite(v)&&v>0?v:1;
-    }
-
-    pick.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      selecting=true;
-      center=null;
-      if(status)status.textContent="Клікніть на аркуші, щоб вибрати центр кола.";
-    };
-
-    if(!fcanvas.__sofiaCompassV49Bound){
-      fcanvas.__sofiaCompassV49Bound=true;
-      fcanvas.on("mouse:down",opt=>{
-        if(!selecting)return;
-        center=fcanvas.getPointer(opt.e);
-        selecting=false;
-        if(status)status.textContent=`Центр вибрано. Радіус: ${radiusCm().toString().replace(".",",")} см. Натисніть «Побудувати коло».`;
-      });
-    }
-
-    build.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      if(!center){
-        if(status)status.textContent="Спочатку натисніть «1. Вибрати центр» і клікніть на аркуші.";
-        return;
-      }
-
-      const cm=radiusCm();
-      const px=cm*37.7952755906;
-      const color=document.getElementById("colorPicker")?.value||"#17315f";
-      const sw=Math.max(1,Number(document.getElementById("lineWidth")?.value||2));
-
-      const circle=new fabric.Circle({
-        left:center.x-px,
-        top:center.y-px,
-        radius:px,
-        fill:"transparent",
-        stroke:color,
-        strokeWidth:sw,
-        selectable:true,
-        evented:true
-      });
-      circle.sofiaCompassCircle=true;
-      circle.radiusCm=cm;
-
-      const dot=new fabric.Circle({
-        left:center.x-3,top:center.y-3,radius:3,
-        fill:color,
-        selectable:false,
-        evented:false
-      });
-      dot.sofiaInstrumentProtected=true;
-
-      circle.sofiaInstrumentProtected=false;
-      fcanvas.add(circle,dot);
-      fcanvas.setActiveObject(circle);
       fcanvas.requestRenderAll();
-
-      if(typeof pushHistory==="function")pushHistory();
-      if(typeof autoSave==="function")autoSave();
-
-      if(status)status.textContent=`Готово. Побудовано коло радіусом ${cm.toString().replace(".",",")} см.`;
-      center=null;
-    };
+    }catch(e){console.warn("V56 graph migration",e)}
+    finally{graphMigrationBusy=false}
   }
 
-  /* ---------- 5. СТИРАЧКА НЕ ЧІПАЄ ПРИЛАДИ ---------- */
-  function markProtectedInstruments(){
-    if(typeof fcanvas==="undefined")return;
-    fcanvas.getObjects().forEach(o=>{
-      // Groups created by measuring instruments / geometry tools
-      if(o?.sofiaInstrumentProtected)return;
-      if(o?.type==="group"){
-        const name=(o.name||o.type||"").toLowerCase();
-        if(o.instrumentType || o.geometryInstrument || o.isInstrument){
-          o.sofiaInstrumentProtected=true;
-        }
-      }
-    });
+  /* ---------- Heading font ---------- */
+  function headingObjects(){
+    if(typeof fcanvas==="undefined")return [];
+    return fcanvas.getObjects().filter(o=>o?.systemRole==="dateHeading"||o?.systemRole==="workHeading");
+  }
+  function applyHeadingFont(){
+    const font=$v("v56HeadingFont")?.value||"Times New Roman";
+    const italic=$v("v56HeadingItalic")?.checked!==false;
+    localStorage.setItem("sofiaHeadingFontV56",font);
+    localStorage.setItem("sofiaHeadingItalicV56",italic?"1":"0");
+    headingObjects().forEach(o=>{o.set({fontFamily:font,fontStyle:italic?"italic":"normal",fontWeight:"normal"});o.setCoords?.()});
+    fcanvas?.requestRenderAll?.();
+  }
+  function restoreHeadingFont(){
+    const font=localStorage.getItem("sofiaHeadingFontV56")||"Times New Roman";
+    const italic=localStorage.getItem("sofiaHeadingItalicV56")!=="0";
+    if($v("v56HeadingFont"))$v("v56HeadingFont").value=font;
+    if($v("v56HeadingItalic"))$v("v56HeadingItalic").checked=italic;
+    applyHeadingFont();
   }
 
-  function patchInstrumentCreation(){
-    if(typeof groupInstrument==="function" && !window.__sofiaGroupInstrumentV49){
-      window.__sofiaGroupInstrumentV49=true;
-      const old=groupInstrument;
-      try{
-        window.groupInstrument=function(objects,left=220,top=210){
-          const g=old(objects,left,top);
-          if(g){
-            g.sofiaInstrumentProtected=true;
-            g.isInstrument=true;
-          }
-          return g;
-        };
-      }catch(e){}
-    }
+  /* ---------- Teacher tools ---------- */
+  function teacherPanel(){return $v("teacherToolsPanel")||document.querySelector(".teacher-tools-panel")}
+  function openTeacherTool(name){
+    const p=teacherPanel();
+    if(!p){alert("Інструменти вчителя ще не завантажились.");return}
+    p.classList.remove("hidden");p.style.removeProperty("display");bringFront(p);
+    p.querySelectorAll("[data-tt31-section]").forEach(s=>s.classList.toggle("hidden",s.dataset.tt31Section!==name));
+    p.querySelectorAll("[data-tt31]").forEach(b=>b.classList.toggle("active",b.dataset.tt31===name));
+    ensureWheelFullscreen();
+  }
+  function makeTeacherShortcut(id,label,name){
+    return makeButton(id,label,"teacher",()=>openTeacherTool(name));
   }
 
-  function protectFromEraser(){
-    if(typeof fcanvas==="undefined")return;
-
-    // This does not alter the eraser implementation globally. It makes
-    // instruments repaint above eraser masks so they remain visible.
-    const repaint=()=>{
-      const objs=fcanvas.getObjects();
-      const protectedObjs=objs.filter(o=>o?.sofiaInstrumentProtected || o?.isInstrument || o?.geometryInstrument);
-      protectedObjs.forEach(o=>fcanvas.bringToFront(o));
-      fcanvas.requestRenderAll();
-    };
-
-    fcanvas.on("object:added",()=>setTimeout(repaint,0));
-    fcanvas.on("mouse:up",()=>setTimeout(repaint,0));
-  }
-
-  /* ---------- 6. ПОВТОРНА ПРИВ'ЯЗКА ОСНОВНИХ ПАНЕЛЕЙ ---------- */
-  const PANELS={
-    elementsBtn:"elementsPanel",
-    geometryBtn:"geometryPanel",
-    shapeLibraryBtn:"shapeLibraryPanel",
-    angleBtn:"anglePanel",
-    numberRayBtn:"numberRayPanel",
-    graphBuilderBtn:"graphBuilderPanel",
-    mediaBtn:"mediaPanel",
-    calculatorBtn:"calculatorPanel",
-    timerBtn:"timerPanel"
-  };
-
-  function rebindPanels(){
-    Object.entries(PANELS).forEach(([bid,pid])=>{
-      const b=document.getElementById(bid);
-      const p=document.getElementById(pid);
-      if(!b || !p)return;
-      b.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        p.classList.toggle("hidden");
-        p.style.zIndex="6100";
+  function ensureWheelFullscreen(){
+    const p=teacherPanel();if(!p)return;
+    let b=$v("v56WheelFullscreen");
+    if(!b){
+      b=document.createElement("button");b.id="v56WheelFullscreen";b.className="v56-wheel-max";b.textContent="⛶ На весь екран";
+      b.onclick=()=>{
+        const on=!p.classList.contains("v56-maximized");
+        p.classList.toggle("v56-maximized",on);
+        b.textContent=on?"↙ Вийти з повного екрану":"⛶ На весь екран";
       };
-    });
-  }
-
-  function init(){
-    moveInstallTop();
-    bindKeyboard();
-    ensureUkrainianButtons();
-    bindUkrainian();
-    fixCompass();
-    patchInstrumentCreation();
-    markProtectedInstruments();
-    protectFromEraser();
-    rebindPanels();
-
-    [300,900,1800].forEach(ms=>setTimeout(()=>{
-      moveInstallTop();
-      bindKeyboard();
-      ensureUkrainianButtons();
-      bindUkrainian();
-      fixCompass();
-      rebindPanels();
-    },ms));
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200));
-  }else{
-    setTimeout(init,200);
-  }
-})();
-
-
-
-/* =========================================================
-   V50: ПОВНЕ ВІДНОВЛЕННЯ "ІНСТРУМЕНТІВ ВЧИТЕЛЯ"
-   Колесо / Картки / Тест / Списки / Перекладач / Зображення
-   ========================================================= */
-(function(){
-  const TOOLS=[
-    ["wheel","🎡 Колесо"],
-    ["cards","🃏 Картки"],
-    ["test","✅ Тест"],
-    ["lists","☷ Списки"],
-    ["translate","🌐 Перекладач"],
-    ["image","🖼 Зображення"]
-  ];
-
-  function teacherPanel(){
-    return document.getElementById("teacherToolsPanel") ||
-           document.querySelector(".teacher-tools-panel") ||
-           document.querySelector("[data-tt31-section]")?.parentElement;
-  }
-
-  function sections(){
-    const p=teacherPanel();
-    if(!p)return [];
-    return Array.from(p.querySelectorAll("[data-tt31-section]"));
-  }
-
-  function activeTool(){
-    const ss=sections();
-    const visible=ss.find(s=>!s.classList.contains("hidden") && getComputedStyle(s).display!=="none");
-    return visible?.dataset.tt31Section || "wheel";
-  }
-
-  function showTool(name){
-    const p=teacherPanel();
-    if(!p)return;
-
-    sections().forEach(s=>{
-      const on=s.dataset.tt31Section===name;
-      s.classList.toggle("hidden",!on);
-      if(on){
-        s.style.removeProperty("display");
-        s.style.removeProperty("visibility");
-        s.style.removeProperty("opacity");
-      }
-    });
-
-    p.querySelectorAll("[data-tt31]").forEach(b=>{
-      b.classList.toggle("active",b.dataset.tt31===name);
-    });
-
-    const bar=document.getElementById("teacherToolsTabsV50");
-    bar?.querySelectorAll("[data-v50-tool]").forEach(b=>{
-      b.classList.toggle("active",b.dataset.v50Tool===name);
-    });
-
-    // Fullscreen belongs only to fortune wheel.
-    const full=document.getElementById("fortuneFullscreenBtnV48");
-    if(full)full.style.display=name==="wheel"?"":"none";
-
-    if(name!=="wheel" && p.classList.contains("sofia-maximized")){
-      p.classList.remove("sofia-maximized");
-      ["left","top","right","bottom","width","height","max-width","max-height"].forEach(k=>p.style.removeProperty(k));
+      p.appendChild(b);
     }
-
-    p.style.zIndex="6500";
+    const wheelVisible=Array.from(p.querySelectorAll("[data-tt31-section]")).some(s=>s.dataset.tt31Section==="wheel"&&!s.classList.contains("hidden"));
+    b.style.display=wheelVisible?"":"none";
   }
 
-  function makeTabs(){
-    const p=teacherPanel();
-    if(!p || !sections().length)return;
-
-    let bar=document.getElementById("teacherToolsTabsV50");
-    if(!bar){
-      bar=document.createElement("div");
-      bar.id="teacherToolsTabsV50";
-      bar.style.cssText=[
-        "display:flex",
-        "flex-wrap:wrap",
-        "gap:7px",
-        "padding:8px 14px",
-        "border-top:1px solid #edf1f7",
-        "border-bottom:1px solid #dfe6f0",
-        "background:#fff",
-        "position:sticky",
-        "top:0",
-        "z-index:6510"
-      ].join(";");
-
-      TOOLS.forEach(([id,label])=>{
-        const b=document.createElement("button");
-        b.type="button";
-        b.dataset.v50Tool=id;
-        b.textContent=label;
-        b.style.cssText=[
-          "padding:8px 11px",
-          "border:1px solid #cbd6e5",
-          "border-radius:9px",
-          "background:#fff",
-          "cursor:pointer",
-          "font-weight:600",
-          "white-space:nowrap"
-        ].join(";");
-        b.onclick=e=>{
-          e.preventDefault();e.stopPropagation();
-          showTool(id);
-        };
-        bar.appendChild(b);
-      });
-
-      const style=document.createElement("style");
-      style.id="teacherToolsTabsV50Style";
-      style.textContent=`
-        #teacherToolsTabsV50 button.active{
-          background:#173b78!important;
-          color:#fff!important;
-          border-color:#173b78!important;
-        }
-        #teacherToolsPanel [data-tt31-section],
-        .teacher-tools-panel [data-tt31-section]{
-          padding-top:12px;
-        }
-      `;
-      document.head.appendChild(style);
-
-      const head=p.querySelector(".teacher-tools-head,.panel-head") || p.firstElementChild;
-      if(head && head.nextSibling)p.insertBefore(bar,head.nextSibling);
-      else p.insertBefore(bar,p.firstChild);
-    }
-
-    const current=activeTool();
-    showTool(current);
-  }
-
-  function fixOriginalTabs(){
-    const p=teacherPanel();
-    if(!p)return;
-
-    // If original tab buttons are present but were hidden by a later layout,
-    // make them visible again too.
-    p.querySelectorAll("[data-tt31]").forEach(b=>{
-      b.style.removeProperty("display");
-      b.style.removeProperty("visibility");
-      b.style.removeProperty("opacity");
-      b.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        showTool(b.dataset.tt31);
-      };
-    });
-  }
-
-  function bindTeacherButton(){
-    const btn=document.getElementById("teacherToolsBtn") ||
-              Array.from(document.querySelectorAll("button")).find(b=>{
-                const t=(b.textContent||"").trim();
-                return t==="🎓 Інструменти" || t==="Інструменти";
-              });
-    const p=teacherPanel();
-    if(!btn || !p)return;
-
-    btn.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      makeTabs();
-      fixOriginalTabs();
-      p.classList.toggle("hidden");
-      p.style.zIndex="6500";
-    };
-  }
-
-  function removeDuplicateClose(){
-    const p=teacherPanel();
-    if(!p)return;
-
-    // Keep the original small X in the header, remove only large artificial duplicate close.
-    Array.from(p.querySelectorAll("button")).forEach(b=>{
-      const txt=(b.textContent||"").trim();
-      if(/Закрити/i.test(txt) && txt!=="×" && txt!=="✕"){
-        if(b.id!=="teacherToolsClose")b.remove();
-      }
-    });
-  }
-
-  function init(){
-    makeTabs();
-    fixOriginalTabs();
-    bindTeacherButton();
-    removeDuplicateClose();
-
-    [400,1000,2000].forEach(ms=>setTimeout(()=>{
-      makeTabs();
-      fixOriginalTabs();
-      bindTeacherButton();
-      removeDuplicateClose();
-    },ms));
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
-  }else{
-    setTimeout(init,250);
-  }
-})();
-
-
-
-/* =========================================================
-   V51: УСІ ВІКНА ЗАВЖДИ НА ПЕРЕДНЬОМУ ПЛАНІ + НАДІЙНИЙ ГОЛОС
-   ========================================================= */
-(function(){
-  let zTop=20000;
-
-  const FLOATING_IDS=[
-    "teacherToolsPanel","aiPanel","calculatorPanel","timerPanel","keyboardPanel",
-    "mediaPanel","elementsPanel","geometryPanel","shapeLibraryPanel","anglePanel",
-    "numberRayPanel","ukrainianPanel","graphBuilderPanel","graphEditorPanel",
-    "diagnosticsPanel","sofiaCompassPanel"
-  ];
-
-  const LAUNCH_MAP={
-    teacherToolsBtn:"teacherToolsPanel",
-    aiBtn:"aiPanel",
-    calculatorBtn:"calculatorPanel",
-    timerBtn:"timerPanel",
-    keyboardBtn:"keyboardPanel",
-    mediaBtn:"mediaPanel",
-    elementsBtn:"elementsPanel",
-    geometryBtn:"geometryPanel",
-    shapeLibraryBtn:"shapeLibraryPanel",
-    angleBtn:"anglePanel",
-    numberRayBtn:"numberRayPanel",
-    ukrainianBtn:"ukrainianPanel",
-    graphBuilderBtn:"graphBuilderPanel"
-  };
-
-  function getPanel(id){
-    return document.getElementById(id);
-  }
-
-  function bringToFront(panel){
-    if(!panel)return;
-    zTop++;
-    panel.style.setProperty("z-index",String(zTop),"important");
-    panel.style.setProperty("position","fixed","important");
-    panel.style.setProperty("isolation","isolate","important");
-  }
-
-  function showPanel(panel){
-    if(!panel)return;
-    panel.classList.remove("hidden");
-    panel.hidden=false;
-    panel.style.removeProperty("display");
-    panel.style.setProperty("visibility","visible","important");
-    panel.style.setProperty("opacity","1","important");
-    panel.style.setProperty("pointer-events","auto","important");
-    bringToFront(panel);
-  }
-
-  function makeAllKnownPanelsFront(){
-    FLOATING_IDS.forEach(id=>{
-      const p=getPanel(id);
-      if(!p)return;
-      if(!p.classList.contains("hidden") && getComputedStyle(p).display!=="none"){
-        bringToFront(p);
-      }
-      p.addEventListener("mousedown",()=>bringToFront(p),true);
-    });
-  }
-
-  // Every launcher raises its target above all ribbons/settings panels.
-  document.addEventListener("click",e=>{
-    const btn=e.target.closest?.("button");
-    if(!btn)return;
-
-    let pid=LAUNCH_MAP[btn.id];
-    if(!pid){
-      const txt=(btn.textContent||"").trim();
-      if(/Інструменти/.test(txt) && getPanel("teacherToolsPanel"))pid="teacherToolsPanel";
-    }
-    if(!pid)return;
-
-    setTimeout(()=>{
-      const p=getPanel(pid);
-      if(p && !p.classList.contains("hidden"))bringToFront(p);
-    },20);
-  },true);
-
-  // Any visible modal-like panel gets raised after DOM changes.
-  const observer=new MutationObserver(()=>{
-    clearTimeout(observer.__t);
-    observer.__t=setTimeout(makeAllKnownPanelsFront,30);
-  });
-
-  /* ---------- ГОЛОСОВЕ ВВЕДЕННЯ ---------- */
-  let recognition=null;
-  let listening=false;
-
-  function voiceButton(){
-    return document.getElementById("voiceBtn");
-  }
-
-  function setVoiceState(on,label){
-    const b=voiceButton();
-    if(!b)return;
-    listening=on;
-    b.textContent=label || (on ? "🎙 Слухаю…" : "🎙 Голос");
-    b.classList.toggle("active",on);
-  }
-
-  function insertVoiceText(text){
-    if(!text)return;
-    try{
-      if(typeof insertTextIntoBoard==="function"){
-        insertTextIntoBoard(text+" ");
-        return;
-      }
-      const canvas=window.fcanvas || (typeof fcanvas!=="undefined" ? fcanvas : null);
-      if(canvas && window.fabric){
-        const obj=new fabric.IText(text,{
-          left:280,top:180,fontSize:27,
-          fill:document.getElementById("colorPicker")?.value||"#17315f"
-        });
-        canvas.add(obj);
-        canvas.setActiveObject(obj);
-        canvas.requestRenderAll();
-        if(typeof autoSave==="function")autoSave();
-      }
-    }catch(err){
-      console.error("Voice insert error",err);
-    }
-  }
-
-  function explainVoiceError(err){
-    const code=err?.error || err?.name || "";
-    if(code==="not-allowed" || code==="NotAllowedError" || code==="service-not-allowed"){
-      alert("Доступ до мікрофона заблоковано. Натисніть значок 🔒 біля адреси сайту → Мікрофон → Дозволити, потім оновіть сторінку.");
-      return;
-    }
-    if(code==="no-speech"){
-      alert("Мовлення не розпізнано. Спробуйте говорити трохи голосніше.");
-      return;
-    }
-    if(code==="audio-capture"){
-      alert("Не знайдено доступного мікрофона. Перевірте підключення мікрофона у Windows.");
-      return;
-    }
-    if(code==="network"){
-      alert("Голосове розпізнавання не змогло підключитися до сервісу. Перевірте інтернет і спробуйте ще раз.");
-      return;
-    }
-    alert("Не вдалося запустити голосове введення. Перевірте дозвіл на мікрофон у браузері.");
-  }
-
-  function stopRecognition(){
-    if(recognition){
-      try{recognition.stop()}catch(e){}
-    }
-    recognition=null;
-    setVoiceState(false,"🎙 Голос");
-  }
-
-  async function startRecognition(){
-    const b=voiceButton();
-    if(!b)return;
-
-    if(listening){
-      stopRecognition();
-      return;
-    }
-
-    if(!window.isSecureContext){
-      alert("Голосове введення працює лише через захищене HTTPS-з'єднання.");
-      return;
-    }
-
-    const SR=window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SR){
-      alert("Цей браузер не підтримує голосове введення. Відкрийте Sofia Notebook у Google Chrome або Microsoft Edge.");
-      return;
-    }
-
-    // Ask the browser for microphone access explicitly first. This makes the
-    // permission prompt predictable instead of failing silently.
-    try{
-      if(navigator.mediaDevices?.getUserMedia){
-        const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-        stream.getTracks().forEach(t=>t.stop());
-      }
-    }catch(err){
-      explainVoiceError(err);
-      setVoiceState(false,"🎙 Голос");
-      return;
-    }
-
-    recognition=new SR();
-    recognition.lang=document.getElementById("subject")?.value==="Англійська мова" ? "en-US" : "uk-UA";
-    recognition.interimResults=true;
-    recognition.continuous=false;
-    recognition.maxAlternatives=1;
-
-    let finalText="";
-    recognition.onstart=()=>setVoiceState(true,"🎙 Слухаю…");
-
-    recognition.onresult=e=>{
-      finalText="";
-      for(let i=e.resultIndex;i<e.results.length;i++){
-        const piece=e.results[i][0]?.transcript||"";
-        if(e.results[i].isFinal)finalText+=piece;
-      }
-      if(finalText.trim())insertVoiceText(finalText.trim());
-    };
-
-    recognition.onerror=e=>{
-      console.warn("Speech recognition error",e);
-      if(e.error!=="aborted")explainVoiceError(e);
-      setVoiceState(false,"🎙 Голос");
-      recognition=null;
-    };
-
-    recognition.onend=()=>{
-      setVoiceState(false,"🎙 Голос");
-      recognition=null;
-    };
-
-    try{
-      recognition.start();
-    }catch(err){
-      explainVoiceError(err);
-      setVoiceState(false,"🎙 Голос");
-      recognition=null;
-    }
-  }
-
+  /* ---------- Voice ---------- */
   function bindVoice(){
-    const b=voiceButton();
-    if(!b)return;
-    // Replace prior onclick handlers with one reliable handler.
-    b.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      startRecognition();
-    };
-    b.title="Голосове введення українською або англійською відповідно до предмета";
-  }
-
-  function init(){
-    bindVoice();
-    makeAllKnownPanelsFront();
-    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
-
-    [300,900,1800].forEach(ms=>setTimeout(()=>{
-      bindVoice();
-      makeAllKnownPanelsFront();
-    },ms));
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200));
-  }else{
-    setTimeout(init,200);
-  }
-})();
-
-
-
-/* =========================================================
-   V52: 2D / 3D ФІГУРИ ЗАВЖДИ ВИДИМІ + ПАНЕЛЬ ВІДКРИВАЄТЬСЯ СПЕРЕДУ
-   ========================================================= */
-(function(){
-  function ribbonPanel(name){
-    return document.querySelector(`.sofia-ribbon-panel[data-ribbon-panel="${name}"]`);
-  }
-
-  function shapeBtn(){
-    return document.getElementById("shapeLibraryBtn");
-  }
-
-  function shapePanel(){
-    return document.getElementById("shapeLibraryPanel");
-  }
-
-  function ensureShapesButtonVisible(){
-    const btn=shapeBtn();
-    if(!btn)return;
-
-    // Preferred location: "Вставка". If that tab is unavailable, use "Математика".
-    const target=ribbonPanel("insert") || ribbonPanel("math");
-    if(target && btn.parentElement!==target){
-      target.appendChild(btn);
-    }
-
-    btn.style.removeProperty("display");
-    btn.style.removeProperty("visibility");
-    btn.style.removeProperty("opacity");
-    btn.hidden=false;
-    btn.classList.remove("hidden");
-    btn.textContent="⬡ 2D / 3D фігури";
-    btn.title="Відкрити бібліотеку 2D та 3D фігур";
-
-    btn.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-
-      const p=shapePanel();
-      if(!p)return;
-
-      p.classList.remove("hidden");
-      p.hidden=false;
-      p.style.removeProperty("display");
-      p.style.setProperty("visibility","visible","important");
-      p.style.setProperty("opacity","1","important");
-      p.style.setProperty("pointer-events","auto","important");
-      p.style.setProperty("position","fixed","important");
-      p.style.setProperty("z-index","25000","important");
-
-      const r=p.getBoundingClientRect();
-      if(r.left<0 || r.left>window.innerWidth-100)p.style.left="120px";
-      if(r.top<0 || r.top>window.innerHeight-100)p.style.top="140px";
-    };
-  }
-
-  function ensureGeometryVisible(){
-    const btn=document.getElementById("geometryBtn");
-    if(!btn)return;
-    const target=ribbonPanel("insert") || ribbonPanel("math");
-    if(target && btn.parentElement!==target)target.appendChild(btn);
-
-    btn.style.removeProperty("display");
-    btn.style.removeProperty("visibility");
-    btn.style.removeProperty("opacity");
-    btn.hidden=false;
-    btn.classList.remove("hidden");
-    btn.textContent="📐 Прилади";
-  }
-
-  function keepShapePanelFront(){
-    const p=shapePanel();
-    if(!p)return;
-    p.addEventListener("mousedown",()=>{
-      p.style.setProperty("z-index","25000","important");
-    },true);
-  }
-
-  function init(){
-    ensureShapesButtonVisible();
-    ensureGeometryVisible();
-    keepShapePanelFront();
-
-    [300,900,1800].forEach(ms=>setTimeout(()=>{
-      ensureShapesButtonVisible();
-      ensureGeometryVisible();
-    },ms));
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200));
-  }else{
-    setTimeout(init,200);
-  }
-})();
-
-
-
-/* =========================================================
-   V53: ДАТА І ВИД РОБОТИ ЗА ЗАМОВЧУВАННЯМ "ПРОПИСАМИ"
-   ========================================================= */
-(function(){
-  const HEADING_FONT='"Segoe Print","Comic Sans MS",cursive';
-
-  function applyHandwrittenHeading(){
-    if(typeof fcanvas==="undefined")return;
-
-    const dateObj=fcanvas.getObjects().find(o=>o?.systemRole==="dateHeading");
-    const workObj=fcanvas.getObjects().find(o=>o?.systemRole==="workHeading");
-
-    [dateObj,workObj].forEach(o=>{
-      if(!o)return;
-      o.set({
-        fontFamily:HEADING_FONT,
-        fontStyle:"normal",
-        fontWeight:"normal"
-      });
-      o.setCoords?.();
-    });
-
-    if(dateObj)dateObj.set({fontSize:22});
-    if(workObj)workObj.set({fontSize:24});
-
-    fcanvas.requestRenderAll();
-  }
-
-  function ensureWordsDateByDefault(){
-    const dateMode=document.getElementById("dateMode");
-    if(!dateMode)return;
-
-    // For a fresh/default notebook choose the written-out date.
-    // Existing manually selected modes are not overwritten.
-    const saved=localStorage.getItem("sofiaNotebookV12");
-    if(!saved && dateMode.value!=="words"){
-      dateMode.value="words";
-      if(typeof updateHeading==="function")updateHeading();
-    }
-  }
-
-  function init(){
-    ensureWordsDateByDefault();
-    setTimeout(applyHandwrittenHeading,250);
-    setTimeout(applyHandwrittenHeading,700);
-
-    ["dateMode","workType","pageMode"].forEach(id=>{
-      document.getElementById(id)?.addEventListener("change",()=>setTimeout(applyHandwrittenHeading,20));
-    });
-
-    const canvas=typeof fcanvas!=="undefined"?fcanvas:null;
-    canvas?.on?.("object:added",e=>{
-      if(e?.target?.systemRole==="dateHeading" || e?.target?.systemRole==="workHeading"){
-        setTimeout(applyHandwrittenHeading,0);
-      }
-    });
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init);
-  }else{
-    init();
-  }
-})();
-
-
-
-/* =========================================================
-   V54: КОМПЛЕКСНЕ ПРИБИРАННЯ СТРІЧКИ + ВСТАВКА + ПІДПИС ГРАФІКА
-   ========================================================= */
-(function(){
-  const PANEL_MAP={
-    mediaBtn:"mediaPanel",
-    elementsBtn:"elementsPanel",
-    geometryBtn:"geometryPanel",
-    shapeLibraryBtn:"shapeLibraryPanel",
-    angleBtn:"anglePanel",
-    numberRayBtn:"numberRayPanel",
-    graphBuilderBtn:"graphBuilderPanel",
-    ukrainianBtn:"ukrainianPanel",
-    calculatorBtn:"calculatorPanel",
-    timerBtn:"timerPanel",
-    keyboardBtn:"keyboardPanel"
-  };
-
-  function ribbonPanel(name){
-    return document.querySelector(`.sofia-ribbon-panel[data-ribbon-panel="${name}"]`);
-  }
-
-  function showPanel(p){
-    if(!p)return;
-    p.classList.remove("hidden");
-    p.hidden=false;
-    p.style.removeProperty("display");
-    p.style.setProperty("visibility","visible","important");
-    p.style.setProperty("opacity","1","important");
-    p.style.setProperty("pointer-events","auto","important");
-    p.style.setProperty("position","fixed","important");
-    p.style.setProperty("z-index","30000","important");
-  }
-
-  function bindInsertButtons(){
-    const insert=ribbonPanel("insert");
-    if(!insert)return;
-
-    const wanted=[
-      "tableBtn","mediaBtn","elementsBtn","geometryBtn",
-      "shapeLibraryBtn","noteBtn"
-    ];
-
-    wanted.forEach(id=>{
-      const b=document.getElementById(id);
-      if(!b)return;
-      if(b.parentElement!==insert)insert.appendChild(b);
-      b.hidden=false;
-      b.classList.remove("hidden");
-      b.style.removeProperty("display");
-      b.style.removeProperty("visibility");
-      b.style.removeProperty("opacity");
-    });
-
-    // Standard panel launchers.
-    Object.entries(PANEL_MAP).forEach(([bid,pid])=>{
-      const b=document.getElementById(bid);
-      const p=document.getElementById(pid);
-      if(!b || !p)return;
-      b.onclick=e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        showPanel(p);
-      };
-    });
-
-    // Table: use existing implementation when available.
-    const table=document.getElementById("tableBtn");
-    if(table){
-      table.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        if(typeof openTableDialog==="function")return openTableDialog();
-        const p=document.getElementById("tablePanel") || document.getElementById("tableDialog");
-        if(p)return showPanel(p);
-        if(typeof addTable==="function")return addTable();
-      };
-    }
-
-    // Note: preserve the existing note implementation; if a note panel exists, open it.
-    const note=document.getElementById("noteBtn");
-    if(note){
-      note.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        const p=document.getElementById("notePanel");
-        if(p)return showPanel(p);
-        if(typeof addNote==="function")return addNote();
-        if(typeof createNote==="function")return createNote();
-      };
-    }
-  }
-
-  function cleanHome(){
-    const home=ribbonPanel("home");
-    if(!home)return;
-
-    const technicalLabels=[
-      "Верхня панель","Ліва панель","Показати всі","Готово"
-    ];
-
-    home.querySelectorAll("button").forEach(b=>{
-      const txt=(b.textContent||"").trim();
-      if(technicalLabels.includes(txt)){
-        b.remove();
-        return;
-      }
-
-      // Duplicate panel-arranging controls belong to the single settings button,
-      // not to the everyday "Основне" tab.
-      if(txt==="Інструменти" && !b.id && home.querySelector("#teacherToolsBtn")){
-        b.remove();
-      }
-    });
-
-    // Keep only one visible install button. It belongs in the global top area.
-    const installs=Array.from(document.querySelectorAll("#installAppBtn,button")).filter(b=>{
-      return b.id==="installAppBtn" || /Встановити додаток/i.test((b.textContent||"").trim());
-    });
-    installs.slice(1).forEach(b=>b.remove());
-  }
-
-  /* ---------- GRAPH LABEL: remove old top-left label and attach to graph ---------- */
-  function graphObjects(){
-    if(typeof fcanvas==="undefined")return [];
-    return fcanvas.getObjects().filter(o=>{
-      if(!o)return false;
-      return o.graphType || o.isGraph || o.sofiaGraph ||
-        (o.type==="group" && (o.graphFormula || o.formula));
-    });
-  }
-
-  function oldGraphLabels(){
-    if(typeof fcanvas==="undefined")return [];
-    return fcanvas.getObjects().filter(o=>{
-      const t=(o?.text||"").trim();
-      return /^Графік\s*\d*\s*:/i.test(t);
-    });
-  }
-
-  function getGraphColor(g){
-    return g?.stroke ||
-      g?._objects?.find?.(x=>x?.stroke)?.stroke ||
-      document.getElementById("colorPicker")?.value ||
-      "#17315f";
-  }
-
-  function formulaOf(g,index){
-    return g?.formula || g?.graphFormula || g?.equation ||
-      `Графік ${index+1}`;
-  }
-
-  function graphAngle(g){
-    // Linear graphs can carry k/slope. Use it when present.
-    const k=Number(g?.k ?? g?.slope);
-    if(Number.isFinite(k))return Math.atan(k)*180/Math.PI;
-
-    // Otherwise estimate from line endpoints when available.
-    if(g?.type==="line"){
-      const dx=(g.x2||0)-(g.x1||0), dy=(g.y2||0)-(g.y1||0);
-      if(dx || dy)return Math.atan2(dy,dx)*180/Math.PI;
-    }
-    return 0;
-  }
-
-  function labelGraphs(){
-    if(typeof fcanvas==="undefined" || !window.fabric)return;
-
-    // Remove the old fixed labels in the upper-left corner.
-    oldGraphLabels().forEach(o=>{
-      if(!o.sofiaInlineGraphLabel)fcanvas.remove(o);
-    });
-
-    graphObjects().forEach((g,i)=>{
-      if(g.sofiaInlineLabel && fcanvas.getObjects().includes(g.sofiaInlineLabel)){
-        const l=g.sofiaInlineLabel;
-        l.set({
-          fill:getGraphColor(g),
-          angle:graphAngle(g),
-          left:(g.left||0)+(g.width||220)*(g.scaleX||1)*0.55,
-          top:(g.top||0)+(g.height||120)*(g.scaleY||1)*0.45
-        });
-        l.setCoords?.();
-        return;
-      }
-
-      const label=new fabric.Text(formulaOf(g,i),{
-        left:(g.left||0)+(g.width||220)*(g.scaleX||1)*0.55,
-        top:(g.top||0)+(g.height||120)*(g.scaleY||1)*0.45,
-        fontSize:18,
-        fontFamily:"Arial",
-        fill:getGraphColor(g),
-        angle:graphAngle(g),
-        selectable:false,
-        evented:false,
-        originX:"center",
-        originY:"bottom"
-      });
-      label.sofiaInlineGraphLabel=true;
-      label.excludeFromExport=false;
-      g.sofiaInlineLabel=label;
-      fcanvas.add(label);
-      fcanvas.bringToFront(label);
-    });
-
-    fcanvas.requestRenderAll();
-  }
-
-  function bindGraphRelabel(){
-    if(typeof fcanvas==="undefined")return;
-    let t;
-    const schedule=()=>{
-      clearTimeout(t);
-      t=setTimeout(labelGraphs,80);
-    };
-    fcanvas.on("object:added",schedule);
-    fcanvas.on("object:modified",schedule);
-    fcanvas.on("object:moving",schedule);
-    fcanvas.on("object:scaling",schedule);
-    fcanvas.on("object:rotating",schedule);
-  }
-
-  function init(){
-    bindInsertButtons();
-    cleanHome();
-    labelGraphs();
-    bindGraphRelabel();
-
-    [300,900,1800].forEach(ms=>setTimeout(()=>{
-      bindInsertButtons();
-      cleanHome();
-      labelGraphs();
-    },ms));
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
-  }else{
-    setTimeout(init,250);
-  }
-})();
-
-
-
-/* =========================================================
-   V55: СТАБІЛЬНА ПЕРЕВІРКА КНОПОК + ВСТАВКА + ЦИРКУЛЬ
-   ========================================================= */
-(function(){
-  let zTop=40000;
-
-  function front(p){
-    if(!p)return;
-    p.style.setProperty("position","fixed","important");
-    p.style.setProperty("z-index",String(++zTop),"important");
-    p.style.setProperty("visibility","visible","important");
-    p.style.setProperty("opacity","1","important");
-    p.style.setProperty("pointer-events","auto","important");
-  }
-
-  function togglePanel(id){
-    const p=document.getElementById(id);
-    if(!p)return false;
-    const hidden=p.classList.contains("hidden") || p.hidden || getComputedStyle(p).display==="none";
-    if(hidden){
-      p.classList.remove("hidden");
-      p.hidden=false;
-      p.style.removeProperty("display");
-      front(p);
-    }else{
-      p.classList.add("hidden");
-    }
-    return true;
-  }
-
-  function bindPanelButton(bid,pid){
-    const b=document.getElementById(bid);
-    const p=document.getElementById(pid);
-    if(!b || !p)return;
-    b.onclick=e=>{
+    const b=$v("voiceBtn");if(!b)return;
+    b.onclick=async e=>{
       e.preventDefault();e.stopPropagation();
-      togglePanel(pid);
+      const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!SR){alert("Голосове введення працює у Google Chrome або Microsoft Edge.");return}
+      try{
+        if(navigator.mediaDevices?.getUserMedia){
+          const stream=await navigator.mediaDevices.getUserMedia({audio:true});stream.getTracks().forEach(t=>t.stop());
+        }
+      }catch(err){alert("Дозвольте доступ до мікрофона для Sofia Notebook.");return}
+      const r=new SR();r.lang=$v("subject")?.value==="Англійська мова"?"en-US":"uk-UA";r.interimResults=false;
+      b.textContent="🎙 Слухаю…";
+      r.onresult=ev=>insertTextIntoBoard(ev.results[0][0].transcript+" ");
+      r.onerror=()=>alert("Не вдалося розпізнати мовлення.");
+      r.onend=()=>b.textContent="🎙 Голос";
+      r.start();
     };
   }
 
-  /* ---------- INSERT: every visible command gets a real action ---------- */
-  function createNote(){
-    if(typeof fcanvas==="undefined" || !window.fabric)return;
-    const t=new fabric.Textbox("Замітка",{
-      left:380,top:280,width:260,
-      fontSize:22,
-      fill:"#273142",
-      backgroundColor:"#fff19a",
-      padding:14,
-      fontFamily:"Arial",
-      editable:true
+  /* ---------- Keyboard UA default ---------- */
+  function ensureUaKeyboard(){
+    try{keyboardLang="UA";renderKeyboard()}catch(e){}
+  }
+
+  /* ---------- Floating / dragging ---------- */
+  function makeDraggable(p,handle){
+    if(!p||!handle||p.dataset.v56Drag)return;p.dataset.v56Drag="1";
+    let down=false,sx=0,sy=0,sl=0,st=0;
+    handle.addEventListener("mousedown",e=>{
+      if(e.button!==0||e.target.closest("button,input,select,textarea"))return;
+      const r=p.getBoundingClientRect();down=true;sx=e.clientX;sy=e.clientY;sl=r.left;st=r.top;bringFront(p);e.preventDefault();
     });
-    t.sofiaNote=true;
-    fcanvas.add(t);
-    fcanvas.setActiveObject(t);
-    t.enterEditing?.();
-    fcanvas.requestRenderAll();
-    if(typeof pushHistory==="function")pushHistory();
-    if(typeof autoSave==="function")autoSave();
-    if(typeof setTool==="function")setTool("select");
-  }
-
-  function createTable(){
-    if(typeof fcanvas==="undefined" || !window.fabric)return;
-    let rows=Number(prompt("Кількість рядків таблиці:","3"));
-    if(!Number.isFinite(rows))return;
-    let cols=Number(prompt("Кількість стовпців таблиці:","3"));
-    if(!Number.isFinite(cols))return;
-    rows=Math.max(1,Math.min(20,Math.floor(rows)));
-    cols=Math.max(1,Math.min(12,Math.floor(cols)));
-
-    const cellW=90,cellH=42,w=cols*cellW,h=rows*cellH;
-    const color=document.getElementById("colorPicker")?.value||"#17315f";
-    const sw=Math.max(1,Number(document.getElementById("lineWidth")?.value||2));
-    const parts=[];
-
-    for(let r=0;r<=rows;r++){
-      parts.push(new fabric.Line([0,r*cellH,w,r*cellH],{
-        stroke:color,strokeWidth:sw,selectable:false,evented:false
-      }));
-    }
-    for(let c=0;c<=cols;c++){
-      parts.push(new fabric.Line([c*cellW,0,c*cellW,h],{
-        stroke:color,strokeWidth:sw,selectable:false,evented:false
-      }));
-    }
-
-    const g=new fabric.Group(parts,{
-      left:320,top:220,
-      selectable:true,evented:true,
-      transparentCorners:false,
-      cornerStyle:"circle"
+    window.addEventListener("mousemove",e=>{
+      if(!down)return;
+      p.style.left=Math.max(0,Math.min(window.innerWidth-p.offsetWidth,sl+e.clientX-sx))+"px";
+      p.style.top=Math.max(0,Math.min(window.innerHeight-p.offsetHeight,st+e.clientY-sy))+"px";
+      p.style.right="auto";p.style.bottom="auto";
     });
-    g.sofiaTable=true;
-    fcanvas.add(g);
-    fcanvas.setActiveObject(g);
-    if(typeof pushHistory==="function")pushHistory();
-    if(typeof autoSave==="function")autoSave();
-    if(typeof setTool==="function")setTool("select");
+    window.addEventListener("mouseup",()=>down=false);
   }
 
-  function bindInsert(){
-    bindPanelButton("mediaBtn","mediaPanel");
-    bindPanelButton("elementsBtn","elementsPanel");
-    bindPanelButton("geometryBtn","geometryPanel");
-    bindPanelButton("shapeLibraryBtn","shapeLibraryPanel");
-
-    const note=document.getElementById("noteBtn");
-    if(note){
-      note.onclick=e=>{e.preventDefault();e.stopPropagation();createNote()};
-    }
-
-    const table=document.getElementById("tableBtn");
-    if(table){
-      table.onclick=e=>{e.preventDefault();e.stopPropagation();createTable()};
-    }
-  }
-
-  /* ---------- MATH ---------- */
-  function bindMath(){
-    bindPanelButton("calculatorBtn","calculatorPanel");
-    bindPanelButton("angleBtn","anglePanel");
-    bindPanelButton("numberRayBtn","numberRayPanel");
-    bindPanelButton("graphBuilderBtn","graphBuilderPanel");
-  }
-
-  /* ---------- TEACHER ---------- */
-  function bindTeacher(){
-    bindPanelButton("timerBtn","timerPanel");
-    bindPanelButton("ukrainianBtn","ukrainianPanel");
-  }
-
-  /* ---------- COMPASS ---------- */
-  function fixCompassControls(){
-    const p=document.getElementById("sofiaCompassPanel");
-    if(!p)return;
-
-    // Always show all controls. Some earlier CSS/layout changes had hidden the action rows.
-    p.querySelectorAll(".sofia-compass-actions").forEach(row=>{
-      row.style.setProperty("display","flex","important");
-      row.style.setProperty("visibility","visible","important");
-      row.style.setProperty("opacity","1","important");
-    });
-
-    const close=document.getElementById("sofiaCompassClose");
-    if(close){
-      close.onclick=e=>{
-        e.preventDefault();e.stopPropagation();
-        p.style.display="none";
-        p.classList.add("hidden");
-      };
-    }
-
-    // Maximize was not requested for compass; keep it out of the way.
-    const max=document.getElementById("sofiaCompassMax");
-    if(max)max.style.display="none";
-  }
-
-  /* ---------- Remove duplicate external graph labels from older add-ons ---------- */
-  function removeLegacyGraphLabels(){
-    if(typeof fcanvas==="undefined")return;
-    const junk=fcanvas.getObjects().filter(o=>
-      o?.sofiaGraphInlineLabel ||
-      o?.sofiaInlineGraphLabel
-    );
-    junk.forEach(o=>fcanvas.remove(o));
-
-    // Older top-level labels that literally begin with "Графік N:".
-    fcanvas.getObjects().filter(o=>{
-      const t=(o?.text||"").trim();
-      return /^Графік\s*\d+\s*:/i.test(t) && !o.graphObject;
-    }).forEach(o=>fcanvas.remove(o));
-
-    fcanvas.requestRenderAll();
-  }
-
-  /* ---------- Button audit: repair known core commands without inventing new UI ---------- */
-  function auditAndRepair(){
-    bindInsert();
-    bindMath();
-    bindTeacher();
-    fixCompassControls();
-    removeLegacyGraphLabels();
-
-    // Main floating panels must open above ribbon/settings.
+  function floatKnownPanels(){
     [
-      "mediaPanel","elementsPanel","geometryPanel","shapeLibraryPanel",
-      "calculatorPanel","anglePanel","numberRayPanel","graphBuilderPanel",
-      "timerPanel","ukrainianPanel","teacherToolsPanel","aiPanel","keyboardPanel",
-      "sofiaCompassPanel"
+      "mediaPanel","elementsPanel","geometryPanel","anglePanel","numberRayPanel",
+      "graphBuilderPanel","graphEditorPanel","calculatorPanel","timerPanel","ukrainianPanel",
+      "keyboardPanel","aiPanel","teacherToolsPanel"
     ].forEach(id=>{
-      const p=document.getElementById(id);
-      if(p && !p.classList.contains("hidden") && getComputedStyle(p).display!=="none")front(p);
+      const p=$v(id);if(!p)return;
+      if(!p.classList.contains("hidden")&&getComputedStyle(p).display!=="none")bringFront(p);
+      const h=p.querySelector(".panel-head,.teacher-tools-head,.graph-editor-head,h2,h3")||p.firstElementChild;
+      makeDraggable(p,h);
+      p.addEventListener("mousedown",()=>bringFront(p),true);
     });
   }
 
-  /* ---------- Visual mini-audit in console for development ---------- */
-  function consoleAudit(){
-    const checks=[
-      ["Замітка","noteBtn"],
-      ["Таблиця","tableBtn"],
-      ["Фото / відео / файл","mediaBtn"],
-      ["Елементи","elementsBtn"],
-      ["Прилади","geometryBtn"],
-      ["2D / 3D","shapeLibraryBtn"],
-      ["Калькулятор","calculatorBtn"],
-      ["Побудова кута","angleBtn"],
-      ["Числовий промінь","numberRayBtn"],
-      ["Побудова графіка","graphBuilderBtn"],
-      ["Розбір","ukrainianBtn"],
-      ["Таймер","timerBtn"],
-      ["Голос","voiceBtn"],
-      ["Клавіатура","keyboardBtn"],
-      ["Зберегти","saveBtn"]
-    ];
-    const missing=checks.filter(([,id])=>!document.getElementById(id)).map(([name])=>name);
-    if(missing.length)console.warn("Sofia V55: відсутні DOM-кнопки:",missing);
-    else console.info("Sofia V55: основні кнопки знайдені.");
+  /* ---------- Reorder commands ---------- */
+  function setArrange(on){
+    arrangeMode=on;document.body.classList.toggle("v56-arranging",on);
+    document.querySelectorAll("#sofiaRibbonV56 .v56-command").forEach(b=>b.draggable=on);
+    $v("v56ArrangeBtn").textContent=on?"✓ Готово":"⚙ Впорядкувати";
+    if(!on)saveOrder();
+  }
+  document.addEventListener("dragstart",e=>{
+    const b=e.target.closest?.("#sofiaRibbonV56 .v56-command");
+    if(!arrangeMode||!b)return;draggedCommand=b;b.style.opacity=".45";
+  });
+  document.addEventListener("dragend",e=>{
+    const b=e.target.closest?.("#sofiaRibbonV56 .v56-command");if(b)b.style.opacity="";draggedCommand=null;saveOrder();
+  });
+  document.addEventListener("dragover",e=>{
+    if(!arrangeMode||!draggedCommand)return;
+    const target=e.target.closest?.("#sofiaRibbonV56 .v56-command");
+    const p=e.target.closest?.("#sofiaRibbonV56 .v56-panel");
+    if(target&&target!==draggedCommand){e.preventDefault();const r=target.getBoundingClientRect();if(e.clientX<r.left+r.width/2)target.parentElement.insertBefore(draggedCommand,target);else target.after(draggedCommand)}
+    else if(p){e.preventDefault();if(draggedCommand.parentElement!==p)p.appendChild(draggedCommand)}
+  });
+  document.addEventListener("drop",e=>{if(arrangeMode&&draggedCommand){e.preventDefault();saveOrder()}});
+
+  function saveOrder(){
+    const data={};
+    document.querySelectorAll(".v56-panel").forEach(p=>{
+      data[p.dataset.v56Panel]=Array.from(p.querySelectorAll(":scope>.v56-command")).map(b=>b.id).filter(Boolean);
+    });
+    localStorage.setItem(RIBBON_ORDER_KEY,JSON.stringify(data));
+  }
+  function restoreOrder(){
+    try{
+      const data=JSON.parse(localStorage.getItem(RIBBON_ORDER_KEY)||"{}");
+      Object.entries(data).forEach(([tab,ids])=>{
+        const p=panel(tab);if(!p||!Array.isArray(ids))return;
+        ids.forEach(id=>{const b=$v(id);if(b?.classList.contains("v56-command"))p.appendChild(b)});
+      });
+    }catch(e){}
   }
 
+  /* ---------- Initialize ---------- */
   function init(){
-    auditAndRepair();
-    consoleAudit();
+    addCss();addAuthor();moveInstallTop();createRibbon();buildRibbonCommands();
+    bindCorePanels();bindCompass();bindVoice();ensureUaKeyboard();
+    ensureFiguresPanel();ensureCompassPanel();
+    hideOldTopDuplicates();floatKnownPanels();
+    restoreHeadingFont();
+    setTimeout(migrateOldGraphs,250);
+    setTimeout(migrateOldGraphs,900);
 
-    [300,900,1800].forEach(ms=>setTimeout(auditAndRepair,ms));
+    if(typeof fcanvas!=="undefined"){
+      let graphTimer;
+      fcanvas.on("object:added",()=>{
+        clearTimeout(graphTimer);graphTimer=setTimeout(()=>{migrateOldGraphs();applyHeadingFont();normalizeEraserLayerOrder?.()},80)
+      });
+    }
+
+    document.documentElement.dataset.sofiaVersion="56";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v56";
 
     const mo=new MutationObserver(()=>{
-      clearTimeout(mo.__t);
-      mo.__t=setTimeout(auditAndRepair,80);
+      clearTimeout(mo.__v56);
+      mo.__v56=setTimeout(()=>{floatKnownPanels();hideOldTopDuplicates();ensureWheelFullscreen()},80);
     });
     mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
   }
 
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
-  }else{
-    setTimeout(init,250);
-  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220));
+  else setTimeout(init,220);
 })();
