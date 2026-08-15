@@ -3620,69 +3620,105 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
 
 /* =========================================================
-   V58: ПОВЕРНЕННЯ ПАНЕЛІ СТОРІНОК ПІД СТРІЧКУ НА ВСЮ ШИРИНУ
+   V58b — СТОРІНКИ ОКРЕМИМ РЯДКОМ ПІД СТРІЧКОЮ
+   Не змінює роботу інструментів v57.
    ========================================================= */
 (function(){
-  function pageControlsBar(){
-    const add=document.getElementById("addPageBtn");
-    if(!add)return null;
+  function findPageBar(){
+    const add = document.getElementById("addPageBtn");
+    if(!add) return null;
+
+    // У різних збірках контейнер мав різну вкладеність.
+    // Беремо найменший блок, у якому є addPageBtn і вкладки сторінок.
+    let el = add.parentElement;
+    while(el && el !== document.body){
+      const hasTabs = el.querySelector &&
+        (el.querySelector("#pageTabs") ||
+         el.querySelector("#pageTabsWrap") ||
+         Array.from(el.querySelectorAll("button")).some(b =>
+           /Сторінка\s*\d+/i.test((b.textContent||"").trim())));
+      if(hasTabs) return el;
+      el = el.parentElement;
+    }
     return add.parentElement;
   }
 
-  function fixPageBar(){
-    const bar=pageControlsBar();
-    const ribbon=document.getElementById("sofiaRibbonV56");
-    if(!bar || !ribbon)return;
+  function fix(){
+    const ribbon = document.getElementById("sofiaRibbonV56");
+    const bar = findPageBar();
+    if(!ribbon || !bar || ribbon.contains(bar)) return;
 
-    // Ensure page controls live below the ribbon, not beside it.
+    // Головне виправлення: сторінки фізично переносимо ПІСЛЯ стрічки.
     if(ribbon.nextElementSibling !== bar){
-      ribbon.insertAdjacentElement("afterend",bar);
+      ribbon.insertAdjacentElement("afterend", bar);
     }
 
-    bar.style.setProperty("display","flex","important");
-    bar.style.setProperty("align-items","center","important");
-    bar.style.setProperty("gap","8px","important");
-    bar.style.setProperty("flex-wrap","wrap","important");
-    bar.style.setProperty("width","100%","important");
-    bar.style.setProperty("max-width","none","important");
-    bar.style.setProperty("margin","0","important");
-    bar.style.setProperty("padding","8px 10px","important");
-    bar.style.setProperty("box-sizing","border-box","important");
+    // Окремий рядок на всю ширину.
+    Object.entries({
+      display:"flex",
+      width:"100%",
+      maxWidth:"100%",
+      flexBasis:"100%",
+      clear:"both",
+      alignItems:"center",
+      justifyContent:"flex-start",
+      flexWrap:"wrap",
+      gap:"8px",
+      margin:"8px 0 0 0",
+      padding:"8px 10px",
+      boxSizing:"border-box",
+      position:"relative",
+      left:"0",
+      right:"auto",
+      float:"none"
+    }).forEach(([k,v])=>bar.style.setProperty(k,v,"important"));
 
-    // Page tabs should stay directly after "Нова сторінка" and scroll only when needed.
-    const tabsWrap=document.getElementById("pageTabsWrap");
-    if(tabsWrap){
-      if(tabsWrap.previousElementSibling !== document.getElementById("addPageBtn")){
-        document.getElementById("addPageBtn").insertAdjacentElement("afterend",tabsWrap);
-      }
-      tabsWrap.style.setProperty("display","flex","important");
-      tabsWrap.style.setProperty("align-items","center","important");
-      tabsWrap.style.setProperty("flex","1 1 auto","important");
-      tabsWrap.style.setProperty("min-width","0","important");
-      tabsWrap.style.setProperty("max-width","100%","important");
-      tabsWrap.style.setProperty("margin-left","0","important");
+    // Якщо батьківський контейнер був flex-row, не дозволяємо йому
+    // знову поставити стрічку та сторінки поруч.
+    const parent = ribbon.parentElement;
+    if(parent){
+      parent.style.setProperty("display","flex","important");
+      parent.style.setProperty("flex-direction","column","important");
+      parent.style.setProperty("align-items","stretch","important");
+      parent.style.setProperty("width","100%","important");
+    }
+
+    // Кнопка "Нова сторінка" та вкладки не розтягуються на правий край.
+    const add=document.getElementById("addPageBtn");
+    if(add){
+      add.style.setProperty("flex","0 0 auto","important");
+      add.style.setProperty("margin","0","important");
     }
 
     const tabs=document.getElementById("pageTabs");
-    if(tabs){
-      tabs.style.setProperty("display","flex","important");
-      tabs.style.setProperty("align-items","center","important");
-      tabs.style.setProperty("gap","6px","important");
-      tabs.style.setProperty("overflow-x","auto","important");
-      tabs.style.setProperty("overflow-y","hidden","important");
-      tabs.style.setProperty("width","100%","important");
-      tabs.style.setProperty("max-width","100%","important");
-    }
+    const wrap=document.getElementById("pageTabsWrap");
+    [wrap,tabs].filter(Boolean).forEach(el=>{
+      el.style.setProperty("display","flex","important");
+      el.style.setProperty("align-items","center","important");
+      el.style.setProperty("gap","6px","important");
+      el.style.setProperty("width","auto","important");
+      el.style.setProperty("max-width","100%","important");
+      el.style.setProperty("flex","0 1 auto","important");
+      el.style.setProperty("margin","0","important");
+      el.style.setProperty("overflow-x","auto","important");
+    });
+
+    // Позначаємо версію лише після успішного виправлення.
+    const badge=document.getElementById("appVersionBadge");
+    if(badge) badge.textContent="v58";
+    document.documentElement.dataset.sofiaVersion="58";
   }
 
   function init(){
-    fixPageBar();
-    [250,700,1500].forEach(ms=>setTimeout(fixPageBar,ms));
+    fix();
+    [100,300,700,1400,2500].forEach(t=>setTimeout(fix,t));
+
+    // Після додавання/видалення сторінок DOM може перебудуватися.
+    const obs=new MutationObserver(()=>requestAnimationFrame(fix));
+    obs.observe(document.body,{childList:true,subtree:true});
   }
 
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150));
-  }else{
-    setTimeout(init,150);
-  }
+  if(document.readyState==="loading")
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  else init();
 })();
