@@ -853,10 +853,38 @@ function createGraphParts(meta){
       }
     }
   }
-  parts.push(new fabric.Text(`${meta.name||"Графік"}: ${shiftedFormulaLabel(meta)}`,{
-    left:18,top:18,fontSize:18,fill:color,fontFamily:"Arial",
-    backgroundColor:"rgba(255,255,255,.90)",padding:5,selectable:false,evented:false,erasable:false
-  }));
+  // V55: formula is written next to the graph itself, not in the top-left corner.
+  // Use the longest visible segment and its local tangent.
+  const longest=segments.slice().sort((a,b)=>b.length-a.length)[0];
+  if(longest && longest.length>3){
+    const idx=Math.max(1,Math.min(longest.length-2,Math.floor(longest.length*0.62)));
+    const p0=longest[idx-1], p1=longest[idx], p2=longest[idx+1];
+    let angle=Math.atan2(p2.y-p0.y,p2.x-p0.x)*180/Math.PI;
+    if(angle>90)angle-=180;
+    if(angle<-90)angle+=180;
+
+    // Offset a little perpendicular to the curve so the label does not cover it.
+    const rad=angle*Math.PI/180;
+    const offset=18;
+    const lx=p1.x-Math.sin(rad)*offset;
+    const ly=p1.y+Math.cos(rad)*offset;
+
+    const formulaLabel=new fabric.Text(shiftedFormulaLabel(meta),{
+      left:lx,top:ly,
+      originX:"center",originY:"bottom",
+      angle,
+      fontSize:18,
+      fill:color,
+      fontFamily:"Arial",
+      fontWeight:"600",
+      backgroundColor:"rgba(255,255,255,.78)",
+      padding:3,
+      selectable:false,evented:false,erasable:false,
+      objectCaching:false
+    });
+    formulaLabel.isGraphFormulaLabel=true;
+    parts.push(formulaLabel);
+  }
   return parts;
 }
 function createGraphGroup(meta){
@@ -3804,8 +3832,18 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       const b=e.target.closest?.("button");
       if(!b)return;
       const id=(b.id||"").toLowerCase();
-      const txt=(b.textContent||"").toLowerCase();
-      if(/compass/.test(id) || /циркул/.test(txt)){
+      const txt=(b.textContent||"").trim().toLowerCase();
+
+      // V55: react ONLY to the real compass launcher, never to controls
+      // inside the compass window (Close / Pick / Build / Max).
+      const isCompassLauncher =
+        b.dataset?.instrument==="compass" ||
+        id==="compassbtn" ||
+        id==="opencompassbtn" ||
+        txt==="циркуль" ||
+        txt==="📐 циркуль";
+
+      if(isCompassLauncher){
         e.preventDefault();
         e.stopImmediatePropagation();
         openCompass();
@@ -5579,6 +5617,248 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       cleanHome();
       labelGraphs();
     },ms));
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
+  }else{
+    setTimeout(init,250);
+  }
+})();
+
+
+
+/* =========================================================
+   V55: СТАБІЛЬНА ПЕРЕВІРКА КНОПОК + ВСТАВКА + ЦИРКУЛЬ
+   ========================================================= */
+(function(){
+  let zTop=40000;
+
+  function front(p){
+    if(!p)return;
+    p.style.setProperty("position","fixed","important");
+    p.style.setProperty("z-index",String(++zTop),"important");
+    p.style.setProperty("visibility","visible","important");
+    p.style.setProperty("opacity","1","important");
+    p.style.setProperty("pointer-events","auto","important");
+  }
+
+  function togglePanel(id){
+    const p=document.getElementById(id);
+    if(!p)return false;
+    const hidden=p.classList.contains("hidden") || p.hidden || getComputedStyle(p).display==="none";
+    if(hidden){
+      p.classList.remove("hidden");
+      p.hidden=false;
+      p.style.removeProperty("display");
+      front(p);
+    }else{
+      p.classList.add("hidden");
+    }
+    return true;
+  }
+
+  function bindPanelButton(bid,pid){
+    const b=document.getElementById(bid);
+    const p=document.getElementById(pid);
+    if(!b || !p)return;
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      togglePanel(pid);
+    };
+  }
+
+  /* ---------- INSERT: every visible command gets a real action ---------- */
+  function createNote(){
+    if(typeof fcanvas==="undefined" || !window.fabric)return;
+    const t=new fabric.Textbox("Замітка",{
+      left:380,top:280,width:260,
+      fontSize:22,
+      fill:"#273142",
+      backgroundColor:"#fff19a",
+      padding:14,
+      fontFamily:"Arial",
+      editable:true
+    });
+    t.sofiaNote=true;
+    fcanvas.add(t);
+    fcanvas.setActiveObject(t);
+    t.enterEditing?.();
+    fcanvas.requestRenderAll();
+    if(typeof pushHistory==="function")pushHistory();
+    if(typeof autoSave==="function")autoSave();
+    if(typeof setTool==="function")setTool("select");
+  }
+
+  function createTable(){
+    if(typeof fcanvas==="undefined" || !window.fabric)return;
+    let rows=Number(prompt("Кількість рядків таблиці:","3"));
+    if(!Number.isFinite(rows))return;
+    let cols=Number(prompt("Кількість стовпців таблиці:","3"));
+    if(!Number.isFinite(cols))return;
+    rows=Math.max(1,Math.min(20,Math.floor(rows)));
+    cols=Math.max(1,Math.min(12,Math.floor(cols)));
+
+    const cellW=90,cellH=42,w=cols*cellW,h=rows*cellH;
+    const color=document.getElementById("colorPicker")?.value||"#17315f";
+    const sw=Math.max(1,Number(document.getElementById("lineWidth")?.value||2));
+    const parts=[];
+
+    for(let r=0;r<=rows;r++){
+      parts.push(new fabric.Line([0,r*cellH,w,r*cellH],{
+        stroke:color,strokeWidth:sw,selectable:false,evented:false
+      }));
+    }
+    for(let c=0;c<=cols;c++){
+      parts.push(new fabric.Line([c*cellW,0,c*cellW,h],{
+        stroke:color,strokeWidth:sw,selectable:false,evented:false
+      }));
+    }
+
+    const g=new fabric.Group(parts,{
+      left:320,top:220,
+      selectable:true,evented:true,
+      transparentCorners:false,
+      cornerStyle:"circle"
+    });
+    g.sofiaTable=true;
+    fcanvas.add(g);
+    fcanvas.setActiveObject(g);
+    if(typeof pushHistory==="function")pushHistory();
+    if(typeof autoSave==="function")autoSave();
+    if(typeof setTool==="function")setTool("select");
+  }
+
+  function bindInsert(){
+    bindPanelButton("mediaBtn","mediaPanel");
+    bindPanelButton("elementsBtn","elementsPanel");
+    bindPanelButton("geometryBtn","geometryPanel");
+    bindPanelButton("shapeLibraryBtn","shapeLibraryPanel");
+
+    const note=document.getElementById("noteBtn");
+    if(note){
+      note.onclick=e=>{e.preventDefault();e.stopPropagation();createNote()};
+    }
+
+    const table=document.getElementById("tableBtn");
+    if(table){
+      table.onclick=e=>{e.preventDefault();e.stopPropagation();createTable()};
+    }
+  }
+
+  /* ---------- MATH ---------- */
+  function bindMath(){
+    bindPanelButton("calculatorBtn","calculatorPanel");
+    bindPanelButton("angleBtn","anglePanel");
+    bindPanelButton("numberRayBtn","numberRayPanel");
+    bindPanelButton("graphBuilderBtn","graphBuilderPanel");
+  }
+
+  /* ---------- TEACHER ---------- */
+  function bindTeacher(){
+    bindPanelButton("timerBtn","timerPanel");
+    bindPanelButton("ukrainianBtn","ukrainianPanel");
+  }
+
+  /* ---------- COMPASS ---------- */
+  function fixCompassControls(){
+    const p=document.getElementById("sofiaCompassPanel");
+    if(!p)return;
+
+    // Always show all controls. Some earlier CSS/layout changes had hidden the action rows.
+    p.querySelectorAll(".sofia-compass-actions").forEach(row=>{
+      row.style.setProperty("display","flex","important");
+      row.style.setProperty("visibility","visible","important");
+      row.style.setProperty("opacity","1","important");
+    });
+
+    const close=document.getElementById("sofiaCompassClose");
+    if(close){
+      close.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        p.style.display="none";
+        p.classList.add("hidden");
+      };
+    }
+
+    // Maximize was not requested for compass; keep it out of the way.
+    const max=document.getElementById("sofiaCompassMax");
+    if(max)max.style.display="none";
+  }
+
+  /* ---------- Remove duplicate external graph labels from older add-ons ---------- */
+  function removeLegacyGraphLabels(){
+    if(typeof fcanvas==="undefined")return;
+    const junk=fcanvas.getObjects().filter(o=>
+      o?.sofiaGraphInlineLabel ||
+      o?.sofiaInlineGraphLabel
+    );
+    junk.forEach(o=>fcanvas.remove(o));
+
+    // Older top-level labels that literally begin with "Графік N:".
+    fcanvas.getObjects().filter(o=>{
+      const t=(o?.text||"").trim();
+      return /^Графік\s*\d+\s*:/i.test(t) && !o.graphObject;
+    }).forEach(o=>fcanvas.remove(o));
+
+    fcanvas.requestRenderAll();
+  }
+
+  /* ---------- Button audit: repair known core commands without inventing new UI ---------- */
+  function auditAndRepair(){
+    bindInsert();
+    bindMath();
+    bindTeacher();
+    fixCompassControls();
+    removeLegacyGraphLabels();
+
+    // Main floating panels must open above ribbon/settings.
+    [
+      "mediaPanel","elementsPanel","geometryPanel","shapeLibraryPanel",
+      "calculatorPanel","anglePanel","numberRayPanel","graphBuilderPanel",
+      "timerPanel","ukrainianPanel","teacherToolsPanel","aiPanel","keyboardPanel",
+      "sofiaCompassPanel"
+    ].forEach(id=>{
+      const p=document.getElementById(id);
+      if(p && !p.classList.contains("hidden") && getComputedStyle(p).display!=="none")front(p);
+    });
+  }
+
+  /* ---------- Visual mini-audit in console for development ---------- */
+  function consoleAudit(){
+    const checks=[
+      ["Замітка","noteBtn"],
+      ["Таблиця","tableBtn"],
+      ["Фото / відео / файл","mediaBtn"],
+      ["Елементи","elementsBtn"],
+      ["Прилади","geometryBtn"],
+      ["2D / 3D","shapeLibraryBtn"],
+      ["Калькулятор","calculatorBtn"],
+      ["Побудова кута","angleBtn"],
+      ["Числовий промінь","numberRayBtn"],
+      ["Побудова графіка","graphBuilderBtn"],
+      ["Розбір","ukrainianBtn"],
+      ["Таймер","timerBtn"],
+      ["Голос","voiceBtn"],
+      ["Клавіатура","keyboardBtn"],
+      ["Зберегти","saveBtn"]
+    ];
+    const missing=checks.filter(([,id])=>!document.getElementById(id)).map(([name])=>name);
+    if(missing.length)console.warn("Sofia V55: відсутні DOM-кнопки:",missing);
+    else console.info("Sofia V55: основні кнопки знайдені.");
+  }
+
+  function init(){
+    auditAndRepair();
+    consoleAudit();
+
+    [300,900,1800].forEach(ms=>setTimeout(auditAndRepair,ms));
+
+    const mo=new MutationObserver(()=>{
+      clearTimeout(mo.__t);
+      mo.__t=setTimeout(auditAndRepair,80);
+    });
+    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
   }
 
   if(document.readyState==="loading"){
