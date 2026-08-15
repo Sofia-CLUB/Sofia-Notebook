@@ -2531,3 +2531,298 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   document.documentElement.dataset.sofiaVersion="28";
   if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
 })();
+
+
+
+/* =========================================================
+   V40: АВТОРСЬКИЙ ПІДПИС + РЕЖИМ ВПОРЯДКУВАННЯ КНОПОК
+   ========================================================= */
+(function(){
+  const STORAGE_KEY="sofiaNotebookButtonOrderV40";
+  let arrangeMode=false;
+  let draggedBtn=null;
+
+  function addAuthorSignature(){
+    if(document.getElementById("sofiaAuthorSignature"))return;
+    const el=document.createElement("div");
+    el.id="sofiaAuthorSignature";
+    el.textContent="Sofia Notebook © Parasochka";
+    el.style.cssText=[
+      "position:fixed",
+      "right:14px",
+      "bottom:8px",
+      "z-index:9998",
+      "font-size:12px",
+      "font-weight:600",
+      "letter-spacing:.15px",
+      "opacity:.55",
+      "pointer-events:none",
+      "user-select:none",
+      "white-space:nowrap"
+    ].join(";");
+    document.body.appendChild(el);
+  }
+
+  function getArrangeButton(){
+    return document.getElementById("arrangeButtonsBtn");
+  }
+
+  function addArrangeControls(){
+    if(getArrangeButton())return;
+
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.id="arrangeButtonsBtn";
+    btn.textContent="🔀 Впорядкувати кнопки";
+    btn.title="Увімкнути переміщення кнопок мишкою";
+    btn.style.cssText="margin-left:6px;";
+
+    const reset=document.createElement("button");
+    reset.type="button";
+    reset.id="resetButtonsOrderBtn";
+    reset.textContent="↺ Стандартний порядок";
+    reset.title="Повернути початковий порядок кнопок";
+    reset.style.cssText="margin-left:4px;display:none;";
+
+    const anchor=document.getElementById("addPageBtn") ||
+                 document.getElementById("saveBtn") ||
+                 document.querySelector("header button, .toolbar button, button");
+
+    if(anchor && anchor.parentElement){
+      anchor.parentElement.appendChild(btn);
+      anchor.parentElement.appendChild(reset);
+    }else{
+      const box=document.createElement("div");
+      box.style.cssText="position:fixed;top:8px;right:8px;z-index:9999;";
+      box.append(btn,reset);
+      document.body.appendChild(box);
+    }
+
+    btn.addEventListener("click", e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      setArrangeMode(!arrangeMode);
+    });
+
+    reset.addEventListener("click", e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(!confirm("Повернути стандартний порядок кнопок?"))return;
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    });
+  }
+
+  function eligibleButton(btn){
+    if(!(btn instanceof HTMLButtonElement))return false;
+    if(btn.id==="arrangeButtonsBtn" || btn.id==="resetButtonsOrderBtn")return false;
+    if(btn.closest("#pageTabs"))return false;
+    if(btn.closest(".page-tab"))return false;
+    return true;
+  }
+
+  function buttonKey(btn){
+    if(btn.id)return "id:"+btn.id;
+    const attrs=["data-tool","data-calc","data-mathinsert","data-action","data-insert"];
+    for(const a of attrs){
+      if(btn.hasAttribute(a))return a+":"+btn.getAttribute(a);
+    }
+    const txt=(btn.textContent||"").trim().replace(/\s+/g," ").slice(0,80);
+    return "txt:"+txt;
+  }
+
+  function elementPath(el){
+    if(!el)return "";
+    if(el.id)return "#"+el.id;
+    const parts=[];
+    let cur=el;
+    while(cur && cur!==document.body && parts.length<5){
+      let p=cur.tagName.toLowerCase();
+      if(cur.classList && cur.classList.length){
+        p+="."+Array.from(cur.classList).slice(0,2).join(".");
+      }
+      const parent=cur.parentElement;
+      if(parent){
+        const same=Array.from(parent.children).filter(x=>x.tagName===cur.tagName);
+        if(same.length>1)p+=`:nth-of-type(${same.indexOf(cur)+1})`;
+      }
+      parts.unshift(p);
+      cur=parent;
+    }
+    return parts.join(">");
+  }
+
+  function containerKey(parent){
+    return parent.id ? "#"+parent.id : elementPath(parent);
+  }
+
+  function getSavedOrders(){
+    try{
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
+    }catch(e){
+      return {};
+    }
+  }
+
+  function saveContainerOrder(parent){
+    const buttons=Array.from(parent.children).filter(eligibleButton);
+    if(buttons.length<2)return;
+    const orders=getSavedOrders();
+    orders[containerKey(parent)]=buttons.map(buttonKey);
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(orders));
+  }
+
+  function restoreOrders(){
+    const orders=getSavedOrders();
+    if(!orders || typeof orders!=="object")return;
+
+    document.querySelectorAll("button").forEach(btn=>{
+      if(!eligibleButton(btn))return;
+      const parent=btn.parentElement;
+      if(!parent)return;
+      const key=containerKey(parent);
+      const order=orders[key];
+      if(!Array.isArray(order)||!order.length)return;
+
+      const children=Array.from(parent.children);
+      const candidates=children.filter(eligibleButton);
+      const map=new Map(candidates.map(b=>[buttonKey(b),b]));
+      const ordered=order.map(k=>map.get(k)).filter(Boolean);
+      candidates.forEach(b=>{if(!ordered.includes(b))ordered.push(b)});
+
+      if(ordered.length<2)return;
+
+      // Reorder only buttons while preserving non-button elements as much as possible.
+      const firstButton=candidates[0];
+      let cursor=firstButton;
+      ordered.forEach((b,idx)=>{
+        if(idx===0){
+          if(b!==firstButton) parent.insertBefore(b,firstButton);
+          cursor=b;
+        }else{
+          cursor.insertAdjacentElement("afterend",b);
+          cursor=b;
+        }
+      });
+    });
+  }
+
+  function setButtonVisual(btn,on){
+    btn.draggable=on;
+    if(on){
+      btn.dataset.sofiaArrange="1";
+      btn.style.cursor="grab";
+      btn.style.outline="1px dashed rgba(37,99,235,.45)";
+      btn.style.outlineOffset="2px";
+    }else{
+      btn.draggable=false;
+      delete btn.dataset.sofiaArrange;
+      btn.style.cursor="";
+      btn.style.outline="";
+      btn.style.outlineOffset="";
+    }
+  }
+
+  function setArrangeMode(on){
+    arrangeMode=on;
+    document.body.classList.toggle("sofia-arrange-mode",on);
+
+    document.querySelectorAll("button").forEach(btn=>{
+      if(eligibleButton(btn))setButtonVisual(btn,on);
+    });
+
+    const ctl=getArrangeButton();
+    const reset=document.getElementById("resetButtonsOrderBtn");
+    if(ctl){
+      ctl.textContent=on ? "✓ Готово" : "🔀 Впорядкувати кнопки";
+      ctl.style.fontWeight=on ? "700" : "";
+    }
+    if(reset)reset.style.display=on ? "" : "none";
+
+    let badge=document.getElementById("arrangeModeBadge");
+    if(on){
+      if(!badge){
+        badge=document.createElement("div");
+        badge.id="arrangeModeBadge";
+        badge.textContent="Перетягуйте кнопки мишкою. Натисніть «✓ Готово», коли завершите.";
+        badge.style.cssText=[
+          "position:fixed","left:50%","bottom:34px","transform:translateX(-50%)",
+          "z-index:10000","padding:8px 14px","border-radius:10px",
+          "background:rgba(15,23,42,.92)","color:white","font-size:13px",
+          "box-shadow:0 4px 18px rgba(0,0,0,.18)","pointer-events:none"
+        ].join(";");
+        document.body.appendChild(badge);
+      }
+    }else if(badge){
+      badge.remove();
+    }
+  }
+
+  document.addEventListener("dragstart",e=>{
+    const btn=e.target.closest && e.target.closest("button");
+    if(!arrangeMode || !btn || !eligibleButton(btn))return;
+    draggedBtn=btn;
+    btn.style.opacity=".45";
+    if(e.dataTransfer){
+      e.dataTransfer.effectAllowed="move";
+      e.dataTransfer.setData("text/plain",buttonKey(btn));
+    }
+  },true);
+
+  document.addEventListener("dragend",e=>{
+    const btn=e.target.closest && e.target.closest("button");
+    if(btn)btn.style.opacity="";
+    if(draggedBtn && draggedBtn.parentElement)saveContainerOrder(draggedBtn.parentElement);
+    draggedBtn=null;
+  },true);
+
+  document.addEventListener("dragover",e=>{
+    if(!arrangeMode || !draggedBtn)return;
+    const target=e.target.closest && e.target.closest("button");
+    if(!target || target===draggedBtn || !eligibleButton(target))return;
+    if(target.parentElement!==draggedBtn.parentElement)return;
+    e.preventDefault();
+
+    const rect=target.getBoundingClientRect();
+    const horizontal = target.parentElement.scrollWidth > target.parentElement.clientWidth ||
+                       getComputedStyle(target.parentElement).display.includes("flex");
+    const before = horizontal ? e.clientX < rect.left+rect.width/2
+                              : e.clientY < rect.top+rect.height/2;
+    if(before) target.parentElement.insertBefore(draggedBtn,target);
+    else target.insertAdjacentElement("afterend",draggedBtn);
+  },true);
+
+  document.addEventListener("drop",e=>{
+    if(!arrangeMode || !draggedBtn)return;
+    e.preventDefault();
+    if(draggedBtn.parentElement)saveContainerOrder(draggedBtn.parentElement);
+  },true);
+
+  // In arrange mode buttons should not perform their normal actions.
+  document.addEventListener("click",e=>{
+    if(!arrangeMode)return;
+    const btn=e.target.closest && e.target.closest("button");
+    if(!btn || !eligibleButton(btn))return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  },true);
+
+  function refreshArrangeState(){
+    if(!arrangeMode)return;
+    document.querySelectorAll("button").forEach(btn=>{
+      if(eligibleButton(btn) && btn.dataset.sofiaArrange!=="1")setButtonVisual(btn,true);
+    });
+  }
+
+  const observer=new MutationObserver(()=>refreshArrangeState());
+
+  function init(){
+    addAuthorSignature();
+    addArrangeControls();
+    restoreOrders();
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
+
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
+  else init();
+})();
