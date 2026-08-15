@@ -2866,6 +2866,11 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     if(NEVER_MOVE_IDS.has(btn.id))return false;
     if(btn.id==="arrangeButtonsBtn" || btn.id==="resetButtonsOrderBtn")return false;
     if(btn.closest("#sofiaRibbonV41"))return false;
+
+    // V46: the original left vertical toolbar belongs to the canvas and must stay there.
+    // These buttons already have their own setTool(...) handlers.
+    if(btn.matches(".side-tool[data-tool]") || btn.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar"))return false;
+
     if(isOverlayButton(btn) || isPageTabButton(btn))return false;
 
     // Do not steal tiny calculator/keyboard/internal editing buttons.
@@ -3838,187 +3843,146 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
 
 /* =========================================================
-   V45: ЛІВА ПАНЕЛЬ ЗАВЖДИ ЗАЛИШАЄТЬСЯ + ЧИСТЕ НАЛАШТУВАННЯ СТРІЧКИ
+   V46: ВІДНОВЛЕННЯ ЛІВОЇ ПАНЕЛІ + НАДІЙНЕ ВІДКРИТТЯ ПАНЕЛЕЙ
    ========================================================= */
 (function(){
-  const LEFT_TOOL_IDS = new Set([
-    "handBtn","penBtn","markerBtn","eraserBtn","lineBtn","curveBtn","polylineBtn",
-    "arrowBtn","rectBtn","circleBtn","triangleBtn","selectBtn"
-  ]);
+  const PANEL_MAP={
+    elementsBtn:"elementsPanel",
+    geometryBtn:"geometryPanel",
+    shapeLibraryBtn:"shapeLibraryPanel",
+    angleBtn:"anglePanel",
+    numberRayBtn:"numberRayPanel",
+    ukrainianBtn:"ukrainianPanel",
+    graphBuilderBtn:"graphBuilderPanel",
+    mediaBtn:"mediaPanel",
+    aiBtn:"aiPanel",
+    calculatorBtn:"calculatorPanel",
+    timerBtn:"timerPanel",
+    keyboardBtn:"keyboardPanel"
+  };
 
-  function getLeftPanel(){
-    const known = [
-      document.getElementById("leftToolbar"),
-      document.getElementById("leftPanel"),
-      document.querySelector(".left-toolbar"),
-      document.querySelector(".tool-sidebar"),
-      document.querySelector(".left-tools")
-    ].filter(Boolean);
-    if(known.length) return known[0];
+  let z=5000;
 
-    // Fallback: infer the vertical tool strip from known buttons.
-    for(const id of LEFT_TOOL_IDS){
-      const btn=document.getElementById(id);
-      if(btn && btn.parentElement) return btn.parentElement;
+  function leftToolbar(){
+    const first=document.querySelector(".side-tool[data-tool]");
+    if(!first)return null;
+    let p=first.parentElement;
+    // Usually all side tools share one vertical parent. Walk only while the
+    // parent remains a compact toolbar, never up to the whole page.
+    while(p && p!==document.body){
+      const count=p.querySelectorAll(":scope > .side-tool[data-tool]").length;
+      if(count>=3)return p;
+      p=p.parentElement;
     }
-    return null;
+    return first.parentElement;
   }
 
-  function forceLeftPanelVisible(){
-    const panel=getLeftPanel();
+  function restoreLeftToolbar(){
+    const bar=leftToolbar();
+    if(!bar)return;
+
+    bar.hidden=false;
+    bar.classList.remove("hidden","collapsed","is-hidden","panel-hidden");
+    bar.style.removeProperty("display");
+    bar.style.setProperty("visibility","visible","important");
+    bar.style.setProperty("opacity","1","important");
+    bar.style.setProperty("pointer-events","auto","important");
+    bar.style.setProperty("z-index","1150","important");
+
+    // The left tools themselves must never be draggable ribbon commands.
+    bar.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+      btn.classList.remove("sofia-command");
+      btn.draggable=false;
+      btn.style.removeProperty("outline");
+      btn.style.removeProperty("outline-offset");
+      btn.style.removeProperty("cursor");
+      btn.style.removeProperty("display");
+      btn.style.removeProperty("visibility");
+      btn.style.removeProperty("opacity");
+    });
+  }
+
+  function front(panel){
+    if(!panel)return;
+    panel.style.setProperty("z-index",String(++z),"important");
+  }
+
+  function openPanel(panel){
+    if(!panel)return;
+    panel.classList.remove("hidden");
+    panel.hidden=false;
+    panel.style.removeProperty("display");
+    panel.style.setProperty("visibility","visible","important");
+    panel.style.setProperty("opacity","1","important");
+    panel.style.setProperty("pointer-events","auto","important");
+    front(panel);
+
+    // V44 floating-window behavior, but without changing the tool's own content.
+    panel.classList.add("sofia-floating-window");
+    if(!panel.style.left && !panel.classList.contains("sofia-maximized")){
+      const r=panel.getBoundingClientRect();
+      if(r.left<0 || r.left>window.innerWidth-80)panel.style.left="120px";
+      if(r.top<0 || r.top>window.innerHeight-80)panel.style.top="140px";
+    }
+  }
+
+  function closePanel(panel){
+    if(!panel)return;
+    panel.classList.add("hidden");
+  }
+
+  function togglePanel(panel){
+    if(!panel)return;
+    const isHidden=panel.classList.contains("hidden") ||
+      getComputedStyle(panel).display==="none" ||
+      panel.hidden;
+    if(isHidden)openPanel(panel);
+    else closePanel(panel);
+  }
+
+  // These are panel-launcher buttons only. Handle them in one place so moving
+  // them between ribbon tabs cannot break their command.
+  document.addEventListener("click",e=>{
+    const btn=e.target.closest?.("button");
+    if(!btn || !PANEL_MAP[btn.id])return;
+
+    const panel=document.getElementById(PANEL_MAP[btn.id]);
     if(!panel)return;
 
-    panel.style.display="";
-    panel.style.visibility="visible";
-    panel.style.opacity="1";
-    panel.style.pointerEvents="auto";
-    panel.style.transform="none";
-    panel.style.left="";
-    panel.style.marginLeft="";
-    panel.removeAttribute("hidden");
-    panel.classList.remove("hidden","collapsed","is-hidden","panel-hidden");
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    togglePanel(panel);
+  },true);
 
-    // Keep the left toolbar above canvas, but under floating windows.
-    panel.style.zIndex="1100";
-  }
+  // Ensure any opened tool window rises above the notebook/ribbon.
+  document.addEventListener("mousedown",e=>{
+    const panel=e.target.closest?.(
+      "#elementsPanel,#geometryPanel,#shapeLibraryPanel,#anglePanel,#numberRayPanel,"+
+      "#ukrainianPanel,#graphBuilderPanel,#mediaPanel,#aiPanel,#calculatorPanel,"+
+      "#timerPanel,#keyboardPanel,#teacherToolsPanel"
+    );
+    if(panel)front(panel);
+  },true);
 
-  function isLeftTool(btn){
-    if(!btn)return false;
-    if(btn.id && LEFT_TOOL_IDS.has(btn.id))return true;
-    const panel=getLeftPanel();
-    return !!(panel && panel.contains(btn));
-  }
+  function repair(){
+    restoreLeftToolbar();
 
-  function moveRibbonCommandsAwayFromLeftPanel(){
-    const panel=getLeftPanel();
-    if(!panel)return;
-
-    // If a previous ribbon version moved left-toolbar buttons into the top ribbon,
-    // return them to the left panel in a sensible order.
-    const preferredOrder=[
-      "selectBtn","handBtn","penBtn","markerBtn","eraserBtn","lineBtn","curveBtn",
-      "polylineBtn","arrowBtn","rectBtn","circleBtn","triangleBtn"
-    ];
-
-    preferredOrder.forEach(id=>{
-      const btn=document.getElementById(id);
-      if(btn && !panel.contains(btn)){
-        panel.appendChild(btn);
-      }
-      if(btn){
-        btn.classList.remove("sofia-command");
-        btn.draggable=false;
-        btn.style.outline="";
-        btn.style.outlineOffset="";
-        btn.style.cursor="";
-      }
+    // Remove ribbon styling if a previously saved browser state had affected side tools.
+    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+      btn.classList.remove("sofia-command");
+      btn.draggable=false;
     });
   }
 
-  function cleanTechnicalButtons(){
-    // Remove the temporary technical buttons that appeared in the toolbar.
-    const labels=[
-      "Верхня панель",
-      "Ліва панель",
-      "Показати всі",
-      "Готово"
-    ];
-
-    document.querySelectorAll("button").forEach(btn=>{
-      const txt=(btn.textContent||"").trim();
-      if(labels.includes(txt)){
-        // Do not remove the current arrange completion button if it is the real arrange control.
-        if(btn.id==="arrangeButtonsBtn")return;
-        btn.style.display="none";
-        btn.setAttribute("aria-hidden","true");
-      }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>{
+      repair();
+      setTimeout(repair,350);
+      setTimeout(repair,1000);
     });
+  }else{
+    repair();
+    setTimeout(repair,350);
+    setTimeout(repair,1000);
   }
-
-  function renameArrangeControl(){
-    const btn=document.getElementById("arrangeButtonsBtn");
-    if(!btn)return;
-    if(document.body.classList.contains("sofia-arrange-v41")){
-      btn.textContent="✓ Готово";
-    }else{
-      btn.textContent="⚙ Налаштувати панелі";
-      btn.title="Налаштувати порядок команд у верхніх вкладках";
-    }
-  }
-
-  function protectLeftPanelFromArrange(){
-    document.addEventListener("dragstart",e=>{
-      const btn=e.target.closest?.("button");
-      if(isLeftTool(btn)){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-      }
-    },true);
-
-    document.addEventListener("click",e=>{
-      const btn=e.target.closest?.("button");
-      if(isLeftTool(btn) && document.body.classList.contains("sofia-arrange-v41")){
-        // Left toolbar should remain usable and untouched even while arranging the ribbon.
-        e.stopPropagation();
-      }
-    },true);
-  }
-
-  function patchRibbonCollectors(){
-    // Any button already inside the left panel must never become a ribbon command.
-    const mo=new MutationObserver(()=>{
-      const panel=getLeftPanel();
-      if(!panel)return;
-      panel.querySelectorAll("button").forEach(btn=>{
-        btn.classList.remove("sofia-command");
-        btn.draggable=false;
-        btn.style.outline="";
-        btn.style.outlineOffset="";
-        btn.style.cursor="";
-      });
-      forceLeftPanelVisible();
-      cleanTechnicalButtons();
-      renameArrangeControl();
-    });
-    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
-  }
-
-  function createPanelsButtonIfMissing(){
-    let btn=document.getElementById("arrangeButtonsBtn");
-    if(btn){
-      renameArrangeControl();
-      return;
-    }
-
-    const ribbonHead=document.querySelector(".sofia-ribbon-actions");
-    if(!ribbonHead)return;
-
-    btn=document.createElement("button");
-    btn.type="button";
-    btn.id="arrangeButtonsBtn";
-    btn.textContent="⚙ Налаштувати панелі";
-    btn.title="Налаштувати порядок команд у верхніх вкладках";
-    ribbonHead.prepend(btn);
-  }
-
-  function init(){
-    forceLeftPanelVisible();
-    moveRibbonCommandsAwayFromLeftPanel();
-    cleanTechnicalButtons();
-    createPanelsButtonIfMissing();
-    renameArrangeControl();
-    protectLeftPanelFromArrange();
-    patchRibbonCollectors();
-
-    // Re-assert after all late teacher tools/ribbon code has loaded.
-    [250,700,1400,2500].forEach(ms=>setTimeout(()=>{
-      forceLeftPanelVisible();
-      moveRibbonCommandsAwayFromLeftPanel();
-      cleanTechnicalButtons();
-      renameArrangeControl();
-    },ms));
-  }
-
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
-  else init();
 })();
