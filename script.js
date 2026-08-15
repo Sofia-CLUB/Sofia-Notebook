@@ -524,7 +524,7 @@ fcanvas.on("mouse:down",opt=>{
   if(currentTool==="text"){
     const t=new fabric.IText("Текст",{
       left:p.x,top:p.y,fill:$("colorPicker").value,
-      fontSize:26,fontFamily:"Arial",erasable:false
+      fontSize:26,fontFamily:"Times New Roman",fontStyle:"normal",erasable:false
     });
     fcanvas.add(t);
     fcanvas.setActiveObject(t);
@@ -3282,4 +3282,407 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220));
   else setTimeout(init,220);
+})();
+
+
+
+/* =========================================================
+   V57: ФОРМАТУВАННЯ ТЕКСТУ + АУДИТ КНОПОК БЕЗ ДУБЛІКАТІВ
+   ========================================================= */
+(function(){
+  "use strict";
+
+  const $57=id=>document.getElementById(id);
+
+  /* ---------- TEXT FORMAT PANEL ---------- */
+  function activeText(){
+    if(typeof fcanvas==="undefined")return null;
+    const o=fcanvas.getActiveObject?.();
+    return o && ["i-text","textbox","text"].includes(o.type) ? o : null;
+  }
+
+  function applyText(props){
+    const o=activeText();
+    if(!o)return;
+    o.set(props);
+    o.setCoords?.();
+    fcanvas.requestRenderAll();
+    try{pushHistory();autoSave()}catch(e){}
+    syncV57TextControls();
+  }
+
+  function syncV57TextControls(){
+    const o=activeText();
+    const box=$57("v57TextFormat");
+    if(!box)return;
+
+    box.querySelectorAll("select,input,button").forEach(el=>{
+      if(el.id==="v57InsertTextBtn")return;
+      el.disabled=!o;
+    });
+
+    if(!o)return;
+
+    const font=$57("v57TextFont");
+    const size=$57("v57TextSize");
+    const color=$57("v57TextColor");
+    const bg=$57("v57TextBg");
+    const align=$57("v57TextAlign");
+
+    if(font)font.value=o.fontFamily||"Times New Roman";
+    if(size)size.value=Math.round(o.fontSize||26);
+    if(color && /^#[0-9a-f]{6}$/i.test(o.fill||""))color.value=o.fill;
+    if(bg && /^#[0-9a-f]{6}$/i.test(o.backgroundColor||""))bg.value=o.backgroundColor;
+    if(align)align.value=o.textAlign||"left";
+
+    $57("v57Bold")?.classList.toggle("active",o.fontWeight==="bold"||Number(o.fontWeight)>=600);
+    $57("v57Italic")?.classList.toggle("active",o.fontStyle==="italic");
+    $57("v57Underline")?.classList.toggle("active",!!o.underline);
+    $57("v57Strike")?.classList.toggle("active",!!o.linethrough);
+  }
+
+  function insertText(){
+    if(typeof fcanvas==="undefined"||!window.fabric)return;
+    const t=new fabric.IText("Текст",{
+      left:300,top:200,
+      fontFamily:"Times New Roman",
+      fontSize:26,
+      fill:"#17315f",
+      fontStyle:"normal",
+      editable:true,
+      erasable:false
+    });
+    fcanvas.add(t);
+    fcanvas.setActiveObject(t);
+    t.enterEditing?.();
+    t.selectAll?.();
+    fcanvas.requestRenderAll();
+    try{pushHistory();autoSave();setTool("select")}catch(e){}
+    syncV57TextControls();
+  }
+
+  function addTextFormatControls(){
+    const home=document.querySelector('.v56-panel[data-v56-panel="home"]');
+    if(!home || $57("v57TextFormat"))return;
+
+    const wrap=document.createElement("div");
+    wrap.id="v57TextFormat";
+    wrap.style.cssText=[
+      "display:flex","flex-wrap:wrap","gap:6px","align-items:center",
+      "padding:6px 8px","border:1px solid #d7e0ec","border-radius:10px",
+      "background:#f8fbff"
+    ].join(";");
+
+    wrap.innerHTML=`
+      <button id="v57InsertTextBtn" type="button" title="Додати текст">T Текст</button>
+
+      <select id="v57TextFont" title="Шрифт">
+        <option>Times New Roman</option>
+        <option>Arial</option>
+        <option>Calibri</option>
+        <option>Georgia</option>
+        <option>Verdana</option>
+        <option>Tahoma</option>
+        <option>Trebuchet MS</option>
+        <option>Segoe Print</option>
+        <option>Comic Sans MS</option>
+      </select>
+
+      <input id="v57TextSize" type="number" min="8" max="120" value="26"
+        title="Розмір шрифту" style="width:70px">
+
+      <button id="v57TextSmaller" type="button" title="Зменшити шрифт">A−</button>
+      <button id="v57TextLarger" type="button" title="Збільшити шрифт">A+</button>
+      <button id="v57Bold" type="button" title="Жирний"><b>B</b></button>
+      <button id="v57Italic" type="button" title="Курсив"><i>I</i></button>
+      <button id="v57Underline" type="button" title="Підкреслення"><u>U</u></button>
+      <button id="v57Strike" type="button" title="Закреслення"><s>S</s></button>
+
+      <label title="Колір тексту" style="display:flex;align-items:center;gap:4px">
+        Текст <input id="v57TextColor" type="color" value="#17315f">
+      </label>
+
+      <label title="Фон тексту" style="display:flex;align-items:center;gap:4px">
+        Фон <input id="v57TextBg" type="color" value="#ffffff">
+      </label>
+
+      <select id="v57TextAlign" title="Вирівнювання">
+        <option value="left">← Ліворуч</option>
+        <option value="center">↔ По центру</option>
+        <option value="right">Праворуч →</option>
+        <option value="justify">☰ По ширині</option>
+      </select>
+
+      <button id="v57DuplicateText" type="button" title="Дублювати текст">⧉ Копія</button>
+    `;
+
+    home.appendChild(wrap);
+
+    $57("v57InsertTextBtn").onclick=insertText;
+    $57("v57TextFont").onchange=()=>applyText({fontFamily:$57("v57TextFont").value});
+    $57("v57TextSize").onchange=()=>applyText({fontSize:Math.max(8,Math.min(120,Number($57("v57TextSize").value)||26))});
+
+    $57("v57TextSmaller").onclick=()=>{
+      const o=activeText();if(o)applyText({fontSize:Math.max(8,(o.fontSize||26)-2)});
+    };
+    $57("v57TextLarger").onclick=()=>{
+      const o=activeText();if(o)applyText({fontSize:Math.min(120,(o.fontSize||26)+2)});
+    };
+    $57("v57Bold").onclick=()=>{
+      const o=activeText();if(o)applyText({fontWeight:(o.fontWeight==="bold"||Number(o.fontWeight)>=600)?"normal":"bold"});
+    };
+    $57("v57Italic").onclick=()=>{
+      const o=activeText();if(o)applyText({fontStyle:o.fontStyle==="italic"?"normal":"italic"});
+    };
+    $57("v57Underline").onclick=()=>{
+      const o=activeText();if(o)applyText({underline:!o.underline});
+    };
+    $57("v57Strike").onclick=()=>{
+      const o=activeText();if(o)applyText({linethrough:!o.linethrough});
+    };
+    $57("v57TextColor").oninput=()=>applyText({fill:$57("v57TextColor").value});
+    $57("v57TextBg").oninput=()=>applyText({backgroundColor:$57("v57TextBg").value});
+    $57("v57TextAlign").onchange=()=>applyText({textAlign:$57("v57TextAlign").value});
+
+    $57("v57DuplicateText").onclick=()=>{
+      const o=activeText();if(!o)return;
+      o.clone(cl=>{
+        cl.set({left:(o.left||0)+28,top:(o.top||0)+28,systemRole:null,isHeadingText:false});
+        fcanvas.add(cl);fcanvas.setActiveObject(cl);fcanvas.requestRenderAll();
+        try{pushHistory();autoSave()}catch(e){}
+        syncV57TextControls();
+      });
+    };
+
+    // Old separate text format bar is no longer needed: one text toolbar only.
+    const old=$57("textFormatBar");
+    if(old)old.style.display="none";
+
+    syncV57TextControls();
+  }
+
+  /* ---------- BUTTON AUDIT ---------- */
+  const panelPairs={
+    mediaBtn:"mediaPanel",
+    elementsBtn:"elementsPanel",
+    geometryBtn:"geometryPanel",
+    calculatorBtn:"calculatorPanel",
+    angleBtn:"anglePanel",
+    numberRayBtn:"numberRayPanel",
+    graphBuilderBtn:"graphBuilderPanel",
+    timerBtn:"timerPanel",
+    ukrainianBtn:"ukrainianPanel",
+    keyboardBtn:"keyboardPanel",
+    aiBtn:"aiPanel"
+  };
+
+  const customWorkingIds=new Set([
+    "saveBtn","undoBtn","redoBtn","deleteSelectedBtn","clearPageBtn","voiceBtn",
+    "noteBtn","v56TableBtn","v56FiguresBtn",
+    "v56Wheel","v56Cards","v56Test","v56Lists","v56Translate","v56AiImage",
+    "correctionMarkerBtn","groupBtn","ungroupBtn","explodeShapeBtn","editVerticesBtn",
+    "pointBtn","vertexLabelBtn",
+    "v57InsertTextBtn","v57TextFont","v57TextSize","v57TextSmaller","v57TextLarger",
+    "v57Bold","v57Italic","v57Underline","v57Strike","v57TextColor","v57TextBg",
+    "v57TextAlign","v57DuplicateText"
+  ]);
+
+  function buttonWorks(btn){
+    if(!btn)return false;
+    if(panelPairs[btn.id])return !!$57(panelPairs[btn.id]);
+    if(customWorkingIds.has(btn.id))return true;
+    if(btn.id==="installAppBtn")return true;
+    // Buttons inside dedicated dialogs/panels are not ribbon audit targets.
+    if(!btn.closest("#sofiaRibbonV56"))return true;
+    // Ribbon button with no id is considered unsafe and hidden.
+    if(!btn.id)return false;
+    // Existing core onclick/addEventListener actions are allowed if the button has an id.
+    return typeof btn.onclick==="function";
+  }
+
+  function removeDuplicateRibbonButtons(){
+    const ribbon=$57("sofiaRibbonV56");
+    if(!ribbon)return;
+
+    const seenIds=new Set();
+    const seenLabels=new Map();
+
+    Array.from(ribbon.querySelectorAll("button")).forEach(btn=>{
+      if(btn.id){
+        if(seenIds.has(btn.id)){
+          btn.remove();
+          return;
+        }
+        seenIds.add(btn.id);
+      }
+
+      const label=(btn.textContent||"").trim().replace(/\s+/g," ");
+      const key=(btn.closest(".v56-panel")?.dataset.v56Panel||"head")+"|"+label;
+      if(label && !["B","I","U","S","A−","A+"].includes(label)){
+        if(seenLabels.has(key) && btn.id!==seenLabels.get(key)){
+          btn.remove();
+          return;
+        }
+        seenLabels.set(key,btn.id||"");
+      }
+    });
+  }
+
+  function hideDeadRibbonButtons(){
+    const ribbon=$57("sofiaRibbonV56");
+    if(!ribbon)return;
+    ribbon.querySelectorAll(".v56-panel > button.v56-command").forEach(btn=>{
+      if(!buttonWorks(btn)){
+        btn.style.display="none";
+        btn.dataset.v57DisabledReason="Команда недоступна";
+      }else{
+        btn.style.removeProperty("display");
+      }
+    });
+  }
+
+  function removeOldTechnicalButtons(){
+    const badExact=new Set([
+      "Верхня панель","Ліва панель","Показати всі","Готово",
+      "На весь екран","Вийти з повного екрану"
+    ]);
+
+    document.querySelectorAll("button").forEach(btn=>{
+      if(btn.closest("#sofiaRibbonV56"))return;
+      const label=(btn.textContent||"").trim().replace(/\s+/g," ");
+      if(badExact.has(label) && btn.id!=="fullscreenBtn"){
+        btn.style.display="none";
+      }
+    });
+  }
+
+  function auditRibbon(){
+    removeDuplicateRibbonButtons();
+    hideDeadRibbonButtons();
+    removeOldTechnicalButtons();
+
+    // Keep only the clean v56 ribbon visible.
+    document.querySelectorAll('[id^="sofiaRibbon"]').forEach(r=>{
+      if(r.id!=="sofiaRibbonV56")r.style.display="none";
+    });
+
+    // Compact diagnostic in console.
+    const ribbon=$57("sofiaRibbonV56");
+    if(!ribbon)return;
+    const visible=Array.from(ribbon.querySelectorAll(".v56-panel > button.v56-command"))
+      .filter(b=>getComputedStyle(b).display!=="none");
+    const hidden=Array.from(ribbon.querySelectorAll(".v56-panel > button.v56-command"))
+      .filter(b=>getComputedStyle(b).display==="none");
+
+    console.info("Sofia V57: active ribbon commands",visible.map(b=>b.id||b.textContent.trim()));
+    if(hidden.length)console.warn("Sofia V57: hidden unavailable commands",hidden.map(b=>b.id||b.textContent.trim()));
+  }
+
+  /* ---------- TEXT EVENT SYNC ---------- */
+  function bindTextEvents(){
+    if(typeof fcanvas==="undefined")return;
+
+    ["selection:created","selection:updated","selection:cleared","text:editing:entered","text:changed"].forEach(evt=>{
+      fcanvas.on(evt,()=>setTimeout(syncV57TextControls,0));
+    });
+
+    fcanvas.on("object:added",e=>{
+      const o=e.target;
+      if(o && ["i-text","textbox","text"].includes(o.type)){
+        // Regular user text defaults to Times New Roman unless it already has a specific font.
+        if(!o.systemRole && (!o.fontFamily || o.fontFamily==="Arial")){
+          o.set({fontFamily:"Times New Roman"});
+        }
+      }
+    });
+  }
+
+  function init(){
+    addTextFormatControls();
+    bindTextEvents();
+
+    [100,500,1200,2200].forEach(ms=>setTimeout(()=>{
+      auditRibbon();
+      syncV57TextControls();
+    },ms));
+
+    document.documentElement.dataset.sofiaVersion="57";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v57";
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
+  }else{
+    setTimeout(init,250);
+  }
+})();
+
+
+
+/* =========================================================
+   V58: ПОВЕРНЕННЯ ПАНЕЛІ СТОРІНОК ПІД СТРІЧКУ НА ВСЮ ШИРИНУ
+   ========================================================= */
+(function(){
+  function pageControlsBar(){
+    const add=document.getElementById("addPageBtn");
+    if(!add)return null;
+    return add.parentElement;
+  }
+
+  function fixPageBar(){
+    const bar=pageControlsBar();
+    const ribbon=document.getElementById("sofiaRibbonV56");
+    if(!bar || !ribbon)return;
+
+    // Ensure page controls live below the ribbon, not beside it.
+    if(ribbon.nextElementSibling !== bar){
+      ribbon.insertAdjacentElement("afterend",bar);
+    }
+
+    bar.style.setProperty("display","flex","important");
+    bar.style.setProperty("align-items","center","important");
+    bar.style.setProperty("gap","8px","important");
+    bar.style.setProperty("flex-wrap","wrap","important");
+    bar.style.setProperty("width","100%","important");
+    bar.style.setProperty("max-width","none","important");
+    bar.style.setProperty("margin","0","important");
+    bar.style.setProperty("padding","8px 10px","important");
+    bar.style.setProperty("box-sizing","border-box","important");
+
+    // Page tabs should stay directly after "Нова сторінка" and scroll only when needed.
+    const tabsWrap=document.getElementById("pageTabsWrap");
+    if(tabsWrap){
+      if(tabsWrap.previousElementSibling !== document.getElementById("addPageBtn")){
+        document.getElementById("addPageBtn").insertAdjacentElement("afterend",tabsWrap);
+      }
+      tabsWrap.style.setProperty("display","flex","important");
+      tabsWrap.style.setProperty("align-items","center","important");
+      tabsWrap.style.setProperty("flex","1 1 auto","important");
+      tabsWrap.style.setProperty("min-width","0","important");
+      tabsWrap.style.setProperty("max-width","100%","important");
+      tabsWrap.style.setProperty("margin-left","0","important");
+    }
+
+    const tabs=document.getElementById("pageTabs");
+    if(tabs){
+      tabs.style.setProperty("display","flex","important");
+      tabs.style.setProperty("align-items","center","important");
+      tabs.style.setProperty("gap","6px","important");
+      tabs.style.setProperty("overflow-x","auto","important");
+      tabs.style.setProperty("overflow-y","hidden","important");
+      tabs.style.setProperty("width","100%","important");
+      tabs.style.setProperty("max-width","100%","important");
+    }
+  }
+
+  function init(){
+    fixPageBar();
+    [250,700,1500].forEach(ms=>setTimeout(fixPageBar,ms));
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150));
+  }else{
+    setTimeout(init,150);
+  }
 })();
