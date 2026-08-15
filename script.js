@@ -3133,3 +3133,892 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
   else init();
 })();
+
+
+
+/* =========================================================
+   V42: ПІДПИС ГРАФІКА ВЗДОВЖ ЛІНІЇ
+   ========================================================= */
+(function(){
+  function graphObjects(){
+    if(typeof fcanvas==="undefined")return [];
+    return fcanvas.getObjects().filter(o=>o && o.graphObject);
+  }
+
+  function getGraphColor(obj){
+    if(!obj)return "#2563eb";
+    if(obj.stroke)return obj.stroke;
+    if(obj._objects){
+      const line=obj._objects.find(x=>x && x.stroke);
+      if(line && line.stroke)return line.stroke;
+    }
+    return "#2563eb";
+  }
+
+  function getGraphAngle(obj){
+    // Prefer an existing explicit angle if available.
+    if(obj && Number.isFinite(obj.angle) && Math.abs(obj.angle)>0.01)return obj.angle;
+
+    // Try to infer the angle from graph metadata (linear graph y = ax + b).
+    const meta=obj?.graphMeta||{};
+    const a=Number(meta.a ?? meta.k ?? meta.slope);
+    if(Number.isFinite(a)){
+      return -Math.atan(a) * 180 / Math.PI;
+    }
+
+    // Fallback: estimate from bounding box.
+    const w=(obj?.width||1)*(obj?.scaleX||1);
+    const h=(obj?.height||0)*(obj?.scaleY||1);
+    if(w>0 && h>0){
+      return -Math.atan2(h,w)*180/Math.PI;
+    }
+    return 0;
+  }
+
+  function findGraphLabelFor(obj){
+    const id=obj?.graphMeta?.id || obj?.graphName || obj?.name || null;
+    return fcanvas.getObjects().find(x =>
+      x && x.sofiaGraphInlineLabel &&
+      ((id && x.sofiaGraphFor===id) || x.sofiaGraphTarget===obj)
+    );
+  }
+
+  function removeGraphInlineLabels(){
+    if(typeof fcanvas==="undefined")return;
+    fcanvas.getObjects().filter(o=>o?.sofiaGraphInlineLabel).forEach(o=>fcanvas.remove(o));
+  }
+
+  function labelTextFor(obj,idx){
+    const name=(obj?.graphName || obj?.graphMeta?.name || `Графік ${idx+1}`).trim();
+    const formula=(obj?.graphMeta?.formula || obj?.formula || "").trim();
+    return formula ? `${name}: ${formula}` : name;
+  }
+
+  function placeLabel(obj,idx){
+    if(typeof fabric==="undefined" || typeof fcanvas==="undefined" || !obj)return;
+
+    const existing=findGraphLabelFor(obj);
+    const color=getGraphColor(obj);
+    const text=labelTextFor(obj,idx);
+
+    const center=obj.getCenterPoint ? obj.getCenterPoint() : {
+      x:(obj.left||0)+((obj.width||0)*(obj.scaleX||1))/2,
+      y:(obj.top||0)+((obj.height||0)*(obj.scaleY||1))/2
+    };
+
+    const angle=getGraphAngle(obj);
+
+    // Shift slightly above the graph so it does not cover the line.
+    const rad=angle*Math.PI/180;
+    const normalX=Math.sin(rad);
+    const normalY=-Math.cos(rad);
+    const offset=18;
+    const left=center.x + normalX*offset;
+    const top=center.y + normalY*offset;
+
+    const id=obj?.graphMeta?.id || obj?.graphName || obj?.name || `graph-${idx}`;
+
+    let label=existing;
+    if(!label){
+      label=new fabric.Text(text,{
+        left,top,
+        originX:"center",
+        originY:"center",
+        angle,
+        fontSize:18,
+        fontWeight:"600",
+        fill:color,
+        backgroundColor:"rgba(255,255,255,0.72)",
+        padding:3,
+        selectable:false,
+        evented:false,
+        objectCaching:false,
+        excludeFromExport:false
+      });
+      label.sofiaGraphInlineLabel=true;
+      label.sofiaGraphFor=id;
+      label.sofiaGraphTarget=obj;
+      fcanvas.add(label);
+    }else{
+      label.set({
+        text,
+        left,top,
+        angle,
+        fill:color,
+        backgroundColor:"rgba(255,255,255,0.72)"
+      });
+    }
+    label.bringToFront();
+  }
+
+  function refreshGraphInlineLabels(){
+    if(typeof fcanvas==="undefined")return;
+    const graphs=graphObjects();
+    if(!graphs.length)return;
+    graphs.forEach((g,i)=>placeLabel(g,i));
+    fcanvas.requestRenderAll();
+  }
+
+  function hideOldTopGraphLabels(){
+    if(typeof fcanvas==="undefined")return;
+    fcanvas.getObjects().forEach(o=>{
+      if(!o || o.sofiaGraphInlineLabel)return;
+      const txt=(o.text||"").trim();
+      if(/^Графік\s*\d+/i.test(txt) && !o.graphObject){
+        // Hide the old detached label that appears at the top.
+        o.visible=false;
+      }
+    });
+  }
+
+  function refreshAll(){
+    try{
+      hideOldTopGraphLabels();
+      refreshGraphInlineLabels();
+    }catch(e){
+      console.warn("Sofia graph inline label:",e);
+    }
+  }
+
+  function hook(){
+    if(typeof fcanvas==="undefined")return;
+
+    ["object:moving","object:scaling","object:rotating","object:modified"].forEach(evt=>{
+      fcanvas.on(evt,e=>{
+        if(e?.target?.graphObject)refreshAll();
+      });
+    });
+
+    fcanvas.on("object:added",e=>{
+      if(e?.target?.graphObject){
+        setTimeout(refreshAll,30);
+      }
+    });
+
+    fcanvas.on("object:removed",e=>{
+      if(e?.target?.graphObject){
+        setTimeout(refreshAll,30);
+      }
+    });
+
+    // Refresh after page load and after graph editor changes.
+    const oldLoadPage = typeof loadPage==="function" ? loadPage : null;
+    if(oldLoadPage && !window.__sofiaLoadPageV42){
+      window.__sofiaLoadPageV42=true;
+      const wrapped=function(i){
+        const r=oldLoadPage(i);
+        setTimeout(refreshAll,180);
+        return r;
+      };
+      try{window.loadPage=wrapped}catch(e){}
+    }
+
+    document.addEventListener("input",e=>{
+      const id=e.target?.id||"";
+      if(/Graph(Name|Shift|Param|Formula|Expression)/i.test(id)){
+        setTimeout(refreshAll,80);
+      }
+    });
+
+    document.addEventListener("change",e=>{
+      const id=e.target?.id||"";
+      if(/Graph(Name|Shift|Param|Formula|Expression)/i.test(id)){
+        setTimeout(refreshAll,80);
+      }
+    });
+
+    setTimeout(refreshAll,500);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(hook,300));
+  }else{
+    setTimeout(hook,300);
+  }
+})();
+
+
+
+/* =========================================================
+   V43: КОЛІР ГРАФІКА = ОБРАНИЙ КОЛІР НА ПАНЕЛІ
+   ========================================================= */
+(function(){
+  function selectedGraphColor(){
+    const candidates=[
+      document.getElementById("colorPicker"),
+      document.getElementById("lineColor"),
+      document.getElementById("strokeColor"),
+      document.querySelector('input[type="color"][id*="color" i]')
+    ].filter(Boolean);
+    return candidates[0]?.value || "#1e3a68";
+  }
+
+  function recolorGraphObject(obj,color){
+    if(!obj)return;
+
+    if(obj.set){
+      if(obj.stroke && obj.stroke!=="transparent")obj.set("stroke",color);
+      if(obj.fill && obj.fill!=="transparent" && obj.type!=="text") {
+        // Do not force-fill graph shapes; only replace fills that are already used as strokes/markers.
+        if(obj.type==="circle" && (obj.radius||0)<=8)obj.set("fill",color);
+      }
+    }
+
+    if(Array.isArray(obj._objects)){
+      obj._objects.forEach(child=>recolorGraphObject(child,color));
+    }
+
+    obj.graphColor=color;
+    if(obj.graphMeta && typeof obj.graphMeta==="object"){
+      obj.graphMeta.color=color;
+      obj.graphMeta.stroke=color;
+    }
+  }
+
+  function recolorNewestGraphs(beforeSet){
+    if(typeof fcanvas==="undefined")return;
+    const color=selectedGraphColor();
+    fcanvas.getObjects().forEach(obj=>{
+      if(obj?.graphObject && !beforeSet.has(obj)){
+        recolorGraphObject(obj,color);
+      }
+    });
+
+    // Keep the inline graph labels synchronized with graph color.
+    fcanvas.getObjects().forEach(label=>{
+      if(!label?.sofiaGraphInlineLabel)return;
+      const target=label.sofiaGraphTarget;
+      if(target && !beforeSet.has(target)){
+        label.set("fill",color);
+      }
+    });
+
+    fcanvas.requestRenderAll();
+    if(typeof autoSave==="function")setTimeout(autoSave,20);
+  }
+
+  function wrapGraphBuilder(){
+    // Capture click that actually creates/inserts a graph, independent of the current
+    // graph-builder implementation or button id.
+    document.addEventListener("click",e=>{
+      const btn=e.target.closest?.("button");
+      if(!btn || typeof fcanvas==="undefined")return;
+
+      const id=(btn.id||"").toLowerCase();
+      const txt=(btn.textContent||"").trim().toLowerCase();
+
+      const isGraphCreate =
+        /insertgraph|addgraph|buildgraph|creategraph/.test(id) ||
+        /(побудувати|додати|вставити|створити).*(графік)|графік.*(побудувати|додати|вставити|створити)/.test(txt);
+
+      if(!isGraphCreate)return;
+
+      const before=new Set(fcanvas.getObjects());
+      // Existing Sofia handler runs after/beside this listener. Recolor after it finishes.
+      setTimeout(()=>recolorNewestGraphs(before),60);
+      setTimeout(()=>recolorNewestGraphs(before),180);
+    },true);
+  }
+
+  function syncExistingSelectedGraphOnColorChange(){
+    document.addEventListener("input",e=>{
+      const input=e.target;
+      if(!(input instanceof HTMLInputElement) || input.type!=="color")return;
+      if(typeof fcanvas==="undefined")return;
+
+      const active=fcanvas.getActiveObject?.();
+      if(active?.graphObject){
+        const c=input.value;
+        recolorGraphObject(active,c);
+        const label=fcanvas.getObjects().find(x=>x?.sofiaGraphInlineLabel && x.sofiaGraphTarget===active);
+        if(label)label.set("fill",c);
+        fcanvas.requestRenderAll();
+      }
+    });
+  }
+
+  function init(){
+    wrapGraphBuilder();
+    syncExistingSelectedGraphOnColorChange();
+  }
+
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
+  else init();
+})();
+
+
+
+/* =========================================================
+   V44: РОБОЧИЙ ЦИРКУЛЬ + ПЛАВАЮЧІ ВІКНА ІНСТРУМЕНТІВ
+   ========================================================= */
+(function(){
+  const CM_TO_PX = 37.7952755906; // CSS px per cm at 96 dpi
+
+  /* ---------- Плаваючі вікна: передній план, рух, максимум ---------- */
+  const PANEL_SELECTORS=[
+    "#teacherToolsPanel","#aiPanel","#calculatorPanel","#timerPanel","#keyboardPanel",
+    "#mediaPanel","#elementsPanel","#geometryPanel","#shapeLibraryPanel","#graphBuilderPanel",
+    "#numberRayPanel","#graphEditorPanel","#diagnosticsPanel"
+  ];
+
+  let topZ = 3000;
+
+  function ensureFloatingStyles(){
+    if(document.getElementById("sofiaFloatingWindowsV44"))return;
+    const s=document.createElement("style");
+    s.id="sofiaFloatingWindowsV44";
+    s.textContent=`
+      .sofia-floating-window{
+        position:fixed!important;
+        z-index:3000;
+        max-width:min(92vw,980px);
+        max-height:88vh;
+        overflow:auto!important;
+        box-shadow:0 14px 42px rgba(15,23,42,.28)!important;
+        border-radius:14px!important;
+        background:#fff!important;
+      }
+      .sofia-floating-window.sofia-maximized{
+        left:10px!important;
+        top:10px!important;
+        width:calc(100vw - 20px)!important;
+        height:calc(100vh - 20px)!important;
+        max-width:none!important;
+        max-height:none!important;
+        overflow:auto!important;
+      }
+      .sofia-floating-head{
+        cursor:move!important;
+        user-select:none!important;
+      }
+      .sofia-window-actions{
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        margin-left:auto;
+      }
+      .sofia-window-action{
+        width:30px;height:30px;
+        border:0;border-radius:7px;
+        background:transparent;
+        cursor:pointer;
+        font-size:18px;
+        line-height:1;
+      }
+      .sofia-window-action:hover{background:#eef3fa}
+      .sofia-compass-panel{
+        position:fixed;
+        left:90px;
+        top:170px;
+        width:330px;
+        z-index:3200;
+        background:#fff;
+        border:1px solid #dce5f2;
+        border-radius:14px;
+        box-shadow:0 14px 42px rgba(15,23,42,.24);
+        padding:14px;
+      }
+      .sofia-compass-head{
+        display:flex;align-items:center;gap:8px;
+        font-weight:800;font-size:18px;
+        cursor:move;user-select:none;
+        margin-bottom:12px;
+      }
+      .sofia-compass-grid{display:grid;gap:10px}
+      .sofia-compass-grid label{display:grid;gap:5px;font-size:13px;font-weight:600}
+      .sofia-compass-grid input{
+        padding:8px 10px;border:1px solid #cad5e5;border-radius:8px;font:inherit;
+      }
+      .sofia-compass-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+      .sofia-compass-actions button{
+        padding:8px 10px;border-radius:8px;border:1px solid #cbd6e5;background:#fff;cursor:pointer
+      }
+      .sofia-compass-actions button.primary{background:#173b78;color:#fff;border-color:#173b78}
+      .sofia-compass-status{
+        margin-top:10px;padding:8px 10px;border-radius:8px;background:#f4f8ff;font-size:12px
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function bringFront(el){
+    topZ++;
+    el.style.zIndex=String(topZ);
+  }
+
+  function makeDraggable(panel,handle){
+    if(panel.dataset.sofiaDraggableV44)return;
+    panel.dataset.sofiaDraggableV44="1";
+    let down=false, sx=0, sy=0, sl=0, st=0;
+
+    handle.addEventListener("mousedown",e=>{
+      if(e.button!==0 || e.target.closest("button,input,select,textarea"))return;
+      if(panel.classList.contains("sofia-maximized"))return;
+      down=true;
+      bringFront(panel);
+      const r=panel.getBoundingClientRect();
+      sx=e.clientX; sy=e.clientY; sl=r.left; st=r.top;
+      e.preventDefault();
+    });
+
+    window.addEventListener("mousemove",e=>{
+      if(!down)return;
+      const nx=Math.max(0,Math.min(window.innerWidth-panel.offsetWidth,sl+(e.clientX-sx)));
+      const ny=Math.max(0,Math.min(window.innerHeight-panel.offsetHeight,st+(e.clientY-sy)));
+      panel.style.left=nx+"px";
+      panel.style.top=ny+"px";
+      panel.style.right="auto";
+      panel.style.bottom="auto";
+    });
+
+    window.addEventListener("mouseup",()=>down=false);
+  }
+
+  function enhancePanel(panel){
+    if(!panel || panel.dataset.sofiaFloatingV44)return;
+    panel.dataset.sofiaFloatingV44="1";
+    panel.classList.add("sofia-floating-window");
+
+    const head=panel.querySelector(
+      ".teacher-tools-head,.panel-head,.modal-head,.graph-editor-head,.runtime-error-head,h2,h3"
+    ) || panel.firstElementChild || panel;
+
+    head.classList.add("sofia-floating-head");
+    makeDraggable(panel,head);
+
+    let actions=head.querySelector(".sofia-window-actions");
+    if(!actions){
+      actions=document.createElement("span");
+      actions.className="sofia-window-actions";
+
+      const max=document.createElement("button");
+      max.type="button";
+      max.className="sofia-window-action";
+      max.textContent="□";
+      max.title="На весь екран";
+      max.onclick=e=>{
+        e.stopPropagation();
+        panel.classList.toggle("sofia-maximized");
+        max.textContent=panel.classList.contains("sofia-maximized")?"❐":"□";
+        bringFront(panel);
+      };
+      actions.appendChild(max);
+
+      head.appendChild(actions);
+    }
+
+    panel.addEventListener("mousedown",()=>bringFront(panel),true);
+  }
+
+  function scanPanels(){
+    PANEL_SELECTORS.forEach(sel=>enhancePanel(document.querySelector(sel)));
+  }
+
+  /* ---------- Робочий циркуль ---------- */
+  let compassCenter=null;
+  let compassRadiusCm=3;
+  let compassMode=false;
+  let compassPreview=null;
+  let compassNeedle=null;
+  let compassArm1=null;
+  let compassArm2=null;
+  let compassJoint=null;
+
+  function getCanvasPoint(evt){
+    if(typeof fcanvas==="undefined")return null;
+    const p=fcanvas.getPointer(evt.e||evt);
+    return {x:p.x,y:p.y};
+  }
+
+  function clearCompassPreview(){
+    if(typeof fcanvas==="undefined")return;
+    [compassPreview,compassNeedle,compassArm1,compassArm2,compassJoint].forEach(o=>{
+      if(o)fcanvas.remove(o);
+    });
+    compassPreview=compassNeedle=compassArm1=compassArm2=compassJoint=null;
+    fcanvas.requestRenderAll();
+  }
+
+  function drawCompassVisual(center,rPx){
+    clearCompassPreview();
+    const color=document.getElementById("colorPicker")?.value || "#173b78";
+
+    compassPreview=new fabric.Circle({
+      left:center.x-rPx,top:center.y-rPx,radius:rPx,
+      fill:"transparent",stroke:color,strokeWidth:2,
+      strokeDashArray:[7,5],selectable:false,evented:false
+    });
+
+    compassNeedle=new fabric.Circle({
+      left:center.x-4,top:center.y-4,radius:4,fill:"#d33",stroke:"#fff",strokeWidth:1,
+      selectable:false,evented:false
+    });
+
+    const joint={x:center.x,y:center.y-rPx*0.55};
+    const pencil={x:center.x+rPx,y:center.y};
+    compassArm1=new fabric.Line([center.x,center.y,joint.x,joint.y],{
+      stroke:"#555",strokeWidth:4,selectable:false,evented:false
+    });
+    compassArm2=new fabric.Line([joint.x,joint.y,pencil.x,pencil.y],{
+      stroke:"#777",strokeWidth:4,selectable:false,evented:false
+    });
+    compassJoint=new fabric.Circle({
+      left:joint.x-6,top:joint.y-6,radius:6,fill:"#2d6cdf",stroke:"#fff",strokeWidth:1,
+      selectable:false,evented:false
+    });
+
+    fcanvas.add(compassPreview,compassArm1,compassArm2,compassNeedle,compassJoint);
+    compassPreview.sendToBack();
+    fcanvas.requestRenderAll();
+  }
+
+  function finalizeCompassCircle(){
+    if(!compassCenter || typeof fcanvas==="undefined")return;
+    const rPx=compassRadiusCm*CM_TO_PX;
+    const color=document.getElementById("colorPicker")?.value || "#173b78";
+    const sw=Number(document.getElementById("lineWidth")?.value||2);
+
+    clearCompassPreview();
+
+    const circle=new fabric.Circle({
+      left:compassCenter.x-rPx,
+      top:compassCenter.y-rPx,
+      radius:rPx,
+      fill:"transparent",
+      stroke:color,
+      strokeWidth:sw,
+      selectable:true,
+      evented:true
+    });
+    circle.sofiaCompassCircle=true;
+    circle.radiusCm=compassRadiusCm;
+
+    const centerDot=new fabric.Circle({
+      left:compassCenter.x-3,top:compassCenter.y-3,radius:3,
+      fill:color,selectable:false,evented:false
+    });
+
+    fcanvas.add(circle,centerDot);
+    fcanvas.setActiveObject(circle);
+    fcanvas.requestRenderAll();
+    if(typeof pushHistory==="function")pushHistory();
+    if(typeof autoSave==="function")autoSave();
+  }
+
+  function createCompassPanel(){
+    if(document.getElementById("sofiaCompassPanel"))return;
+    const p=document.createElement("div");
+    p.id="sofiaCompassPanel";
+    p.className="sofia-compass-panel";
+    p.style.display="none";
+    p.innerHTML=`
+      <div class="sofia-compass-head">
+        <span>📐 Циркуль</span>
+        <span style="margin-left:auto;display:flex;gap:4px">
+          <button type="button" id="sofiaCompassMax" title="На весь екран">□</button>
+          <button type="button" id="sofiaCompassClose" title="Закрити">×</button>
+        </span>
+      </div>
+      <div class="sofia-compass-grid">
+        <label>Радіус кола (см)
+          <input id="sofiaCompassRadius" type="number" min="0.1" step="0.01" value="3">
+        </label>
+        <div class="sofia-compass-actions">
+          <button type="button" data-r="1">1 см</button>
+          <button type="button" data-r="2">2 см</button>
+          <button type="button" data-r="3">3 см</button>
+          <button type="button" data-r="5">5 см</button>
+        </div>
+        <div class="sofia-compass-actions">
+          <button type="button" id="sofiaCompassPick" class="primary">1. Вибрати центр</button>
+          <button type="button" id="sofiaCompassBuild">2. Побудувати коло</button>
+        </div>
+        <div id="sofiaCompassStatus" class="sofia-compass-status">
+          Введіть радіус, у тому числі десятковий: 2,5; 3,75; 5,25 см.
+        </div>
+      </div>
+    `;
+    document.body.appendChild(p);
+
+    makeDraggable(p,p.querySelector(".sofia-compass-head"));
+    p.addEventListener("mousedown",()=>bringFront(p),true);
+
+    const radius=p.querySelector("#sofiaCompassRadius");
+    radius.addEventListener("input",()=>{
+      const v=parseFloat(String(radius.value).replace(",","."));
+      if(Number.isFinite(v) && v>0){
+        compassRadiusCm=v;
+        if(compassCenter)drawCompassVisual(compassCenter,compassRadiusCm*CM_TO_PX);
+      }
+    });
+
+    p.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{
+      compassRadiusCm=Number(b.dataset.r);
+      radius.value=String(compassRadiusCm);
+      if(compassCenter)drawCompassVisual(compassCenter,compassRadiusCm*CM_TO_PX);
+    });
+
+    p.querySelector("#sofiaCompassPick").onclick=()=>{
+      compassMode=true;
+      compassCenter=null;
+      clearCompassPreview();
+      p.querySelector("#sofiaCompassStatus").textContent="Клікніть на аркуші в точці, де має бути центр кола.";
+    };
+
+    p.querySelector("#sofiaCompassBuild").onclick=()=>{
+      if(!compassCenter){
+        p.querySelector("#sofiaCompassStatus").textContent="Спочатку виберіть центр кола.";
+        return;
+      }
+      finalizeCompassCircle();
+      p.querySelector("#sofiaCompassStatus").textContent=`Коло побудовано. Радіус: ${compassRadiusCm.toString().replace(".",",")} см.`;
+      compassCenter=null;
+      compassMode=false;
+    };
+
+    p.querySelector("#sofiaCompassClose").onclick=()=>{
+      p.style.display="none";
+      compassMode=false;
+      clearCompassPreview();
+    };
+
+    p.querySelector("#sofiaCompassMax").onclick=()=>{
+      p.classList.toggle("sofia-maximized");
+    };
+  }
+
+  function openCompass(){
+    createCompassPanel();
+    const p=document.getElementById("sofiaCompassPanel");
+    p.style.display="block";
+    bringFront(p);
+  }
+
+  function hookCompassButton(){
+    document.addEventListener("click",e=>{
+      const b=e.target.closest?.("button");
+      if(!b)return;
+      const id=(b.id||"").toLowerCase();
+      const txt=(b.textContent||"").toLowerCase();
+      if(/compass/.test(id) || /циркул/.test(txt)){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        openCompass();
+      }
+    },true);
+
+    if(typeof fcanvas!=="undefined"){
+      fcanvas.on("mouse:down",opt=>{
+        if(!compassMode)return;
+        const p=getCanvasPoint(opt);
+        if(!p)return;
+        compassCenter=p;
+        drawCompassVisual(compassCenter,compassRadiusCm*CM_TO_PX);
+        const st=document.getElementById("sofiaCompassStatus");
+        if(st)st.textContent=`Центр вибрано. Радіус ${compassRadiusCm.toString().replace(".",",")} см. Натисніть «Побудувати коло».`;
+      });
+    }
+  }
+
+  function init(){
+    ensureFloatingStyles();
+    createCompassPanel();
+    setTimeout(scanPanels,300);
+    setTimeout(scanPanels,1000);
+    hookCompassButton();
+
+    const mo=new MutationObserver(()=>scanPanels());
+    mo.observe(document.body,{childList:true,subtree:true});
+  }
+
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
+  else init();
+})();
+
+
+
+/* =========================================================
+   V45: ЛІВА ПАНЕЛЬ ЗАВЖДИ ЗАЛИШАЄТЬСЯ + ЧИСТЕ НАЛАШТУВАННЯ СТРІЧКИ
+   ========================================================= */
+(function(){
+  const LEFT_TOOL_IDS = new Set([
+    "handBtn","penBtn","markerBtn","eraserBtn","lineBtn","curveBtn","polylineBtn",
+    "arrowBtn","rectBtn","circleBtn","triangleBtn","selectBtn"
+  ]);
+
+  function getLeftPanel(){
+    const known = [
+      document.getElementById("leftToolbar"),
+      document.getElementById("leftPanel"),
+      document.querySelector(".left-toolbar"),
+      document.querySelector(".tool-sidebar"),
+      document.querySelector(".left-tools")
+    ].filter(Boolean);
+    if(known.length) return known[0];
+
+    // Fallback: infer the vertical tool strip from known buttons.
+    for(const id of LEFT_TOOL_IDS){
+      const btn=document.getElementById(id);
+      if(btn && btn.parentElement) return btn.parentElement;
+    }
+    return null;
+  }
+
+  function forceLeftPanelVisible(){
+    const panel=getLeftPanel();
+    if(!panel)return;
+
+    panel.style.display="";
+    panel.style.visibility="visible";
+    panel.style.opacity="1";
+    panel.style.pointerEvents="auto";
+    panel.style.transform="none";
+    panel.style.left="";
+    panel.style.marginLeft="";
+    panel.removeAttribute("hidden");
+    panel.classList.remove("hidden","collapsed","is-hidden","panel-hidden");
+
+    // Keep the left toolbar above canvas, but under floating windows.
+    panel.style.zIndex="1100";
+  }
+
+  function isLeftTool(btn){
+    if(!btn)return false;
+    if(btn.id && LEFT_TOOL_IDS.has(btn.id))return true;
+    const panel=getLeftPanel();
+    return !!(panel && panel.contains(btn));
+  }
+
+  function moveRibbonCommandsAwayFromLeftPanel(){
+    const panel=getLeftPanel();
+    if(!panel)return;
+
+    // If a previous ribbon version moved left-toolbar buttons into the top ribbon,
+    // return them to the left panel in a sensible order.
+    const preferredOrder=[
+      "selectBtn","handBtn","penBtn","markerBtn","eraserBtn","lineBtn","curveBtn",
+      "polylineBtn","arrowBtn","rectBtn","circleBtn","triangleBtn"
+    ];
+
+    preferredOrder.forEach(id=>{
+      const btn=document.getElementById(id);
+      if(btn && !panel.contains(btn)){
+        panel.appendChild(btn);
+      }
+      if(btn){
+        btn.classList.remove("sofia-command");
+        btn.draggable=false;
+        btn.style.outline="";
+        btn.style.outlineOffset="";
+        btn.style.cursor="";
+      }
+    });
+  }
+
+  function cleanTechnicalButtons(){
+    // Remove the temporary technical buttons that appeared in the toolbar.
+    const labels=[
+      "Верхня панель",
+      "Ліва панель",
+      "Показати всі",
+      "Готово"
+    ];
+
+    document.querySelectorAll("button").forEach(btn=>{
+      const txt=(btn.textContent||"").trim();
+      if(labels.includes(txt)){
+        // Do not remove the current arrange completion button if it is the real arrange control.
+        if(btn.id==="arrangeButtonsBtn")return;
+        btn.style.display="none";
+        btn.setAttribute("aria-hidden","true");
+      }
+    });
+  }
+
+  function renameArrangeControl(){
+    const btn=document.getElementById("arrangeButtonsBtn");
+    if(!btn)return;
+    if(document.body.classList.contains("sofia-arrange-v41")){
+      btn.textContent="✓ Готово";
+    }else{
+      btn.textContent="⚙ Налаштувати панелі";
+      btn.title="Налаштувати порядок команд у верхніх вкладках";
+    }
+  }
+
+  function protectLeftPanelFromArrange(){
+    document.addEventListener("dragstart",e=>{
+      const btn=e.target.closest?.("button");
+      if(isLeftTool(btn)){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },true);
+
+    document.addEventListener("click",e=>{
+      const btn=e.target.closest?.("button");
+      if(isLeftTool(btn) && document.body.classList.contains("sofia-arrange-v41")){
+        // Left toolbar should remain usable and untouched even while arranging the ribbon.
+        e.stopPropagation();
+      }
+    },true);
+  }
+
+  function patchRibbonCollectors(){
+    // Any button already inside the left panel must never become a ribbon command.
+    const mo=new MutationObserver(()=>{
+      const panel=getLeftPanel();
+      if(!panel)return;
+      panel.querySelectorAll("button").forEach(btn=>{
+        btn.classList.remove("sofia-command");
+        btn.draggable=false;
+        btn.style.outline="";
+        btn.style.outlineOffset="";
+        btn.style.cursor="";
+      });
+      forceLeftPanelVisible();
+      cleanTechnicalButtons();
+      renameArrangeControl();
+    });
+    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
+  }
+
+  function createPanelsButtonIfMissing(){
+    let btn=document.getElementById("arrangeButtonsBtn");
+    if(btn){
+      renameArrangeControl();
+      return;
+    }
+
+    const ribbonHead=document.querySelector(".sofia-ribbon-actions");
+    if(!ribbonHead)return;
+
+    btn=document.createElement("button");
+    btn.type="button";
+    btn.id="arrangeButtonsBtn";
+    btn.textContent="⚙ Налаштувати панелі";
+    btn.title="Налаштувати порядок команд у верхніх вкладках";
+    ribbonHead.prepend(btn);
+  }
+
+  function init(){
+    forceLeftPanelVisible();
+    moveRibbonCommandsAwayFromLeftPanel();
+    cleanTechnicalButtons();
+    createPanelsButtonIfMissing();
+    renameArrangeControl();
+    protectLeftPanelFromArrange();
+    patchRibbonCollectors();
+
+    // Re-assert after all late teacher tools/ribbon code has loaded.
+    [250,700,1400,2500].forEach(ms=>setTimeout(()=>{
+      forceLeftPanelVisible();
+      moveRibbonCommandsAwayFromLeftPanel();
+      cleanTechnicalButtons();
+      renameArrangeControl();
+    },ms));
+  }
+
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
+  else init();
+})();
