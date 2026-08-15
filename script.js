@@ -3726,166 +3726,106 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
 
 /* =========================================================
-   V59 — ПАНЕЛІ ЗАВЖДИ СПЕРЕДУ + СЛУЖБОВІ КНОПКИ У ВКЛАДКАХ
-   База: стабільна v58.
+   V60 — ПАНЕЛЬ "КОЛІР / ТОВЩИНА / ЛІНІЯ / ВІДРІЗОК / ПЕРЕВІРКА"
+   ПЕРЕНЕСЕНА У ВКЛАДКУ "МАЛЮВАННЯ".
+   База: стабільна v58. Інші панелі не змінюємо.
    ========================================================= */
 (function(){
-  const $59=id=>document.getElementById(id);
-  let zTop=50000;
+  const $60 = id => document.getElementById(id);
 
-  function ribbonPanel(name){
-    return document.querySelector(`.v56-panel[data-v56-panel="${name}"]`);
+  function drawingTab(){
+    return document.querySelector('.v56-panel[data-v56-panel="draw"]');
   }
 
-  /* ---------- 1. ВІКНА НА ПЕРЕДНЬОМУ ПЛАНІ ---------- */
-  const knownPanels=[
-    "panelSettings","toolbarSettingsPanel","diagnosticsPanel",
-    "teacherToolsPanel","aiPanel","calculatorPanel","timerPanel","keyboardPanel",
-    "mediaPanel","elementsPanel","geometryPanel","anglePanel","numberRayPanel",
-    "graphBuilderPanel","graphEditorPanel","ukrainianPanel",
-    "v56FiguresPanel","v56CompassPanel"
-  ];
+  function findDrawingOptionsBar(){
+    // Шукаємо рядок через характерні елементи керування.
+    const candidates = [
+      $60("strokeColor"),
+      $60("colorPicker"),
+      $60("lineWidth"),
+      $60("strokeWidth"),
+      $60("lineStyle"),
+      $60("lineType"),
+      $60("correctionColor")
+    ].filter(Boolean);
 
-  function bringFront(panel){
-    if(!panel)return;
-    // Виносимо в body: тоді жодна стрічка/контейнер не може його перекрити
-    // через власний stacking context або overflow.
-    if(panel.parentElement !== document.body){
-      document.body.appendChild(panel);
+    for(const el of candidates){
+      let p = el.parentElement;
+      for(let i=0; p && i<5; i++, p=p.parentElement){
+        const txt=(p.textContent||"").replace(/\s+/g," ").trim();
+        if(/Колір/i.test(txt) &&
+           /Товщина/i.test(txt) &&
+           /(Суцільна|Пунктир|Штрих)/i.test(txt) &&
+           /(Відрізок|Лінія)/i.test(txt)){
+          return p;
+        }
+      }
     }
-    panel.style.setProperty("position","fixed","important");
-    panel.style.setProperty("z-index",String(++zTop),"important");
-    panel.style.setProperty("isolation","isolate","important");
-    panel.style.setProperty("visibility","visible","important");
-    panel.style.setProperty("opacity","1","important");
-    panel.style.setProperty("pointer-events","auto","important");
-    panel.style.setProperty("max-height","88vh","important");
-    panel.style.setProperty("overflow","auto","important");
+
+    // Fallback: знайти компактний блок за текстом.
+    const all = Array.from(document.querySelectorAll("div,section"));
+    return all.find(el=>{
+      const txt=(el.textContent||"").replace(/\s+/g," ").trim();
+      const r=el.getBoundingClientRect();
+      return r.height>25 && r.height<100 &&
+             /Колір/i.test(txt) && /Товщина/i.test(txt) &&
+             /(Суцільна|Пунктир|Штрих)/i.test(txt) &&
+             /(Відрізок|Лінія)/i.test(txt) &&
+             /Перевірка/i.test(txt);
+    }) || null;
   }
 
-  function visible(el){
-    if(!el)return false;
-    const cs=getComputedStyle(el);
-    return !el.hidden && !el.classList.contains("hidden") && cs.display!=="none" && cs.visibility!=="hidden";
-  }
+  function moveDrawingOptions(){
+    const tab=drawingTab();
+    const bar=findDrawingOptionsBar();
+    if(!tab || !bar || bar===tab || tab.contains(bar)) return;
 
-  function scanPanels(){
-    knownPanels.forEach(id=>{
-      const p=$59(id);
-      if(!p)return;
-      if(visible(p))bringFront(p);
-      if(!p.dataset.v59Front){
-        p.dataset.v59Front="1";
-        p.addEventListener("mousedown",()=>bringFront(p),true);
+    // Не переносимо великий батьківський контейнер випадково.
+    const rect=bar.getBoundingClientRect();
+    if(rect.height>120) return;
+
+    bar.id = bar.id || "v60DrawingOptionsBar";
+    bar.dataset.v60Moved="1";
+
+    // Ставимо параметри на початок вкладки "Малювання".
+    tab.insertBefore(bar, tab.firstChild);
+
+    bar.style.setProperty("display","flex","important");
+    bar.style.setProperty("align-items","center","important");
+    bar.style.setProperty("flex-wrap","wrap","important");
+    bar.style.setProperty("gap","8px","important");
+    bar.style.setProperty("width","100%","important");
+    bar.style.setProperty("max-width","100%","important");
+    bar.style.setProperty("margin","0 0 8px 0","important");
+    bar.style.setProperty("padding","6px 8px","important");
+    bar.style.setProperty("box-sizing","border-box","important");
+    bar.style.setProperty("position","static","important");
+    bar.style.setProperty("float","none","important");
+
+    // Якщо старий зовнішній рядок після переносу став порожнім — ховаємо його.
+    document.querySelectorAll("div,section").forEach(el=>{
+      if(el===bar || el.contains(bar) || bar.contains(el)) return;
+      const r=el.getBoundingClientRect();
+      if(r.height>0 && r.height<70 && !(el.textContent||"").trim() &&
+         el.querySelectorAll("input,select,button").length===0){
+        // не чіпаємо загальні layout-контейнери
+        if(el.children.length===0) el.style.display="none";
       }
     });
 
-    // Додатково ловимо діалоги без відомого id.
-    document.querySelectorAll('[role="dialog"],.modal,.dialog,.panel-overlay').forEach(p=>{
-      if(visible(p))bringFront(p);
-    });
-  }
-
-  // Після натискання будь-якої кнопки дати панелі час відкритися й підняти її.
-  document.addEventListener("click",()=>{
-    setTimeout(scanPanels,10);
-    setTimeout(scanPanels,80);
-  },true);
-
-  /* ---------- 2. СЛУЖБОВІ КНОПКИ ПЕРЕНОСИМО У ВКЛАДКИ ---------- */
-  function moveToTab(id,tab,label){
-    const b=$59(id);
-    const target=ribbonPanel(tab);
-    if(!b || !target)return;
-    if(label)b.textContent=label;
-    b.classList.add("v56-command");
-    b.hidden=false;
-    b.style.removeProperty("display");
-    b.style.removeProperty("visibility");
-    b.style.removeProperty("opacity");
-    target.appendChild(b);
-  }
-
-  function organizeUtilityButtons(){
-    // Основне
-    moveToTab("fullscreenBtn","home","⛶ Повний екран");
-    moveToTab("clearAllBtn","home","🗑 Очистити все");
-    moveToTab("diagnosticsBtn","home","🛠 Перевірка");
-    moveToTab("panelBtn","home","⚙ Панелі");
-
-    // Вчитель
-    moveToTab("teacherToolsBtn","teacher","🎓 Інструменти");
-    moveToTab("translateTopBtn","teacher","🌐 Перекладач");
-
-    // Кнопка встановлення лишається зверху, як просили раніше.
-    const install=$59("installAppBtn");
-    if(install){
-      const top=document.querySelector("header,.app-header,.topbar,.brandbar");
-      if(top && install.parentElement!==top)top.appendChild(install);
-    }
-
-    // Прибираємо порожній верхній рядок/контейнер, якщо після переносу там нічого корисного.
-    document.querySelectorAll(".top-actions,.header-actions,.quick-actions,.utility-bar").forEach(bar=>{
-      const useful=Array.from(bar.children).some(el=>{
-        if(el.id==="installAppBtn")return true;
-        if(el.tagName==="BUTTON" && visible(el))return true;
-        return false;
-      });
-      if(!useful)bar.style.display="none";
-    });
-  }
-
-  /* ---------- 3. НАЛАШТУВАННЯ ПАНЕЛЕЙ ТЕЖ СПЕРЕДУ ---------- */
-  function bindSettingsFront(){
-    const candidates=[
-      $59("v56ArrangeBtn"),
-      $59("panelBtn"),
-      ...Array.from(document.querySelectorAll("button")).filter(b=>
-        /Впорядкувати|Панел/i.test((b.textContent||"").trim()))
-    ].filter(Boolean);
-
-    candidates.forEach(b=>{
-      if(b.dataset.v59Bound)return;
-      b.dataset.v59Bound="1";
-      b.addEventListener("click",()=>{
-        setTimeout(()=>{
-          const p=$59("panelSettings") || $59("toolbarSettingsPanel") ||
-            Array.from(document.querySelectorAll('[role="dialog"],.modal,.dialog')).find(x=>
-              /Налаштування панелі/i.test(x.textContent||""));
-          if(p)bringFront(p);
-        },30);
-      },true);
-    });
-  }
-
-  /* ---------- 4. ВІДНОВЛЮЄМО ВЕРСІЮ ---------- */
-  function markVersion(){
-    document.documentElement.dataset.sofiaVersion="59";
-    const badge=$59("appVersionBadge");
-    if(badge)badge.textContent="v59";
+    const badge=$60("appVersionBadge");
+    if(badge) badge.textContent="v60";
+    document.documentElement.dataset.sofiaVersion="60";
   }
 
   function init(){
-    organizeUtilityButtons();
-    bindSettingsFront();
-    scanPanels();
-    markVersion();
-
-    [250,700,1500,2500].forEach(ms=>setTimeout(()=>{
-      organizeUtilityButtons();
-      bindSettingsFront();
-      scanPanels();
-    },ms));
-
-    const mo=new MutationObserver(()=>{
-      clearTimeout(mo.__v59);
-      mo.__v59=setTimeout(scanPanels,30);
-    });
-    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style","hidden"]});
+    moveDrawingOptions();
+    [200,500,1000,1800].forEach(ms=>setTimeout(moveDrawingOptions,ms));
   }
 
-  if(document.readyState==="loading")
+  if(document.readyState==="loading"){
     document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-  else
+  }else{
     setTimeout(init,180);
+  }
 })();
