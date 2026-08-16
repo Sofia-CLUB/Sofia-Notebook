@@ -9994,3 +9994,148 @@ if(document.readyState==="loading"){
   setTimeout(init119,180);
 }
 })();
+
+
+
+/* =========================================================
+   V120 CLEAN — БАЗА: ЗАВАНТАЖЕНА КОРИСТУВАЧЕМ V119
+   ПРАВА ПАНЕЛЬ НЕРУХОМА.
+   ВАЖЛИВО: робочий аркуш / Fabric canvas НЕ змінюємо,
+   не переносимо, не змінюємо його ширину чи висоту.
+   ========================================================= */
+(function(){
+"use strict";
+const $R120=id=>document.getElementById(id);
+
+function addCssR120(){
+  if($R120("v120RightFixedCss")) return;
+
+  const st=document.createElement("style");
+  st.id="v120RightFixedCss";
+  st.textContent=`
+    /* Права панель завжди прикріплена до правого краю вікна */
+    #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      left:auto!important;
+      top:128px!important;
+      bottom:0!important;
+      width:76px!important;
+      min-width:76px!important;
+      max-width:76px!important;
+      height:auto!important;
+
+      background:#fff!important;
+      background-color:#fff!important;
+      opacity:1!important;
+      visibility:visible!important;
+      border-left:1px solid #d8e2ef!important;
+      box-shadow:-4px 0 14px rgba(15,23,42,.10)!important;
+
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      z-index:115000!important;
+    }
+
+    /* У fullscreen панель теж нерухома.
+       Не торкаємося canvas та робочого аркуша. */
+    #pageViewport:fullscreen #v86Dock,
+    #pageViewport:-webkit-full-screen #v86Dock,
+    :fullscreen #v86Dock,
+    :-webkit-full-screen #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      left:auto!important;
+      top:76px!important;
+      bottom:0!important;
+      width:76px!important;
+      min-width:76px!important;
+      max-width:76px!important;
+    }
+
+    /* Зберігаємо згортання з V119 */
+    #pageViewport.v119-right-collapsed #v86Dock{
+      transform:translateX(105%)!important;
+      pointer-events:none!important;
+    }
+
+    #pageViewport:fullscreen.v119-right-collapsed #v86Dock,
+    #pageViewport:-webkit-full-screen.v119-right-collapsed #v86Dock{
+      transform:translateX(105%)!important;
+      pointer-events:none!important;
+    }
+
+    /* Кнопка згортання рухається тільки разом зі станом панелі */
+    #v119DockToggle{
+      position:fixed!important;
+      z-index:116000!important;
+    }
+
+    @media(max-width:900px){
+      #v86Dock{
+        width:66px!important;
+        min-width:66px!important;
+        max-width:66px!important;
+        top:116px!important;
+      }
+      #pageViewport:fullscreen #v86Dock,
+      #pageViewport:-webkit-full-screen #v86Dock{
+        top:76px!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function lockDockR120(){
+  const d=$R120("v86Dock");
+  if(!d)return;
+
+  d.style.setProperty("position","fixed","important");
+  d.style.setProperty("right","0","important");
+  d.style.setProperty("left","auto","important");
+  d.style.setProperty("bottom","0","important");
+  d.style.setProperty("background","#fff","important");
+  d.style.setProperty("opacity","1","important");
+  d.style.setProperty("visibility","visible","important");
+  d.style.setProperty("z-index","115000","important");
+
+  const full=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  d.style.setProperty("top",full?"76px":(window.innerWidth<=900?"116px":"128px"),"important");
+
+  /* Не скидаємо transform, якщо V119 зараз згорнута */
+  const vp=$R120("pageViewport");
+  const collapsed=!!vp?.classList.contains("v119-right-collapsed");
+  d.style.setProperty(
+    "transform",
+    collapsed?"translateX(105%)":"translateX(0)",
+    "important"
+  );
+}
+
+function markR120(){
+  const b=$R120("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v120";
+  document.documentElement.dataset.sofiaVersion="120-from-user119-right-fixed";
+}
+
+function initR120(){
+  addCssR120();
+  lockDockR120();
+  markR120();
+
+  /* Одноразово після того, як V86 створить dock. */
+  [250,700,1400].forEach(ms=>setTimeout(lockDockR120,ms));
+}
+
+document.addEventListener("fullscreenchange",()=>setTimeout(lockDockR120,100));
+document.addEventListener("webkitfullscreenchange",()=>setTimeout(lockDockR120,100));
+window.addEventListener("resize",()=>setTimeout(lockDockR120,80));
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(initR120,160),{once:true});
+}else{
+  setTimeout(initR120,160);
+}
+})();
