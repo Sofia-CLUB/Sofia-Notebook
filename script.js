@@ -3733,111 +3733,6 @@ $("mediaFileInput")?.addEventListener("change",e=>{
 
 
 
-/* =========================================================
-   V58b — СТОРІНКИ ОКРЕМИМ РЯДКОМ ПІД СТРІЧКОЮ
-   Не змінює роботу інструментів v57.
-   ========================================================= */
-(function(){
-  function findPageBar(){
-    const add = document.getElementById("addPageBtn");
-    if(!add) return null;
-
-    // У різних збірках контейнер мав різну вкладеність.
-    // Беремо найменший блок, у якому є addPageBtn і вкладки сторінок.
-    let el = add.parentElement;
-    while(el && el !== document.body){
-      const hasTabs = el.querySelector &&
-        (el.querySelector("#pageTabs") ||
-         el.querySelector("#pageTabsWrap") ||
-         Array.from(el.querySelectorAll("button")).some(b =>
-           /Сторінка\s*\d+/i.test((b.textContent||"").trim())));
-      if(hasTabs) return el;
-      el = el.parentElement;
-    }
-    return add.parentElement;
-  }
-
-  function fix(){
-    const ribbon = document.getElementById("sofiaRibbonV56");
-    const bar = findPageBar();
-    if(!ribbon || !bar || ribbon.contains(bar)) return;
-
-    // Головне виправлення: сторінки фізично переносимо ПІСЛЯ стрічки.
-    if(ribbon.nextElementSibling !== bar){
-      ribbon.insertAdjacentElement("afterend", bar);
-    }
-
-    // Окремий рядок на всю ширину.
-    Object.entries({
-      display:"flex",
-      width:"100%",
-      maxWidth:"100%",
-      flexBasis:"100%",
-      clear:"both",
-      alignItems:"center",
-      justifyContent:"flex-start",
-      flexWrap:"wrap",
-      gap:"8px",
-      margin:"8px 0 0 0",
-      padding:"8px 10px",
-      boxSizing:"border-box",
-      position:"relative",
-      left:"0",
-      right:"auto",
-      float:"none"
-    }).forEach(([k,v])=>bar.style.setProperty(k,v,"important"));
-
-    // Якщо батьківський контейнер був flex-row, не дозволяємо йому
-    // знову поставити стрічку та сторінки поруч.
-    const parent = ribbon.parentElement;
-    if(parent){
-      parent.style.setProperty("display","flex","important");
-      parent.style.setProperty("flex-direction","column","important");
-      parent.style.setProperty("align-items","stretch","important");
-      parent.style.setProperty("width","100%","important");
-    }
-
-    // Кнопка "Нова сторінка" та вкладки не розтягуються на правий край.
-    const add=document.getElementById("addPageBtn");
-    if(add){
-      add.style.setProperty("flex","0 0 auto","important");
-      add.style.setProperty("margin","0","important");
-    }
-
-    const tabs=document.getElementById("pageTabs");
-    const wrap=document.getElementById("pageTabsWrap");
-    [wrap,tabs].filter(Boolean).forEach(el=>{
-      el.style.setProperty("display","flex","important");
-      el.style.setProperty("align-items","center","important");
-      el.style.setProperty("gap","6px","important");
-      el.style.setProperty("width","auto","important");
-      el.style.setProperty("max-width","100%","important");
-      el.style.setProperty("flex","0 1 auto","important");
-      el.style.setProperty("margin","0","important");
-      el.style.setProperty("overflow-x","auto","important");
-    });
-
-    // Позначаємо версію лише після успішного виправлення.
-    const badge=document.getElementById("appVersionBadge");
-    if(badge) badge.textContent="v58";
-    document.documentElement.dataset.sofiaVersion="58";
-  }
-
-  function init(){
-    fix();
-    [100,300,700,1400,2500].forEach(t=>setTimeout(fix,t));
-
-    // Після додавання/видалення сторінок DOM може перебудуватися.
-    const obs=new MutationObserver(()=>requestAnimationFrame(fix));
-    obs.observe(document.body,{childList:true,subtree:true});
-  }
-
-  if(document.readyState==="loading")
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  else init();
-})();
-
-
 
 /* =========================================================
    V60 — ПАНЕЛЬ "КОЛІР / ТОВЩИНА / ЛІНІЯ / ВІДРІЗОК / ПЕРЕВІРКА"
@@ -6764,4 +6659,93 @@ if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
 else
   setTimeout(init,160);
+})();
+
+
+
+/* =========================================================
+   V95 — FIX HIERARCHYREQUESTERROR + STABLE PAGE DOCK
+   ========================================================= */
+(function(){
+"use strict";
+const $95=id=>document.getElementById(id);
+
+function removeLegacyPageStyles(){
+  const dock=$95("v92PageDock");
+  if(!dock) return;
+
+  // Ensure the bottom dock remains the only page navigation host.
+  dock.style.setProperty("position","fixed","important");
+  dock.style.setProperty("bottom","0","important");
+  dock.style.setProperty("top","auto","important");
+  dock.style.setProperty("z-index","79000","important");
+}
+
+function restorePageLabels(){
+  const dock=$95("v92PageDock");
+  if(!dock) return;
+
+  // If a page tab lost its visible title and shows only pencil/x,
+  // reconstruct a readable fallback label from its order.
+  const tabs=[...dock.querySelectorAll("button")].filter(b=>{
+    const t=(b.textContent||"").trim();
+    return !/Нова сторінка|Видалити сторінку/i.test(t) &&
+           (b.querySelector("span") || /✎|×|✕|✖/.test(t));
+  });
+
+  let pageNo=1;
+  tabs.forEach(b=>{
+    const t=(b.textContent||"").trim();
+    if(/^Сторінка\s+\d+/i.test(t)) {
+      pageNo++;
+      return;
+    }
+    // Do not touch previous/next arrows.
+    if(["‹","›","←","→"].includes(t)) return;
+
+    const hasEdit=/✎|🖉|✏/.test(t);
+    const hasClose=/×|✕|✖/.test(t);
+    if((hasEdit||hasClose) && !/Сторінка/i.test(t)){
+      const label=document.createElement("span");
+      label.className="v95-page-label";
+      label.textContent="Сторінка "+pageNo;
+      b.insertBefore(label,b.firstChild);
+      pageNo++;
+    }
+  });
+}
+
+function markVersion(){
+  let b=$95("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b) b.textContent="v95";
+  document.documentElement.dataset.sofiaVersion="95";
+}
+
+function init(){
+  removeLegacyPageStyles();
+  restorePageLabels();
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v95);
+    mo.__v95=setTimeout(()=>{
+      removeLegacyPageStyles();
+      restorePageLabels();
+    },80);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,900,1600].forEach(ms=>setTimeout(()=>{
+    removeLegacyPageStyles();
+    restorePageLabels();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,140),{once:true});
+else
+  setTimeout(init,140);
 })();
