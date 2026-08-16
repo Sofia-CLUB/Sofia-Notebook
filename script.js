@@ -11662,3 +11662,500 @@ if(document.readyState==="loading")
 else
   setTimeout(init,120);
 })();
+
+
+
+/* V136 — дата і "Класна робота" по центру, один під одним */
+(function(){
+"use strict";
+
+function getC(){
+  try{return (typeof fcanvas!=="undefined") ? fcanvas : null}catch(_){return null}
+}
+
+function centerDefaultHeadings(){
+  const c=getC();
+  if(!c) return;
+
+  const objs=c.getObjects();
+  let dateObj=objs.find(o=>o.systemRole==="dateHeading");
+  let workObj=objs.find(o=>o.systemRole==="workHeading");
+
+  /* fallback для старих версій, де systemRole ще не був заданий */
+  if(!dateObj){
+    dateObj=objs.find(o=>{
+      const t=String(o.text||"").toLowerCase();
+      return /січ|лют|берез|квіт|трав|черв|лип|серп|верес|жовт|листоп|груд/.test(t);
+    });
+    if(dateObj) dateObj.systemRole="dateHeading";
+  }
+  if(!workObj){
+    workObj=objs.find(o=>String(o.text||"").trim().toLowerCase()==="класна робота");
+    if(workObj) workObj.systemRole="workHeading";
+  }
+
+  const width=(typeof c.getWidth==="function" ? c.getWidth() : 1200);
+  const cx=width/2;
+
+  /* Верхній рядок — дата */
+  if(dateObj){
+    dateObj.set({
+      left:cx,
+      top:18,
+      originX:"center",
+      originY:"top",
+      textAlign:"center"
+    });
+    dateObj.setCoords();
+  }
+
+  /* Наступний рядок — Класна робота */
+  if(workObj){
+    const dateH=dateObj ? (dateObj.getScaledHeight?.() || dateObj.height || 42) : 42;
+    const secondTop=(dateObj ? dateObj.top : 18) + dateH + 6;
+    workObj.set({
+      left:cx,
+      top:secondTop,
+      originX:"center",
+      originY:"top",
+      textAlign:"center"
+    });
+    workObj.setCoords();
+  }
+
+  c.requestRenderAll?.();
+}
+
+function apply(){
+  [0,80,220,500].forEach(ms=>setTimeout(centerDefaultHeadings,ms));
+}
+
+/* після створення/завантаження сторінки */
+document.addEventListener("click",e=>{
+  const b=e.target.closest?.("#addPageBtn");
+  if(b) setTimeout(apply,30);
+},true);
+
+window.addEventListener("resize",apply);
+document.addEventListener("fullscreenchange",apply);
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(apply,520),{once:true});
+else
+  setTimeout(apply,520);
+
+setTimeout(()=>{
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v136";
+  document.documentElement.dataset.sofiaVersion="136";
+},600);
+})();
+
+
+
+/* =========================================================
+   V137 — шрифт як у V107 + меню тексту на лівій панелі
+   ========================================================= */
+(function(){
+"use strict";
+const $137=id=>document.getElementById(id);
+
+function fc(){try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}}
+function isText(o){return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase())}
+function activeText(){const o=fc()?.getActiveObject?.(); return isText(o)?o:null}
+function panel(){return $137("v131TextPanel")}
+
+/* ---------- V107-like defaults ----------
+   Заголовки: Segoe Script, синій.
+   Звичайний текст: Times New Roman, 26 px. */
+function restoreV107TextDefaults(){
+  const c=fc();
+  if(!c)return;
+
+  c.getObjects().forEach(o=>{
+    if(!isText(o))return;
+
+    if(o.systemRole==="dateHeading" || o.systemRole==="workHeading" || o.isHeadingText){
+      o.set({
+        fontFamily:"Segoe Script",
+        fontStyle:"normal",
+        fontWeight:"normal",
+        fill:"#4a7fbd",
+        scaleX:1,
+        scaleY:1
+      });
+    }else if(o.sofiaCursorText || o.sofiaV113Text || o.sofiaV112CursorText){
+      o.set({
+        fontFamily:"Times New Roman",
+        fontStyle:"normal",
+        fontWeight:"normal",
+        fill:"#000000",
+        fontSize:26,
+        scaleX:1,
+        scaleY:1
+      });
+    }
+    o.dirty=true;o.setCoords?.();
+  });
+  c.requestRenderAll?.();
+}
+
+/* Новий текст повертаємо до поведінки V107 */
+function bindV107Defaults(){
+  const c=fc();
+  if(!c || c.__v137Defaults)return;
+  c.__v137Defaults=true;
+
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(!isText(o))return;
+
+    setTimeout(()=>{
+      if(o.systemRole==="dateHeading" || o.systemRole==="workHeading" || o.isHeadingText){
+        o.set({
+          fontFamily:"Segoe Script",
+          fontStyle:"normal",
+          fontWeight:"normal",
+          fill:"#4a7fbd",
+          scaleX:1,scaleY:1
+        });
+      }else{
+        o.set({
+          fontFamily:"Times New Roman",
+          fontStyle:"normal",
+          fontWeight:"normal",
+          fill:"#000000",
+          fontSize:26,
+          scaleX:1,scaleY:1
+        });
+      }
+      o.dirty=true;o.setCoords?.();c.requestRenderAll?.();
+    },0);
+  });
+}
+
+/* ---------- LEFT TEXT PANEL TOGGLE ---------- */
+function leftHost(){
+  return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+         document.querySelector(".side-tool[data-tool]")?.parentElement;
+}
+
+function addCss(){
+  if($137("v137Css"))return;
+  const st=document.createElement("style");
+  st.id="v137Css";
+  st.textContent=`
+    #v137TextPanelBtn{
+      width:100%;
+      min-height:46px;
+      border:0;
+      border-radius:8px;
+      background:transparent;
+      color:#24354e;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      padding:3px 1px;
+      cursor:pointer;
+      font:600 9px/1.05 Arial,sans-serif;
+    }
+    #v137TextPanelBtn .ico{font-size:18px;line-height:1}
+    #v137TextPanelBtn.active{background:#173b78!important;color:#fff!important}
+
+    /* Меню тексту тепер прикріплене до лівої панелі, але приховане за замовчуванням */
+    #v131TextPanel.v137-left{
+      position:fixed!important;
+      left:88px!important;
+      right:auto!important;
+      top:170px!important;
+      width:245px!important;
+      z-index:90000!important;
+      display:none!important;
+      max-height:calc(100vh - 190px)!important;
+      overflow:auto!important;
+      background:rgba(255,255,255,.94)!important;
+      backdrop-filter:blur(6px)!important;
+      -webkit-backdrop-filter:blur(6px)!important;
+    }
+    #v131TextPanel.v137-left.show{display:block!important}
+  `;
+  document.head.appendChild(st);
+}
+
+function ensureButton(){
+  const host=leftHost();
+  if(!host)return;
+  let b=$137("v137TextPanelBtn");
+  if(!b){
+    b=document.createElement("button");
+    b.id="v137TextPanelBtn";
+    b.type="button";
+    b.title="Показати/сховати меню роботи з текстом";
+    b.innerHTML='<span class="ico">Aa</span><span>Текст меню</span>';
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const p=panel();
+      if(!p)return;
+      p.classList.add("v137-left");
+      const willShow=!p.classList.contains("show");
+      p.classList.toggle("show",willShow);
+      b.classList.toggle("active",willShow);
+      if(willShow){
+        const o=activeText();
+        try{ if(o && typeof syncPanel==="function") syncPanel(o); }catch(_){}
+      }
+    };
+    host.appendChild(b);
+  }
+}
+
+function configurePanel(){
+  const p=panel();
+  if(!p)return;
+  p.classList.add("v137-left");
+
+  /* За замовчуванням приховане, щоб не заважало */
+  if(!p.dataset.v137Init){
+    p.dataset.v137Init="1";
+    p.classList.remove("show");
+  }
+
+  /* Кнопка × просто ховає меню */
+  const close=$137("v131TextClose");
+  if(close && !close.__v137){
+    close.__v137=true;
+    close.addEventListener("click",()=>{
+      p.classList.remove("show");
+      $137("v137TextPanelBtn")?.classList.remove("active");
+    },true);
+  }
+}
+
+/* Не відкривати меню автоматично при кожному курсорі/наборі.
+   Користувач сам вмикає його кнопкою зліва. */
+function suppressAutoOpen(){
+  const p=panel();
+  if(!p)return;
+  const obs=new MutationObserver(()=>{
+    if(!p.dataset.v137UserOpen && p.classList.contains("show")){
+      p.classList.remove("show");
+    }
+  });
+  if(!p.__v137Obs){
+    p.__v137Obs=obs;
+    obs.observe(p,{attributes:true,attributeFilter:["class"]});
+  }
+
+  const b=$137("v137TextPanelBtn");
+  if(b && !b.__v137Mark){
+    b.__v137Mark=true;
+    b.addEventListener("click",()=>{
+      const shown=panel()?.classList.contains("show");
+      if(panel()) panel().dataset.v137UserOpen=shown?"1":"";
+    },false);
+  }
+}
+
+/* ---------- VERSION ---------- */
+function mark(){
+  const b=$137("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v137";
+  document.documentElement.dataset.sofiaVersion="137";
+}
+
+function repair(){
+  addCss();
+  ensureButton();
+  configurePanel();
+  bindV107Defaults();
+}
+
+function init(){
+  repair();
+  restoreV107TextDefaults();
+  suppressAutoOpen();
+  mark();
+  [400,1000,1800].forEach(ms=>setTimeout(()=>{
+    repair();suppressAutoOpen();
+  },ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V138 — МЕНЮ РОБОТИ З ТЕКСТОМ НА ПРАВІЙ ПАНЕЛІ
+   ========================================================= */
+(function(){
+"use strict";
+const $138=id=>document.getElementById(id);
+
+function panel(){
+  return $138("v131TextPanel");
+}
+
+function rightHost(){
+  return $138("v86Dock") ||
+         document.querySelector(".right-toolbar,.right-rail,.sofia-right-rail");
+}
+
+function addCss(){
+  if($138("v138Css")) return;
+  const st=document.createElement("style");
+  st.id="v138Css";
+  st.textContent=`
+    #v137TextPanelBtn{display:none!important}
+
+    #v138TextPanelBtn{
+      width:100%;
+      min-height:48px;
+      border:0;
+      border-radius:8px;
+      background:transparent;
+      color:#24354e;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      padding:3px 1px;
+      cursor:pointer;
+      font:600 9px/1.05 Arial,sans-serif;
+    }
+    #v138TextPanelBtn .ico{
+      font-size:17px;
+      line-height:1;
+      font-weight:700;
+    }
+    #v138TextPanelBtn.active{
+      background:#173b78!important;
+      color:#fff!important;
+    }
+
+    /* Панель відкривається біля правої панелі */
+    #v131TextPanel.v138-right{
+      position:fixed!important;
+      right:84px!important;
+      left:auto!important;
+      top:170px!important;
+      width:245px!important;
+      z-index:94000!important;
+      display:none!important;
+      max-height:calc(100vh - 190px)!important;
+      overflow:auto!important;
+      background:rgba(255,255,255,.94)!important;
+      backdrop-filter:blur(6px)!important;
+      -webkit-backdrop-filter:blur(6px)!important;
+      border:1px solid rgba(23,59,120,.16)!important;
+      border-radius:11px!important;
+      box-shadow:0 8px 24px rgba(15,42,80,.15)!important;
+    }
+    #v131TextPanel.v138-right.show{
+      display:block!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function removeOldLeftButton(){
+  const old=$138("v137TextPanelBtn");
+  if(old) old.remove();
+}
+
+function ensureRightButton(){
+  const host=rightHost();
+  if(!host) return;
+
+  let b=$138("v138TextPanelBtn");
+  if(!b){
+    b=document.createElement("button");
+    b.id="v138TextPanelBtn";
+    b.type="button";
+    b.title="Показати/сховати меню роботи з текстом";
+    b.innerHTML='<span class="ico">Aa</span><span>Текст</span>';
+
+    b.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const p=panel();
+      if(!p) return;
+
+      p.classList.add("v138-right");
+      p.classList.remove("v137-left");
+
+      const show=!p.classList.contains("show");
+      p.classList.toggle("show",show);
+      b.classList.toggle("active",show);
+
+      if(show){
+        p.dataset.v138UserOpen="1";
+      }else{
+        delete p.dataset.v138UserOpen;
+      }
+    };
+
+    /* Додаємо у праву панель перед Довідкою, якщо вона є */
+    const help=[...host.querySelectorAll("button")].find(x=>/Довідка/i.test((x.textContent||"").trim()));
+    if(help) host.insertBefore(b,help);
+    else host.appendChild(b);
+  }
+}
+
+function configurePanel(){
+  const p=panel();
+  if(!p) return;
+
+  p.classList.remove("v137-left");
+  p.classList.add("v138-right");
+
+  /* Меню за замовчуванням закрите */
+  if(!p.dataset.v138Init){
+    p.dataset.v138Init="1";
+    p.classList.remove("show");
+  }
+
+  /* × закриває меню та знімає активність кнопки */
+  const close=$138("v131TextClose");
+  if(close && !close.__v138){
+    close.__v138=true;
+    close.addEventListener("click",()=>{
+      p.classList.remove("show");
+      delete p.dataset.v138UserOpen;
+      $138("v138TextPanelBtn")?.classList.remove("active");
+    },true);
+  }
+}
+
+function mark(){
+  const b=$138("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
+}
+
+function repair(){
+  addCss();
+  removeOldLeftButton();
+  ensureRightButton();
+  configurePanel();
+}
+
+function init(){
+  repair();
+  mark();
+  [300,900,1600].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
