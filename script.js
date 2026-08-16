@@ -9633,3 +9633,454 @@ if(document.readyState==="loading")
 else
   setTimeout(init113,220);
 })();
+
+
+
+/* =========================================================
+   V114 — ОДНА КНОПКА ЗГОРТАННЯ + НЕПРОЗОРА ПРАВА ПАНЕЛЬ
+          + ОДНЕ КОНТЕКСТНЕ МЕНЮ
+   ========================================================= */
+(function(){
+"use strict";
+
+const $114=id=>document.getElementById(id);
+
+function c114(){
+  try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}
+}
+
+function isText114(o){
+  return !!o && ["text","i-text","textbox"].includes(String(o.type||"").toLowerCase());
+}
+
+/* ---------- CSS ---------- */
+function css114(){
+  if($114("v114Css")) return;
+
+  const st=document.createElement("style");
+  st.id="v114Css";
+  st.textContent=`
+    /* Прибираємо стару дубльовану кнопку згортання */
+    #v89RightToggle{
+      display:none!important;
+      visibility:hidden!important;
+      opacity:0!important;
+      pointer-events:none!important;
+    }
+
+    /* Наша єдина кнопка */
+    #v112RightToggle{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      visibility:visible!important;
+      opacity:1!important;
+      pointer-events:auto!important;
+      z-index:126000!important;
+    }
+
+    /* Права панель — НЕ прозора */
+    #v86Dock{
+      background:#ffffff!important;
+      background-color:#ffffff!important;
+      opacity:1!important;
+      backdrop-filter:none!important;
+      -webkit-backdrop-filter:none!important;
+      border-left:1px solid #d8e2ef!important;
+      box-shadow:-4px 0 14px rgba(15,23,42,.10)!important;
+    }
+
+    #v86Dock::before,
+    #v86Dock::after{
+      opacity:1!important;
+    }
+
+    /* Тільки одна контекстна панель у момент часу */
+    #v68ToolSettings.v114-force-hide,
+    #v102ObjectPanel.v114-force-hide,
+    #textFormatBar.v114-force-hide{
+      display:none!important;
+      visibility:hidden!important;
+      opacity:0!important;
+      pointer-events:none!important;
+    }
+
+    /* Універсальне контекстне меню — справа від аркуша, перед усім */
+    #v102ObjectPanel.v114-context-open,
+    #textFormatBar.v114-context-open{
+      display:block!important;
+      visibility:visible!important;
+      opacity:1!important;
+      pointer-events:auto!important;
+      position:fixed!important;
+      right:84px!important;
+      left:auto!important;
+      top:150px!important;
+      width:300px!important;
+      max-width:calc(100vw - 100px)!important;
+      max-height:calc(100vh - 180px)!important;
+      overflow:auto!important;
+      z-index:132000!important;
+      background:#fff!important;
+      border:1px solid #d8e2ef!important;
+      border-radius:12px!important;
+      box-shadow:0 12px 32px rgba(15,23,42,.22)!important;
+    }
+
+    /* Старе меню інструмента не показуємо при виділенні об'єкта */
+    #v68ToolSettings{
+      z-index:131000!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------- ОДНА КНОПКА ЗГОРТАННЯ ---------- */
+function removeDuplicateToggle114(){
+  const old=$114("v89RightToggle");
+  if(old) old.remove();
+
+  const all=[...document.querySelectorAll("button")].filter(b=>{
+    const t=(b.textContent||"").trim();
+    const id=b.id||"";
+    return (t==="›"||t==="‹") && id!=="v112RightToggle" &&
+           (b.style.position==="fixed" || /toggle/i.test(id));
+  });
+
+  all.forEach(b=>{
+    if(b.id!=="v112RightToggle") b.remove();
+  });
+}
+
+/* ---------- ПРИБИРАЄМО СТАРІ АВТОМАТИЧНІ КОНТЕКСТНІ МЕНЮ ---------- */
+function hideLegacyContext114(){
+  const btn=$114("v112ContextBtn");
+  const contextOpen=!!btn?.classList.contains("active");
+
+  const old=$114("v68ToolSettings");
+  const obj=$114("v102ObjectPanel");
+  const text=$114("textFormatBar");
+
+  /* v68 — старе меню типу "Крива", "Трикутник" тощо.
+     Воно більше не повинно з'являтися при виборі об'єкта. */
+  if(old){
+    old.classList.add("v114-force-hide");
+    old.classList.remove("v112-context-open","v114-context-open");
+  }
+
+  if(!contextOpen){
+    [obj,text].forEach(p=>{
+      if(!p)return;
+      p.classList.add("v114-force-hide");
+      p.classList.remove("v112-context-open","v114-context-open");
+    });
+  }
+}
+
+/* ---------- ОДНЕ КОНТЕКСТНЕ МЕНЮ ---------- */
+function closeContext114(){
+  [$114("v102ObjectPanel"),$114("textFormatBar"),$114("v68ToolSettings")].forEach(p=>{
+    if(!p)return;
+    p.classList.remove("v112-context-open","v114-context-open");
+    p.classList.add("v114-force-hide");
+  });
+
+  $114("v112ContextEmpty")?.classList.remove("show");
+  $114("v112ContextBtn")?.classList.remove("active");
+}
+
+function openContext114(){
+  const c=c114();
+  const o=c?.getActiveObject?.();
+
+  /* Спочатку все закриваємо, щоб не було 2 меню */
+  [$114("v102ObjectPanel"),$114("textFormatBar"),$114("v68ToolSettings")].forEach(p=>{
+    if(!p)return;
+    p.classList.remove("v112-context-open","v114-context-open");
+    p.classList.add("v114-force-hide");
+  });
+
+  if(!o){
+    const e=$114("v112ContextEmpty");
+    if(e){
+      e.innerHTML="<b>Контекстне меню</b><br>Спочатку виділіть текст або об’єкт на аркуші.";
+      e.classList.add("show");
+    }
+    return;
+  }
+
+  if(isText114(o)){
+    try{
+      if(typeof syncTextFormatBar==="function") syncTextFormatBar();
+    }catch(_){}
+
+    const p=$114("textFormatBar");
+    if(p){
+      p.classList.remove("hidden","v114-force-hide");
+      p.classList.add("v114-context-open");
+      return;
+    }
+  }
+
+  const obj=$114("v102ObjectPanel");
+  if(obj){
+    try{
+      if(typeof refreshObjectPanel==="function") refreshObjectPanel();
+    }catch(_){}
+
+    obj.classList.remove("hidden","v114-force-hide");
+    obj.classList.add("v114-context-open");
+    return;
+  }
+
+  const e=$114("v112ContextEmpty");
+  if(e){
+    e.innerHTML="<b>Контекстне меню</b><br>Для цього об’єкта параметри недоступні.";
+    e.classList.add("show");
+  }
+}
+
+function rebindContextButton114(){
+  const b=$114("v112ContextBtn");
+  if(!b || b.__v114Bound) return;
+  b.__v114Bound=true;
+
+  /* Скидаємо старий onclick V112 */
+  b.onclick=null;
+
+  b.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const opening=!b.classList.contains("active");
+    closeContext114();
+
+    if(opening){
+      b.classList.add("active");
+      openContext114();
+    }
+  },true);
+}
+
+/* ---------- ПРИ ВИДІЛЕННІ ОБ'ЄКТА НЕ ПОКАЗУЄМО НІЧОГО АВТОМАТИЧНО ---------- */
+function bindSelectionGuard114(){
+  const c=c114();
+  if(!c || c.__v114SelectionGuard) return;
+  c.__v114SelectionGuard=true;
+
+  ["selection:created","selection:updated","selection:cleared","text:editing:entered"].forEach(ev=>{
+    c.on(ev,()=>{
+      setTimeout(()=>{
+        const btn=$114("v112ContextBtn");
+
+        /* Якщо Контекст відкритий — оновлюємо тільки його */
+        if(btn?.classList.contains("active")){
+          closeContext114();
+          btn.classList.add("active");
+          openContext114();
+          return;
+        }
+
+        /* Інакше не показуємо жодне старе меню */
+        hideLegacyContext114();
+      },0);
+    });
+  });
+}
+
+/* ---------- MUTATION GUARD: старі патчі можуть знову показувати меню ---------- */
+function mutationGuard114(){
+  if(document.documentElement.__v114Mutation) return;
+  document.documentElement.__v114Mutation=true;
+
+  const obs=new MutationObserver(()=>{
+    const btn=$114("v112ContextBtn");
+    if(btn?.classList.contains("active")) return;
+    hideLegacyContext114();
+  });
+
+  ["v68ToolSettings","v102ObjectPanel","textFormatBar"].forEach(id=>{
+    const p=$114(id);
+    if(p) obs.observe(p,{attributes:true,attributeFilter:["class","style"]});
+  });
+}
+
+/* ---------- VERSION ---------- */
+function mark114(){
+  const b=$114("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v114";
+  document.documentElement.dataset.sofiaVersion="114";
+}
+
+function repair114(){
+  css114();
+  removeDuplicateToggle114();
+  hideLegacyContext114();
+  rebindContextButton114();
+  bindSelectionGuard114();
+  mutationGuard114();
+}
+
+function init114(){
+  repair114();
+  mark114();
+  [350,900,1600].forEach(ms=>setTimeout(repair114,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init114,220),{once:true});
+else
+  setTimeout(init114,220);
+
+})();
+
+
+
+/* =========================================================
+   V115 — ПЕРЕТЯГУВАННЯ ВІКОН МЕНЮ ЗА ЗАГОЛОВОК
+   ========================================================= */
+(function(){
+"use strict";
+
+const $115=id=>document.getElementById(id);
+
+const PANEL_IDS_115=[
+  "v86Commands",
+  "v102Help",
+  "v87Help",
+  "v86HelpBox",
+  "v102ObjectPanel",
+  "textFormatBar",
+  "v68ToolSettings",
+  "graphBuilderPanel",
+  "graphEditorPanel",
+  "numberRayPanel",
+  "geometryPanel",
+  "anglePanel",
+  "mediaPanel",
+  "elementsPanel",
+  "calculatorPanel",
+  "teacherToolsPanel",
+  "ukrainianPanel",
+  "aiPanel",
+  "shapeLibraryPanel",
+  "v56FiguresPanel",
+  "v56CompassPanel"
+];
+
+function makeDraggable115(panel){
+  if(!panel || panel.__v115Drag)return;
+  panel.__v115Drag=true;
+
+  /* Пошук заголовка/верхньої частини меню */
+  let head=
+    panel.querySelector(".head") ||
+    panel.querySelector("[id$='Header']") ||
+    panel.querySelector("[id$='Head']") ||
+    panel.querySelector(".panel-header") ||
+    panel.querySelector(".modal-header") ||
+    panel.querySelector("h1,h2,h3,h4,strong");
+
+  /* Для v86Commands часто заголовок — перший рядок/strong */
+  if(!head){
+    head=panel.firstElementChild;
+  }
+  if(!head)return;
+
+  head.style.setProperty("cursor","move","important");
+  head.style.setProperty("user-select","none","important");
+  head.title="Перетягніть, щоб перемістити вікно";
+
+  let dragging=false;
+  let sx=0,sy=0,sl=0,st=0;
+
+  const move=e=>{
+    if(!dragging)return;
+
+    const r=panel.getBoundingClientRect();
+    let left=sl+(e.clientX-sx);
+    let top=st+(e.clientY-sy);
+
+    left=Math.max(4,Math.min(window.innerWidth-r.width-4,left));
+    top=Math.max(4,Math.min(window.innerHeight-r.height-4,top));
+
+    panel.style.setProperty("position","fixed","important");
+    panel.style.setProperty("left",left+"px","important");
+    panel.style.setProperty("top",top+"px","important");
+    panel.style.setProperty("right","auto","important");
+    panel.style.setProperty("bottom","auto","important");
+    panel.style.setProperty("z-index","135000","important");
+
+    try{
+      localStorage.setItem("sofiaPanelPos_"+panel.id,JSON.stringify({left,top}));
+    }catch(_){}
+  };
+
+  const up=()=>{
+    dragging=false;
+    document.removeEventListener("pointermove",move,true);
+    document.removeEventListener("pointerup",up,true);
+  };
+
+  head.addEventListener("pointerdown",e=>{
+    /* Не починати перетягування з кнопки/поля у заголовку */
+    if(e.target.closest("button,input,select,textarea,a"))return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const r=panel.getBoundingClientRect();
+    dragging=true;
+    sx=e.clientX;
+    sy=e.clientY;
+    sl=r.left;
+    st=r.top;
+
+    panel.style.setProperty("z-index","135000","important");
+
+    document.addEventListener("pointermove",move,true);
+    document.addEventListener("pointerup",up,true);
+  },true);
+
+  /* Відновлення останньої позиції */
+  try{
+    const saved=JSON.parse(localStorage.getItem("sofiaPanelPos_"+panel.id)||"null");
+    if(saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)){
+      panel.style.setProperty("position","fixed","important");
+      panel.style.setProperty("left",saved.left+"px","important");
+      panel.style.setProperty("top",saved.top+"px","important");
+      panel.style.setProperty("right","auto","important");
+      panel.style.setProperty("bottom","auto","important");
+    }
+  }catch(_){}
+}
+
+function scan115(){
+  PANEL_IDS_115.forEach(id=>makeDraggable115($115(id)));
+
+  document.querySelectorAll(
+    ".v56-floating,.teacher-tools-panel,.floating-panel,.modal,.dialog"
+  ).forEach(makeDraggable115);
+}
+
+function mark115(){
+  const b=$115("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v115";
+  document.documentElement.dataset.sofiaVersion="115";
+}
+
+function init115(){
+  scan115();
+  mark115();
+  [300,900,1600].forEach(ms=>setTimeout(scan115,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init115,220),{once:true});
+else
+  setTimeout(init115,220);
+
+})();
