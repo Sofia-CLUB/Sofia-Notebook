@@ -9690,3 +9690,695 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V129 — FULLSCREEN: ЛИСТ НА ВСЮ РОБОЧУ ШИРИНУ БЕЗ БЛАКИТНИХ ПОЛІВ
+   ========================================================= */
+(function(){
+"use strict";
+
+function addCss(){
+  if(document.getElementById("v129Css")) return;
+  const st=document.createElement("style");
+  st.id="v129Css";
+  st.textContent=`
+    :root{
+      --v129-left-rail: 80px;
+      --v129-right-rail: 78px;
+    }
+
+    /* У повному екрані прибираємо блакитні поля навколо аркуша */
+    :fullscreen body,
+    :-webkit-full-screen body{
+      background:#fff!important;
+    }
+
+    :fullscreen #notebook,
+    :-webkit-full-screen #notebook{
+      width:calc(100vw - var(--v129-left-rail) - var(--v129-right-rail))!important;
+      max-width:none!important;
+      min-width:0!important;
+      margin-left:var(--v129-left-rail)!important;
+      margin-right:var(--v129-right-rail)!important;
+      margin-top:0!important;
+      margin-bottom:0!important;
+      padding:0!important;
+      background-color:#fff!important;
+      box-sizing:border-box!important;
+    }
+
+    :fullscreen .canvas-container,
+    :-webkit-full-screen .canvas-container{
+      width:100%!important;
+      max-width:none!important;
+      margin:0!important;
+      padding:0!important;
+      background:#fff!important;
+    }
+
+    :fullscreen .lower-canvas,
+    :fullscreen .upper-canvas,
+    :-webkit-full-screen .lower-canvas,
+    :-webkit-full-screen .upper-canvas{
+      left:0!important;
+      margin:0!important;
+    }
+
+    /* Типові зовнішні обгортки аркуша теж без блакитного фону */
+    :fullscreen .workspace,
+    :fullscreen .board-wrap,
+    :fullscreen .canvas-wrap,
+    :fullscreen .notebook-wrap,
+    :fullscreen main,
+    :-webkit-full-screen .workspace,
+    :-webkit-full-screen .board-wrap,
+    :-webkit-full-screen .canvas-wrap,
+    :-webkit-full-screen .notebook-wrap,
+    :-webkit-full-screen main{
+      background:#fff!important;
+      margin-left:0!important;
+      margin-right:0!important;
+      padding-left:0!important;
+      padding-right:0!important;
+    }
+
+    /* Ліва і права панелі залишаються поверх аркуша */
+    :fullscreen .side-tools,
+    :fullscreen .left-toolbar,
+    :fullscreen .left-tools,
+    :fullscreen .tool-sidebar,
+    :-webkit-full-screen .side-tools,
+    :-webkit-full-screen .left-toolbar,
+    :-webkit-full-screen .left-tools,
+    :-webkit-full-screen .tool-sidebar{
+      width:var(--v129-left-rail)!important;
+    }
+
+    :fullscreen #v86Dock,
+    :-webkit-full-screen #v86Dock{
+      width:var(--v129-right-rail)!important;
+      right:0!important;
+      background:transparent!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function resizeFabricToAvailableWidth(){
+  const fs=document.fullscreenElement || document.webkitFullscreenElement;
+  if(!fs) return;
+
+  const nb=document.getElementById("notebook");
+  let c=null;
+  try{
+    c=(typeof fcanvas!=="undefined") ? fcanvas : null;
+  }catch(_){}
+  if(!nb || !c) return;
+
+  const available=Math.max(600, window.innerWidth - 80 - 78);
+  const current=c.getWidth?.() || 0;
+
+  if(Math.abs(current-available) > 3){
+    try{
+      c.setWidth(available);
+      c.calcOffset?.();
+      c.requestRenderAll?.();
+    }catch(_){}
+  }
+
+  nb.style.setProperty("width",available+"px","important");
+  nb.style.setProperty("margin-left","80px","important");
+  nb.style.setProperty("margin-right","78px","important");
+  nb.style.setProperty("background","#fff","important");
+
+  const wrap=document.querySelector(".canvas-container");
+  if(wrap){
+    wrap.style.setProperty("width",available+"px","important");
+    wrap.style.setProperty("background","#fff","important");
+  }
+}
+
+function apply(){
+  addCss();
+  resizeFabricToAvailableWidth();
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v129";
+  document.documentElement.dataset.sofiaVersion="129";
+}
+
+function init(){
+  addCss();
+  mark();
+
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(apply,80);
+    setTimeout(apply,350);
+    setTimeout(apply,900);
+  });
+
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(apply,80);
+    setTimeout(apply,350);
+    setTimeout(apply,900);
+  });
+
+  window.addEventListener("resize",()=>setTimeout(apply,100));
+
+  [300,900,1600].forEach(ms=>setTimeout(apply,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V130 — TEXT: BLUE DEFAULT + NO STRETCH + SNAP TO NOTEBOOK ROW
+   ========================================================= */
+(function(){
+"use strict";
+
+const DEFAULT_BLUE="#4f81bd";
+
+function getCanvas(){
+  try { return (typeof fcanvas!=="undefined") ? fcanvas : null; } catch(_){ return null; }
+}
+
+function isText(o){
+  return !!o && (
+    o.type==="i-text" || o.type==="textbox" || o.type==="text" ||
+    (window.fabric && (o instanceof fabric.IText || o instanceof fabric.Textbox))
+  );
+}
+
+/* Знаходимо фактичний крок ліній/клітинки з налаштувань сторінки.
+   Якщо точне значення недоступне — беремо найближчий видимий крок. */
+function notebookStep(){
+  const candidates=[
+    document.getElementById("lineSize"),
+    document.getElementById("paperSize"),
+    document.getElementById("gridSize"),
+    document.getElementById("spacing"),
+    document.getElementById("lineSpacing")
+  ].filter(Boolean);
+
+  for(const el of candidates){
+    const n=Number(el.value);
+    if(Number.isFinite(n) && n>=16 && n<=100) return n;
+  }
+
+  /* У поточному Sofia Notebook типовий крок близько 35–37 px */
+  const sizeLabel=[...document.querySelectorAll("span,b,small")].find(
+    e=>/^\s*\d+\s*px\s*$/i.test(e.textContent||"")
+  );
+  if(sizeLabel){
+    const n=parseFloat(sizeLabel.textContent);
+    if(n>=16 && n<=100) return n;
+  }
+  return 36;
+}
+
+function snapTextBaseline(o){
+  if(!isText(o)) return;
+  const step=notebookStep();
+
+  /* Текст повинен сидіти в одному рядку, а не між двома.
+     Центруємо його по висоті рядка з невеликим оптичним зсувом. */
+  const h=(o.getScaledHeight?.() || o.height || step);
+  const centerY=(o.top||0)+h/2;
+  const rowCenter=Math.round((centerY-step/2)/step)*step + step/2;
+  o.top=(o.top||0)+(rowCenter-centerY);
+  o.setCoords?.();
+}
+
+function normalizeText(o, forceBlue){
+  if(!isText(o)) return;
+
+  /* Головна причина "розтягнутого" тексту — scaleX/scaleY після
+     зміни розміру рамкою. Повертаємо нормальні пропорції. */
+  if(Math.abs((o.scaleX??1)-(o.scaleY??1)) > .02 || (o.scaleX??1)!==1 || (o.scaleY??1)!==1){
+    const sx=o.scaleX||1, sy=o.scaleY||1;
+    const avg=Math.max(.55, Math.min(2.2,(sx+sy)/2));
+    o.scaleX=avg;
+    o.scaleY=avg;
+  }
+
+  if(forceBlue || !o.fill || o.fill==="#000" || o.fill==="#000000" || o.fill==="black"){
+    o.fill=DEFAULT_BLUE;
+  }
+
+  /* Забороняємо окреме горизонтальне/вертикальне розтягування тексту */
+  o.lockUniScaling=true;
+  o.setControlsVisibility?.({
+    ml:false, mr:false, mt:false, mb:false
+  });
+
+  snapTextBaseline(o);
+  o.setCoords?.();
+}
+
+function setUiBlue(){
+  ["textColor","textColorPicker","fontColor","textFill"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.type==="color" && (!el.value || /^#0{6}$/i.test(el.value))){
+      el.value=DEFAULT_BLUE;
+    }
+  });
+}
+
+function init(){
+  const c=getCanvas();
+  if(!c){ setTimeout(init,250); return; }
+
+  setUiBlue();
+
+  c.on("text:editing:entered",e=>{
+    normalizeText(e.target,true);
+    c.requestRenderAll();
+  });
+
+  c.on("object:added",e=>{
+    if(isText(e.target)){
+      normalizeText(e.target,true);
+      c.requestRenderAll();
+    }
+  });
+
+  c.on("object:modified",e=>{
+    if(isText(e.target)){
+      normalizeText(e.target,false);
+      c.requestRenderAll();
+    }
+  });
+
+  /* Коли ставимо текстовий курсор — прив'язуємо його до рядка/клітинки */
+  c.on("mouse:down",opt=>{
+    const o=opt.target;
+    if(isText(o)){
+      setTimeout(()=>{
+        normalizeText(o,false);
+        c.requestRenderAll();
+      },0);
+    }
+  });
+
+  /* Уже створений текст не перекрашуємо насильно,
+     але прибираємо непропорційне розтягнення. */
+  (c.getObjects?.()||[]).forEach(o=>{
+    if(isText(o)) normalizeText(o,false);
+  });
+  c.requestRenderAll();
+
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v130";
+  document.documentElement.dataset.sofiaVersion="130";
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350),{once:true});
+else setTimeout(init,350);
+})();
+
+
+
+/* =========================================================
+   V131 — ЗОШИТНИЙ РУКОПИСНИЙ ТЕКСТ + БОКОВЕ МЕНЮ ТЕКСТУ
+   Default: Segoe Script, blue, fitted to one notebook row.
+   ========================================================= */
+(function(){
+"use strict";
+
+const DEFAULT_FONT="Segoe Script";
+const DEFAULT_COLOR="#4f81bd";
+const $131=id=>document.getElementById(id);
+
+function fc(){try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}}
+function isText(o){
+  return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase());
+}
+
+/* ---------- PAPER METRICS ---------- */
+function paperStep(){
+  const ids=["paperSize","lineSize","gridSize","spacing","lineSpacing"];
+  for(const id of ids){
+    const el=document.getElementById(id);
+    const n=Number(el?.value);
+    if(Number.isFinite(n) && n>=16 && n<=100) return n;
+  }
+
+  const labels=[...document.querySelectorAll("span,b,small")];
+  for(const el of labels){
+    const m=(el.textContent||"").match(/(\d+(?:\.\d+)?)\s*px/i);
+    if(m){
+      const n=parseFloat(m[1]);
+      if(n>=16 && n<=100) return n;
+    }
+  }
+  return 36;
+}
+
+function paperType(){
+  const el=document.getElementById("paperType") ||
+           document.querySelector('select[id*="paper" i]') ||
+           [...document.querySelectorAll("select")].find(x=>/ліні|кліт|коса/i.test(x.value||x.options?.[x.selectedIndex]?.textContent||""));
+  return String(el?.value || el?.options?.[el.selectedIndex]?.textContent || "").toLowerCase();
+}
+
+function defaultFontSize(){
+  const step=paperStep();
+  /* One handwritten line, with ascenders/descenders still inside the row. */
+  return Math.max(15, Math.min(38, Math.round(step*0.68)));
+}
+
+function snapToNotebookRow(o){
+  if(!isText(o)) return;
+  const step=paperStep();
+  const fs=Number(o.fontSize)||defaultFontSize();
+
+  /* Baseline-style positioning: keep the glyph visually inside one row. */
+  const row=Math.max(0, Math.round((Number(o.top)||0)/step));
+  const visualHeight=fs*1.05;
+  const top=row*step + Math.max(1,(step-visualHeight)/2);
+
+  o.set({top});
+
+  /* In grid paper also gently align X to the current cell, but keep natural writing flow. */
+  const type=paperType();
+  if(/grid|кліт|cell|millimeter/.test(type)){
+    const x=Number(o.left)||0;
+    const cell=Math.floor(x/step);
+    o.set({left:cell*step + Math.max(2,Math.round(step*.10))});
+  }
+
+  o.setCoords?.();
+}
+
+function applyNotebookTextStyle(o, preserveUserChoice=false){
+  if(!isText(o)) return;
+
+  const props={
+    scaleX:1,
+    scaleY:1,
+    lineHeight:1.0,
+    charSpacing:0,
+    shadow:null,
+    stroke:null,
+    strokeWidth:0,
+    objectCaching:false,
+    noScaleCache:true
+  };
+
+  if(!preserveUserChoice){
+    props.fontFamily=DEFAULT_FONT;
+    props.fontStyle="normal";
+    props.fontWeight="normal";
+    props.fill=DEFAULT_COLOR;
+    props.fontSize=defaultFontSize();
+  }
+
+  o.set(props);
+  o.lockUniScaling=true;
+  o.setControlsVisibility?.({ml:false,mr:false,mt:false,mb:false});
+  snapToNotebookRow(o);
+  o.dirty=true;
+  o.setCoords?.();
+}
+
+/* ---------- COMPACT SIDE TEXT PANEL ---------- */
+function addCss(){
+  if($131("v131Css")) return;
+  const st=document.createElement("style");
+  st.id="v131Css";
+  st.textContent=`
+    #v131TextPanel{
+      position:fixed;
+      right:86px;
+      top:165px;
+      z-index:90000;
+      width:236px;
+      display:none;
+      padding:9px;
+      background:rgba(255,255,255,.88);
+      backdrop-filter:blur(7px);
+      -webkit-backdrop-filter:blur(7px);
+      border:1px solid rgba(23,59,120,.16);
+      border-radius:11px;
+      box-shadow:0 8px 24px rgba(15,42,80,.16);
+      box-sizing:border-box;
+      font:13px/1.25 Arial,sans-serif;
+    }
+    #v131TextPanel.show{display:block}
+    #v131TextPanel .head{
+      display:flex;align-items:center;gap:6px;
+      font-weight:700;color:#173b78;margin-bottom:7px;
+    }
+    #v131TextPanel .head button{
+      margin-left:auto;width:26px;height:26px;border:0;border-radius:7px;
+      background:#eef2f7;cursor:pointer;
+    }
+    #v131TextPanel .row{
+      display:flex;align-items:center;gap:5px;margin:5px 0;
+    }
+    #v131TextPanel label{font-size:12px;color:#52606d;min-width:48px}
+    #v131TextPanel select,
+    #v131TextPanel input[type="number"],
+    #v131TextPanel button.fmt{
+      height:30px;border:1px solid #cbd7e6;border-radius:6px;background:#fff;
+      padding:2px 6px;box-sizing:border-box;
+    }
+    #v131TextPanel select{flex:1;min-width:0}
+    #v131TextPanel input[type="number"]{width:58px}
+    #v131TextPanel input[type="color"]{width:36px;height:30px;padding:1px;border:1px solid #cbd7e6;border-radius:6px}
+    #v131TextPanel button.fmt{min-width:31px;cursor:pointer}
+    #v131TextPanel button.fmt.active{background:#e5edff;color:#173b78}
+  `;
+  document.head.appendChild(st);
+}
+
+function activeText(){
+  const o=fc()?.getActiveObject?.();
+  return isText(o)?o:null;
+}
+
+function makeTextPanel(){
+  let p=$131("v131TextPanel");
+  if(p) return p;
+
+  p=document.createElement("div");
+  p.id="v131TextPanel";
+  p.innerHTML=`
+    <div class="head">
+      <span>Текст</span>
+      <button id="v131TextClose" type="button">×</button>
+    </div>
+    <div class="row">
+      <label>Шрифт</label>
+      <select id="v131Font">
+        <option value="Segoe Script">Segoe Script</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Segoe Print">Segoe Print</option>
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Розмір</label>
+      <input id="v131Size" type="number" min="10" max="72" step="1">
+      <button class="fmt" id="v131Bold" type="button"><b>B</b></button>
+      <button class="fmt" id="v131Italic" type="button"><i>I</i></button>
+      <button class="fmt" id="v131Underline" type="button"><u>U</u></button>
+    </div>
+    <div class="row">
+      <label>Колір</label>
+      <input id="v131Color" type="color" value="${DEFAULT_COLOR}">
+      <button class="fmt" id="v131AutoFit" type="button" title="Підігнати під рядок">↕ рядок</button>
+    </div>
+  `;
+  document.body.appendChild(p);
+
+  $131("v131TextClose").onclick=()=>p.classList.remove("show");
+
+  $131("v131Font").onchange=e=>{
+    const o=activeText(); if(!o) return;
+    o.set({fontFamily:e.target.value,scaleX:1,scaleY:1});
+    o.dirty=true; o.setCoords?.(); fc()?.requestRenderAll?.();
+  };
+
+  $131("v131Size").oninput=e=>{
+    const o=activeText(); if(!o) return;
+    o.set({fontSize:+e.target.value||defaultFontSize(),scaleX:1,scaleY:1});
+    snapToNotebookRow(o); fc()?.requestRenderAll?.();
+  };
+
+  $131("v131Color").oninput=e=>{
+    const o=activeText(); if(!o) return;
+    o.set({fill:e.target.value}); fc()?.requestRenderAll?.();
+  };
+
+  $131("v131Bold").onclick=()=>{
+    const o=activeText(); if(!o)return;
+    o.set({fontWeight:String(o.fontWeight)==="bold"?"normal":"bold"});
+    syncPanel(o); fc()?.requestRenderAll?.();
+  };
+  $131("v131Italic").onclick=()=>{
+    const o=activeText(); if(!o)return;
+    o.set({fontStyle:o.fontStyle==="italic"?"normal":"italic"});
+    syncPanel(o); fc()?.requestRenderAll?.();
+  };
+  $131("v131Underline").onclick=()=>{
+    const o=activeText(); if(!o)return;
+    o.set({underline:!o.underline});
+    syncPanel(o); fc()?.requestRenderAll?.();
+  };
+
+  $131("v131AutoFit").onclick=()=>{
+    const o=activeText(); if(!o)return;
+    o.set({fontSize:defaultFontSize(),scaleX:1,scaleY:1,lineHeight:1.0,charSpacing:0});
+    snapToNotebookRow(o); syncPanel(o); fc()?.requestRenderAll?.();
+  };
+
+  return p;
+}
+
+function syncPanel(o){
+  if(!o || !isText(o)) return;
+  const p=makeTextPanel();
+
+  const font=$131("v131Font");
+  if(font && ![...font.options].some(x=>x.value===o.fontFamily)){
+    const op=document.createElement("option");
+    op.value=o.fontFamily;op.textContent=o.fontFamily;font.appendChild(op);
+  }
+  if(font) font.value=o.fontFamily||DEFAULT_FONT;
+  $131("v131Size").value=Math.round(o.fontSize||defaultFontSize());
+  try{$131("v131Color").value=/^#[0-9a-f]{6}$/i.test(o.fill)?o.fill:DEFAULT_COLOR}catch(_){}
+  $131("v131Bold").classList.toggle("active",String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600);
+  $131("v131Italic").classList.toggle("active",o.fontStyle==="italic");
+  $131("v131Underline").classList.toggle("active",!!o.underline);
+
+  p.classList.add("show");
+}
+
+function showPanelForCursor(){
+  const p=makeTextPanel();
+  const o=activeText();
+  if(o) syncPanel(o);
+  else{
+    $131("v131Font").value=DEFAULT_FONT;
+    $131("v131Size").value=defaultFontSize();
+    $131("v131Color").value=DEFAULT_COLOR;
+    p.classList.add("show");
+  }
+}
+
+/* ---------- FABRIC EVENTS ---------- */
+function bindFabric(){
+  const c=fc();
+  if(!c || c.__v131Bound) return;
+  c.__v131Bound=true;
+
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(!isText(o)) return;
+
+    /* Apply after legacy handlers from earlier versions. */
+    setTimeout(()=>{
+      applyNotebookTextStyle(o,false);
+      c.requestRenderAll?.();
+    },40);
+  });
+
+  c.on("text:editing:entered",e=>{
+    const o=e?.target||c.getActiveObject?.();
+    if(!isText(o)) return;
+    applyNotebookTextStyle(o,true);
+    setTimeout(()=>syncPanel(o),20);
+  });
+
+  c.on("text:changed",e=>{
+    const o=e?.target;
+    if(!isText(o)) return;
+
+    /* Keep user's chosen font/color, but never allow distortion. */
+    applyNotebookTextStyle(o,true);
+    c.requestRenderAll?.();
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>syncPanel(o),20);
+  });
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>syncPanel(o),20);
+  });
+}
+
+/* ---------- CURSOR ACTIVATION ----------
+   Panel opens with Cursor mode, but is tucked at the right side. */
+function bindCursorButton(){
+  const b=
+    document.getElementById("v105CursorBtn") ||
+    document.getElementById("v104CursorBtn") ||
+    document.getElementById("v112CursorBtn") ||
+    [...document.querySelectorAll("button")].find(x=>(x.textContent||"").trim()==="Курсор");
+
+  if(!b || b.__v131Bound) return;
+  b.__v131Bound=true;
+  b.addEventListener("click",()=>{
+    setTimeout(showPanelForCursor,30);
+  },false);
+}
+
+/* Other tools close the text panel. */
+function bindToolExit(){
+  if(document.__v131ToolExit) return;
+  document.__v131ToolExit=true;
+
+  document.addEventListener("click",e=>{
+    const tool=e.target.closest?.(".side-tool[data-tool]");
+    if(!tool) return;
+    const txt=(tool.textContent||"").trim();
+    if(txt!=="Курсор"){
+      $131("v131TextPanel")?.classList.remove("show");
+    }
+  },true);
+}
+
+/* UI commands remain clickable. We never place the panel over the ribbon. */
+function mark(){
+  const b=$131("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v131";
+  document.documentElement.dataset.sofiaVersion="131";
+}
+
+function init(){
+  addCss();
+  makeTextPanel();
+  bindFabric();
+  bindCursorButton();
+  bindToolExit();
+  mark();
+
+  [400,1000,1800].forEach(ms=>setTimeout(()=>{
+    bindFabric();
+    bindCursorButton();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
