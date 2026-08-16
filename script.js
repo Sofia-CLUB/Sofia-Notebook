@@ -4666,3 +4666,286 @@ else setTimeout(init,220);
   else
     setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V66 — FULLSCREEN БЕЗ ПУСТОТИ + STICKY ВКЛАДКИ + МАЛА ПАНЕЛЬ ТЕКСТУ СПРАВА
+   ========================================================= */
+(function(){
+"use strict";
+const $66=id=>document.getElementById(id);
+
+function ribbon(){ return $66("sofiaRibbonV56"); }
+function tabsHead(){ return ribbon()?.querySelector(".v56-ribbon-head"); }
+function activeText(){
+  if(typeof fcanvas==="undefined")return null;
+  const o=fcanvas.getActiveObject?.();
+  return o && ["i-text","textbox","text"].includes(o.type) ? o : null;
+}
+
+/* ---------- 1. FULLSCREEN: прибираємо саме порожній spacer ---------- */
+function isFs(){
+  return !!document.fullscreenElement ||
+         !!document.webkitFullscreenElement ||
+         document.body.classList.contains("fullscreen") ||
+         document.documentElement.classList.contains("fullscreen");
+}
+function killFullscreenGap(){
+  const on=isFs();
+  document.body.classList.toggle("v66-fullscreen",on);
+
+  const rb=ribbon();
+  if(!rb)return;
+
+  const r=rb.getBoundingClientRect();
+  if(on){
+    // Якщо перед стрічкою є великий пустий блок — ховаємо саме його.
+    let prev=rb.previousElementSibling;
+    while(prev){
+      const pr=prev.getBoundingClientRect();
+      const txt=(prev.textContent||"").trim();
+      const controls=prev.querySelectorAll?.("button,input,select,textarea").length||0;
+      if(pr.height>80 && pr.height<420 && !txt && controls===0){
+        prev.dataset.v66HiddenSpacer="1";
+        prev.style.setProperty("display","none","important");
+      }
+      prev=prev.previousElementSibling;
+    }
+
+    // Якщо gap походить від батьківського контейнера — обнуляємо тільки його top spacing.
+    let parent=rb.parentElement;
+    for(let i=0;i<4 && parent && parent!==document.body;i++,parent=parent.parentElement){
+      const cs=getComputedStyle(parent);
+      const pt=parseFloat(cs.paddingTop)||0;
+      const mt=parseFloat(cs.marginTop)||0;
+      if(pt>20){
+        if(parent.dataset.v66Pad===undefined)parent.dataset.v66Pad=parent.style.paddingTop||"";
+        parent.style.setProperty("padding-top","0","important");
+      }
+      if(mt>20){
+        if(parent.dataset.v66Mar===undefined)parent.dataset.v66Mar=parent.style.marginTop||"";
+        parent.style.setProperty("margin-top","0","important");
+      }
+    }
+  }else{
+    document.querySelectorAll('[data-v66-hidden-spacer="1"]').forEach(el=>{
+      el.style.removeProperty("display");
+      delete el.dataset.v66HiddenSpacer;
+    });
+    document.querySelectorAll("[data-v66-pad]").forEach(el=>{
+      el.style.paddingTop=el.dataset.v66Pad||"";
+      delete el.dataset.v66Pad;
+    });
+    document.querySelectorAll("[data-v66-mar]").forEach(el=>{
+      el.style.marginTop=el.dataset.v66Mar||"";
+      delete el.dataset.v66Mar;
+    });
+  }
+}
+
+/* ---------- 2. STICKY вкладки при прокрутці ---------- */
+function makeTabsSticky(){
+  const head=tabsHead();
+  if(!head)return;
+  head.classList.add("v66-sticky-tabs");
+}
+
+/* ---------- 3. Мала плаваюча панель форматування тексту ---------- */
+function ensureTextFlyout(){
+  if($66("v66TextFlyout"))return;
+
+  const box=document.createElement("div");
+  box.id="v66TextFlyout";
+  box.innerHTML=`
+    <div class="v66-flyout-title">
+      <span>Текст</span>
+      <button type="button" id="v66FlyoutClose" title="Сховати">×</button>
+    </div>
+    <select id="v66FlyFont" title="Шрифт">
+      <option>Segoe Script</option>
+      <option>Times New Roman</option>
+      <option>Arial</option>
+      <option>Calibri</option>
+      <option>Georgia</option>
+      <option>Verdana</option>
+      <option>Tahoma</option>
+      <option>Comic Sans MS</option>
+    </select>
+    <div class="v66-fly-row">
+      <button type="button" id="v66FlyMinus">A−</button>
+      <input id="v66FlySize" type="number" min="8" max="120" value="38">
+      <button type="button" id="v66FlyPlus">A+</button>
+    </div>
+    <div class="v66-fly-row">
+      <button type="button" id="v66FlyBold"><b>B</b></button>
+      <button type="button" id="v66FlyItalic"><i>I</i></button>
+      <button type="button" id="v66FlyUnderline"><u>U</u></button>
+      <button type="button" id="v66FlyStrike"><s>S</s></button>
+    </div>
+    <label class="v66-fly-label">Колір <input id="v66FlyColor" type="color" value="#4a7fbd"></label>
+    <label class="v66-fly-label">Фон <input id="v66FlyBg" type="color" value="#ffffff"></label>
+    <select id="v66FlyAlign" title="Вирівнювання">
+      <option value="left">Ліворуч</option>
+      <option value="center">По центру</option>
+      <option value="right">Праворуч</option>
+      <option value="justify">По ширині</option>
+    </select>
+  `;
+  document.body.appendChild(box);
+
+  $66("v66FlyoutClose").onclick=()=>box.classList.remove("show");
+
+  const apply=props=>{
+    const o=activeText();
+    if(!o)return;
+    o.set(props);o.setCoords?.();
+    fcanvas.requestRenderAll();
+    try{pushHistory();autoSave()}catch(e){}
+    syncTextFlyout();
+  };
+
+  $66("v66FlyFont").onchange=()=>apply({fontFamily:$66("v66FlyFont").value});
+  $66("v66FlySize").onchange=()=>apply({fontSize:Math.max(8,Math.min(120,Number($66("v66FlySize").value)||38))});
+  $66("v66FlyMinus").onclick=()=>{const o=activeText();if(o)apply({fontSize:Math.max(8,(o.fontSize||38)-2)})};
+  $66("v66FlyPlus").onclick=()=>{const o=activeText();if(o)apply({fontSize:Math.min(120,(o.fontSize||38)+2)})};
+  $66("v66FlyBold").onclick=()=>{const o=activeText();if(o)apply({fontWeight:(o.fontWeight==="bold"||Number(o.fontWeight)>=600)?"normal":"bold"})};
+  $66("v66FlyItalic").onclick=()=>{const o=activeText();if(o)apply({fontStyle:o.fontStyle==="italic"?"normal":"italic"})};
+  $66("v66FlyUnderline").onclick=()=>{const o=activeText();if(o)apply({underline:!o.underline})};
+  $66("v66FlyStrike").onclick=()=>{const o=activeText();if(o)apply({linethrough:!o.linethrough})};
+  $66("v66FlyColor").oninput=()=>apply({fill:$66("v66FlyColor").value});
+  $66("v66FlyBg").oninput=()=>apply({backgroundColor:$66("v66FlyBg").value});
+  $66("v66FlyAlign").onchange=()=>apply({textAlign:$66("v66FlyAlign").value});
+}
+
+function syncTextFlyout(){
+  const box=$66("v66TextFlyout");
+  if(!box)return;
+
+  const o=activeText();
+  const show=!!o && (o.isEditing || ["i-text","textbox","text"].includes(o.type));
+
+  box.classList.toggle("show",show);
+  if(!show)return;
+
+  if($66("v66FlyFont"))$66("v66FlyFont").value=o.fontFamily||"Segoe Script";
+  if($66("v66FlySize"))$66("v66FlySize").value=Math.round(o.fontSize||38);
+  if($66("v66FlyColor") && /^#[0-9a-f]{6}$/i.test(o.fill||""))$66("v66FlyColor").value=o.fill;
+  if($66("v66FlyBg") && /^#[0-9a-f]{6}$/i.test(o.backgroundColor||""))$66("v66FlyBg").value=o.backgroundColor;
+  if($66("v66FlyAlign"))$66("v66FlyAlign").value=o.textAlign||"left";
+
+  $66("v66FlyBold")?.classList.toggle("active",o.fontWeight==="bold"||Number(o.fontWeight)>=600);
+  $66("v66FlyItalic")?.classList.toggle("active",o.fontStyle==="italic");
+  $66("v66FlyUnderline")?.classList.toggle("active",!!o.underline);
+  $66("v66FlyStrike")?.classList.toggle("active",!!o.linethrough);
+}
+
+/* ---------- 4. Коли вибрали не текст — панель зникає ---------- */
+function bindCanvas(){
+  if(typeof fcanvas==="undefined" || fcanvas.__v66Bound)return;
+  fcanvas.__v66Bound=true;
+
+  ["selection:created","selection:updated","selection:cleared",
+   "text:editing:entered","text:editing:exited","text:changed",
+   "mouse:down"].forEach(evt=>fcanvas.on(evt,()=>setTimeout(syncTextFlyout,0)));
+}
+
+/* ---------- CSS ---------- */
+function addCss(){
+  if($66("v66Css"))return;
+  const st=document.createElement("style");
+  st.id="v66Css";
+  st.textContent=`
+    /* fullscreen: жодного великого spacer */
+    body.v66-fullscreen #sofiaRibbonV56{
+      margin-top:0!important;
+    }
+
+    /* sticky tabs */
+    .v66-sticky-tabs{
+      position:sticky!important;
+      top:0!important;
+      z-index:16000!important;
+      background:#fff!important;
+      box-shadow:0 2px 8px rgba(15,23,42,.08)!important;
+    }
+
+    /* маленька текстова панель справа */
+    #v66TextFlyout{
+      position:fixed;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      z-index:25000;
+      width:190px;
+      padding:10px;
+      border:1px solid #d6e0ed;
+      border-radius:12px;
+      background:#fff;
+      box-shadow:0 8px 28px rgba(15,23,42,.18);
+      display:none;
+      gap:7px;
+      flex-direction:column;
+    }
+    #v66TextFlyout.show{display:flex}
+    .v66-flyout-title{display:flex;align-items:center;justify-content:space-between;font-weight:800}
+    .v66-flyout-title button{border:0;background:transparent;font-size:18px;cursor:pointer}
+    #v66TextFlyout select,
+    #v66TextFlyout input[type="number"]{
+      width:100%;
+      box-sizing:border-box;
+      padding:6px;
+      border:1px solid #cbd6e5;
+      border-radius:7px;
+      font:inherit;
+    }
+    .v66-fly-row{display:flex;gap:5px}
+    .v66-fly-row button{flex:1;padding:6px;border:1px solid #cbd6e5;border-radius:7px;background:#fff;cursor:pointer}
+    .v66-fly-row button.active{background:#173b78;color:#fff}
+    .v66-fly-label{display:flex;align-items:center;justify-content:space-between;font-size:13px}
+    .v66-fly-label input[type="color"]{width:50px;height:28px;border:1px solid #cbd6e5;border-radius:6px;background:#fff}
+
+    @media(max-width:800px){
+      #v66TextFlyout{right:8px;width:165px}
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------- init ---------- */
+function init(){
+  addCss();
+  makeTabsSticky();
+  ensureTextFlyout();
+  bindCanvas();
+  syncTextFlyout();
+  killFullscreenGap();
+
+  document.addEventListener("fullscreenchange",()=>setTimeout(killFullscreenGap,20));
+  document.addEventListener("webkitfullscreenchange",()=>setTimeout(killFullscreenGap,20));
+
+  window.addEventListener("scroll",()=>{
+    // sticky tabs are CSS-based; only keep flyout synced
+    syncTextFlyout();
+  },{passive:true});
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v66);
+    mo.__v66=setTimeout(()=>{
+      makeTabsSticky();
+      bindCanvas();
+      syncTextFlyout();
+      killFullscreenGap();
+    },30);
+  });
+  mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style","hidden"]});
+
+  const badge=$66("appVersionBadge");
+  if(badge)badge.textContent="v66";
+  document.documentElement.dataset.sofiaVersion="66";
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
+else setTimeout(init,220);
+})();
