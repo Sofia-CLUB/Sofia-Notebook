@@ -6032,3 +6032,736 @@ if(document.readyState==="loading")
 else
   setTimeout(init,160);
 })();
+
+
+
+/* =========================================================
+   V92 — ОКРЕМИЙ ЗАКРІПЛЕНИЙ ДОК СТОРІНОК ЗНИЗУ
+   ========================================================= */
+(function(){
+"use strict";
+const $92=id=>document.getElementById(id);
+
+function addCss(){
+  if($92("v92Css")) return;
+  const st=document.createElement("style");
+  st.id="v92Css";
+  st.textContent=`
+    #v92PageDock{
+      position:fixed!important;
+      left:86px!important;
+      right:78px!important;
+      bottom:0!important;
+      top:auto!important;
+      z-index:79000!important;
+      display:flex!important;
+      align-items:center!important;
+      gap:6px!important;
+      min-height:48px!important;
+      max-height:54px!important;
+      padding:4px 8px!important;
+      margin:0!important;
+      background:rgba(247,250,253,.98)!important;
+      border-top:1px solid #d4dfec!important;
+      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      white-space:nowrap!important;
+      box-sizing:border-box!important;
+    }
+
+    #v92PageDock > *{
+      flex:0 0 auto!important;
+    }
+
+    #v92PageDock button{
+      min-height:34px!important;
+      height:34px!important;
+      margin:0!important;
+      padding:3px 10px!important;
+    }
+
+    .v92-hidden-page-source{
+      display:none!important;
+      height:0!important;
+      min-height:0!important;
+      max-height:0!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      overflow:hidden!important;
+    }
+
+    body{padding-bottom:52px!important;}
+
+    :fullscreen #v92PageDock,
+    :-webkit-full-screen #v92PageDock{
+      left:78px!important;
+      right:70px!important;
+      bottom:0!important;
+    }
+
+    body.v89-right-collapsed #v92PageDock{
+      right:4px!important;
+    }
+
+    @media(max-width:900px){
+      #v92PageDock{
+        left:68px!important;
+        right:68px!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function ensureDock(){
+  let d=$92("v92PageDock");
+  if(!d){
+    d=document.createElement("div");
+    d.id="v92PageDock";
+    document.body.appendChild(d);
+  }
+  return d;
+}
+
+function visibleText(el){
+  return (el?.textContent||"").replace(/\s+/g," ").trim();
+}
+
+function findSource(){
+  const candidates=[...document.querySelectorAll("div,section")].filter(el=>{
+    if(el.id==="v92PageDock" || el.closest("#v92PageDock")) return false;
+    const t=visibleText(el);
+    return (
+      /Нова сторінка/i.test(t) ||
+      /Видалити сторінку/i.test(t) ||
+      /Сторінка\s+\d+/i.test(t)
+    );
+  });
+
+  // Prefer the smallest element that contains both page controls and page tabs.
+  candidates.sort((a,b)=>a.getBoundingClientRect().height-b.getBoundingClientRect().height);
+  return candidates.find(el=>{
+    const t=visibleText(el);
+    return /Сторінка\s+\d+/i.test(t) &&
+           (/Нова сторінка/i.test(t) || /Видалити сторінку/i.test(t));
+  }) || candidates[0] || null;
+}
+
+function stealControls(){
+  const dock=ensureDock();
+
+  // Known controls first.
+  const add=$92("addPageBtn") ||
+    [...document.querySelectorAll("button")].find(b=>/Нова сторінка/i.test(visibleText(b)));
+  const del=$92("deletePageBtn") ||
+    [...document.querySelectorAll("button")].find(b=>/Видалити сторінку/i.test(visibleText(b)));
+
+  // Find individual page-tab buttons wherever the app recreated them.
+  const pageTabs=[...document.querySelectorAll("button")].filter(b=>{
+    if(b.closest("#v92PageDock")) return false;
+    return /^Сторінка\s+\d+/i.test(visibleText(b));
+  });
+
+  // Find previous/next navigation + counter from the old page source.
+  const src=findSource();
+  let navNodes=[];
+  if(src){
+    navNodes=[...src.children].filter(ch=>{
+      const t=visibleText(ch);
+      return (
+        (ch.tagName==="BUTTON" && (t==="‹"||t==="›"||t==="←"||t==="→")) ||
+        /Сторінка\s+\d+\s*·/i.test(t) ||
+        /1 з \d+/i.test(t)
+      );
+    });
+  }
+
+  // Preserve an orderly bottom dock, without insertBefore.
+  navNodes.forEach(n=>dock.appendChild(n));
+  if(add) dock.appendChild(add);
+
+  // Include already-docked page tabs plus newly recreated ones.
+  const allTabs=[
+    ...[...dock.querySelectorAll("button")].filter(b=>/^Сторінка\s+\d+/i.test(visibleText(b))),
+    ...pageTabs
+  ];
+  const uniqueTabs=[...new Set(allTabs)];
+  uniqueTabs.sort((a,b)=>{
+    const na=parseInt((visibleText(a).match(/\d+/)||["999"])[0],10);
+    const nb=parseInt((visibleText(b).match(/\d+/)||["999"])[0],10);
+    return na-nb;
+  });
+  uniqueTabs.forEach(b=>dock.appendChild(b));
+
+  if(del) dock.appendChild(del);
+
+  // Hide only empty/obsolete upper page-navigation wrappers.
+  document.querySelectorAll("div,section").forEach(el=>{
+    if(el===dock || el.contains(dock) || dock.contains(el)) return;
+    const t=visibleText(el);
+    const r=el.getBoundingClientRect();
+
+    const looksLikePageNav =
+      /Сторінка\s+\d+/i.test(t) ||
+      /Нова сторінка/i.test(t) ||
+      /Видалити сторінку/i.test(t);
+
+    if(looksLikePageNav && r.top < innerHeight*0.65){
+      const remainingInteractive=[...el.querySelectorAll("button")].filter(b=>!b.closest("#v92PageDock"));
+      if(remainingInteractive.length===0 || !t){
+        el.classList.add("v92-hidden-page-source");
+      }
+    }
+  });
+}
+
+function removeTopGap(){
+  const dock=ensureDock();
+
+  // Collapse old empty strip where the page controls used to be.
+  document.querySelectorAll("div,section").forEach(el=>{
+    if(el===dock || el.contains(dock) || dock.contains(el)) return;
+    const r=el.getBoundingClientRect();
+    const t=visibleText(el);
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+    if(r.width>innerWidth*.6 && r.height>=8 && r.height<=100 &&
+       r.top>130 && r.top<380 && !t && controls===0){
+      el.classList.add("v92-hidden-page-source");
+    }
+  });
+}
+
+function repair(){
+  stealControls();
+  removeTopGap();
+}
+
+function markVersion(){
+  let b=$92("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test(visibleText(x)));
+  }
+  if(b) b.textContent="v92";
+  document.documentElement.dataset.sofiaVersion="92";
+}
+
+function init(){
+  addCss();
+  ensureDock();
+  repair();
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v92);
+    mo.__v92=setTimeout(repair,60);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [250,600,1200,2200].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
+else
+  setTimeout(init,150);
+})();
+
+
+
+/* =========================================================
+   V93 — FULLSCREEN: СИМЕТРИЧНІ ЛІВА/ПРАВА ПАНЕЛІ
+   ========================================================= */
+(function(){
+"use strict";
+const $93=id=>document.getElementById(id);
+
+function addCss(){
+  if($93("v93Css")) return;
+  const st=document.createElement("style");
+  st.id="v93Css";
+  st.textContent=`
+    /* Базові змінні вирівнювання */
+    :root{
+      --v93-side-top:156px;
+      --v93-left-w:78px;
+      --v93-right-w:78px;
+    }
+
+    /* Ліва панель */
+    :fullscreen .side-tools,
+    :fullscreen .left-toolbar,
+    :fullscreen .left-tools,
+    :fullscreen .tool-sidebar,
+    :-webkit-full-screen .side-tools,
+    :-webkit-full-screen .left-toolbar,
+    :-webkit-full-screen .left-tools,
+    :-webkit-full-screen .tool-sidebar{
+      position:fixed!important;
+      left:0!important;
+      top:var(--v93-side-top)!important;
+      bottom:0!important;
+      width:var(--v93-left-w)!important;
+      margin:0!important;
+      padding-top:4px!important;
+      border-right:1px solid #d8e2ef!important;
+      background:#fff!important;
+      z-index:73500!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      box-sizing:border-box!important;
+    }
+
+    /* Права панель */
+    :fullscreen #v86Dock,
+    :-webkit-full-screen #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      top:var(--v93-side-top)!important;
+      bottom:0!important;
+      width:var(--v93-right-w)!important;
+      margin:0!important;
+      padding-top:4px!important;
+      border-left:1px solid #d8e2ef!important;
+      background:#fff!important;
+      z-index:73500!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      box-sizing:border-box!important;
+    }
+
+    /* Стрілка згортання правої панелі теж вирівняна */
+    :fullscreen #v89DockToggle,
+    :-webkit-full-screen #v89DockToggle{
+      top:calc(var(--v93-side-top) + 50%)!important;
+      transform:translateY(-50%)!important;
+    }
+
+    /* Робоче поле між двома панелями */
+    :fullscreen .canvas-wrap,
+    :fullscreen .canvas-container-wrapper,
+    :fullscreen .notebook-stage,
+    :fullscreen .page-stage,
+    :fullscreen .workspace,
+    :-webkit-full-screen .canvas-wrap,
+    :-webkit-full-screen .canvas-container-wrapper,
+    :-webkit-full-screen .notebook-stage,
+    :-webkit-full-screen .page-stage,
+    :-webkit-full-screen .workspace{
+      margin-left:var(--v93-left-w)!important;
+      margin-right:var(--v93-right-w)!important;
+      width:calc(100vw - var(--v93-left-w) - var(--v93-right-w))!important;
+      max-width:none!important;
+      box-sizing:border-box!important;
+    }
+
+    /* Нижня панель сторінок також симетрично між боковими панелями */
+    :fullscreen #v92PageDock,
+    :-webkit-full-screen #v92PageDock{
+      left:var(--v93-left-w)!important;
+      right:var(--v93-right-w)!important;
+      bottom:0!important;
+    }
+
+    /* Якщо праву панель згорнули */
+    :fullscreen body.v89-right-collapsed #v92PageDock,
+    :-webkit-full-screen body.v89-right-collapsed #v92PageDock{
+      right:4px!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function findWorkTop(){
+  // Знаходимо верх робочого аркуша / контейнера полотна.
+  const candidates = [
+    document.querySelector(".canvas-wrap"),
+    document.querySelector(".canvas-container-wrapper"),
+    document.querySelector(".notebook-stage"),
+    document.querySelector(".page-stage"),
+    document.querySelector(".workspace"),
+    document.querySelector("canvas")?.parentElement?.parentElement
+  ].filter(Boolean);
+
+  for(const el of candidates){
+    const r=el.getBoundingClientRect();
+    if(r.width>400 && r.height>200 && r.top>80){
+      return Math.max(90, Math.round(r.top));
+    }
+  }
+
+  // fallback: нижня межа рядка Клас / Предмет / ...
+  let bottom=0;
+  [...document.querySelectorAll("select,input")].forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.top<180 && r.bottom>bottom) bottom=r.bottom;
+  });
+  return Math.max(120, Math.round(bottom+4));
+}
+
+function alignFullscreen(){
+  const fs=document.fullscreenElement||document.webkitFullscreenElement;
+  if(!fs) return;
+
+  const top=findWorkTop();
+  document.documentElement.style.setProperty("--v93-side-top", top+"px");
+
+  // Підтягуємо панелі в одну горизонталь із верхом робочого поля.
+  const left = document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+               document.querySelector(".side-tool[data-tool]")?.parentElement;
+  const right = $93("v86Dock");
+
+  if(left){
+    left.style.setProperty("top",top+"px","important");
+    left.style.setProperty("bottom","0","important");
+  }
+  if(right){
+    right.style.setProperty("top",top+"px","important");
+    right.style.setProperty("bottom","0","important");
+  }
+}
+
+function reset(){
+  if(document.fullscreenElement||document.webkitFullscreenElement) return;
+  document.documentElement.style.removeProperty("--v93-side-top");
+}
+
+function markVersion(){
+  let b=$93("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b) b.textContent="v93";
+  document.documentElement.dataset.sofiaVersion="93";
+}
+
+function init(){
+  addCss();
+  markVersion();
+
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(()=>{reset();alignFullscreen()},80);
+    setTimeout(alignFullscreen,300);
+    setTimeout(alignFullscreen,900);
+  });
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(()=>{reset();alignFullscreen()},80);
+    setTimeout(alignFullscreen,300);
+    setTimeout(alignFullscreen,900);
+  });
+
+  window.addEventListener("resize",()=>setTimeout(alignFullscreen,80));
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v93);
+    mo.__v93=setTimeout(alignFullscreen,80);
+  });
+  mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
+
+  [300,900,1600].forEach(ms=>setTimeout(alignFullscreen,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
+
+
+
+/* =========================================================
+   V94 — КУРСОР ВСТАВКИ ЯК У MS WORD
+   ========================================================= */
+(function(){
+"use strict";
+const $94=id=>document.getElementById(id);
+
+let insertPoint={x:180,y:160,active:false};
+let suppressMove=false;
+let lastCanvasClick=0;
+
+function addCss(){
+  if($94("v94Css")) return;
+  const st=document.createElement("style");
+  st.id="v94Css";
+  st.textContent=`
+    #v94InsertCaret{
+      position:absolute;
+      z-index:76000;
+      width:2px;
+      height:34px;
+      background:#173b78;
+      border-radius:2px;
+      pointer-events:none;
+      display:none;
+      animation:v94blink 1s steps(1,end) infinite;
+      box-shadow:0 0 0 1px rgba(255,255,255,.55);
+    }
+    #v94InsertCaret.show{display:block}
+    @keyframes v94blink{0%,48%{opacity:1}49%,100%{opacity:.12}}
+
+    #v94CursorHint{
+      position:fixed;
+      left:94px;
+      bottom:58px;
+      z-index:76000;
+      display:none;
+      background:rgba(23,59,120,.92);
+      color:#fff;
+      padding:5px 8px;
+      border-radius:7px;
+      font:12px/1.2 Arial,sans-serif;
+      pointer-events:none;
+    }
+    #v94CursorHint.show{display:block}
+
+    /* На робочому полі курсор миші схожий на текстовий */
+    body.v94-insert-ready .upper-canvas,
+    body.v94-insert-ready canvas{
+      cursor:text!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function ensureCaret(){
+  let c=$94("v94InsertCaret");
+  if(!c){
+    c=document.createElement("div");
+    c.id="v94InsertCaret";
+    document.body.appendChild(c);
+  }
+  let h=$94("v94CursorHint");
+  if(!h){
+    h=document.createElement("div");
+    h.id="v94CursorHint";
+    h.textContent="Місце вставки";
+    document.body.appendChild(h);
+  }
+  return c;
+}
+
+function canvasEl(){
+  return document.querySelector(".upper-canvas") ||
+         document.querySelector("canvas.upper-canvas") ||
+         document.querySelector("canvas");
+}
+
+function canvasPointFromEvent(e){
+  const c=canvasEl();
+  if(!c) return null;
+  const r=c.getBoundingClientRect();
+  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return null;
+
+  let x=e.clientX-r.left;
+  let y=e.clientY-r.top;
+
+  // Fabric zoom/viewport aware conversion where available.
+  try{
+    if(typeof fcanvas!=="undefined"){
+      const p=fcanvas.getPointer(e);
+      x=p.x; y=p.y;
+    }
+  }catch(_){}
+
+  return {x,y,screenX:e.clientX,screenY:e.clientY};
+}
+
+function positionCaret(screenX,screenY){
+  const c=ensureCaret();
+  c.style.left=(screenX-1)+"px";
+  c.style.top=(screenY-17)+"px";
+  c.classList.add("show");
+  $94("v94CursorHint")?.classList.add("show");
+  clearTimeout(positionCaret._t);
+  positionCaret._t=setTimeout(()=>$94("v94CursorHint")?.classList.remove("show"),900);
+}
+
+function setInsertPointFromEvent(e){
+  const p=canvasPointFromEvent(e);
+  if(!p) return;
+  insertPoint={x:p.x,y:p.y,active:true};
+  positionCaret(p.screenX,p.screenY);
+  document.body.classList.add("v94-insert-ready");
+  lastCanvasClick=Date.now();
+}
+
+function currentTool(){
+  try{
+    if(typeof activeTool!=="undefined") return activeTool;
+  }catch(_){}
+  const active=document.querySelector(".side-tool.active[data-tool],.side-tool[data-tool].selected");
+  return active?.dataset.tool || "";
+}
+
+function shouldSetCaret(e){
+  if(e.button!==0) return false;
+  const p=canvasPointFromEvent(e);
+  if(!p) return false;
+
+  // Don't steal clicks while actively drawing/erasing/using geometry tools.
+  const t=currentTool();
+  const drawingTools=["pen","marker","eraser","line","curve","polyline","wave","arrow","rectangle","ellipse","triangle"];
+  if(drawingTools.includes(t)) return false;
+
+  // If clicking an existing Fabric object, selection should win.
+  try{
+    if(typeof fcanvas!=="undefined"){
+      const target=fcanvas.findTarget?.(e);
+      if(target) return false;
+    }
+  }catch(_){}
+
+  return true;
+}
+
+function bindCanvasClick(){
+  document.addEventListener("pointerdown",e=>{
+    if(!shouldSetCaret(e)) return;
+    setInsertPointFromEvent(e);
+  },true);
+}
+
+function isDrawablePrimitive(o){
+  if(!o) return true;
+  const t=(o.type||"").toLowerCase();
+
+  // Objects drawn directly with mouse should stay where user drew them.
+  if(["path","line","polyline"].includes(t)) return true;
+
+  // Geometric shapes are only moved when they are inserted by a command,
+  // not when just drawn. We distinguish by time since a canvas click.
+  if(["rect","circle","ellipse","triangle","polygon"].includes(t)){
+    return Date.now()-lastCanvasClick < 700;
+  }
+  return false;
+}
+
+function moveNewObjectToCaret(o){
+  if(!insertPoint.active || suppressMove || !o) return;
+  if(isDrawablePrimitive(o)) return;
+
+  // Don't reposition background/grid/ruler/measurement objects.
+  if(o.isBackground || o.sofiaInstrument || o.isInstrument || o.excludeFromInsertCursor) return;
+
+  suppressMove=true;
+  try{
+    const w=(o.getScaledWidth?.()||o.width||40);
+    const h=(o.getScaledHeight?.()||o.height||30);
+
+    o.set({
+      left:insertPoint.x,
+      top:insertPoint.y
+    });
+    o.setCoords?.();
+
+    // Advance cursor approximately after inserted object, Word-like.
+    insertPoint.x += Math.min(Math.max(w+10,35),220);
+
+    fcanvas?.requestRenderAll?.();
+    try{autoSave()}catch(_){}
+  }finally{
+    setTimeout(()=>{suppressMove=false},0);
+  }
+}
+
+function bindObjectInsert(){
+  if(typeof fcanvas==="undefined" || fcanvas.__v94CursorBound) return;
+  fcanvas.__v94CursorBound=true;
+
+  fcanvas.on("object:added",e=>{
+    const o=e?.target;
+    setTimeout(()=>moveNewObjectToCaret(o),0);
+  });
+
+  fcanvas.on("selection:created",()=>{
+    $94("v94InsertCaret")?.classList.remove("show");
+  });
+  fcanvas.on("selection:updated",()=>{
+    $94("v94InsertCaret")?.classList.remove("show");
+  });
+}
+
+function patchTextTool(){
+  // Existing text tool already creates text at clicked point in later versions.
+  // This patch simply ensures default caret position is used if text is created by a toolbar button.
+  const textButtons=[...document.querySelectorAll("button")].filter(b=>
+    /^Текст$/i.test((b.textContent||"").trim()) || /T Текст/i.test((b.textContent||"").trim())
+  );
+
+  textButtons.forEach(b=>{
+    if(b.__v94Bound) return;
+    b.__v94Bound=true;
+    b.addEventListener("click",()=>{
+      document.body.classList.add("v94-insert-ready");
+      const h=$94("v94CursorHint");
+      if(h){
+        h.textContent="Клацніть на аркуші — текст з’явиться саме там";
+        h.classList.add("show");
+        clearTimeout(patchTextTool._t);
+        patchTextTool._t=setTimeout(()=>h.classList.remove("show"),1800);
+      }
+    },true);
+  });
+}
+
+function updateCaretAfterScroll(){
+  if(!insertPoint.active) return;
+  try{
+    const c=canvasEl();
+    if(!c) return;
+    const r=c.getBoundingClientRect();
+
+    // Convert canvas point back to screen coords.
+    let sx=r.left+insertPoint.x, sy=r.top+insertPoint.y;
+    if(typeof fcanvas!=="undefined"){
+      const v=fcanvas.viewportTransform||[1,0,0,1,0,0];
+      sx=r.left + insertPoint.x*v[0] + v[4];
+      sy=r.top + insertPoint.y*v[3] + v[5];
+    }
+    positionCaret(sx,sy);
+  }catch(_){}
+}
+
+function markVersion(){
+  let b=$94("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b) b.textContent="v94";
+  document.documentElement.dataset.sofiaVersion="94";
+}
+
+function init(){
+  addCss();
+  ensureCaret();
+  bindCanvasClick();
+  bindObjectInsert();
+  patchTextTool();
+  markVersion();
+
+  window.addEventListener("scroll",updateCaretAfterScroll,true);
+  window.addEventListener("resize",updateCaretAfterScroll);
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v94);
+    mo.__v94=setTimeout(()=>{
+      bindObjectInsert();
+      patchTextTool();
+    },80);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,900,1600].forEach(ms=>setTimeout(()=>{
+    bindObjectInsert();
+    patchTextTool();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
