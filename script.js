@@ -2886,7 +2886,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     moveButton("mediaBtn","insert","📎 Фото / відео / файл");
     moveButton("elementsBtn","insert","✦ Елементи");
     moveButton("geometryBtn","insert","📐 Прилади");
-    moveButton("noteBtn","insert","📝 Нотатка");
+    moveButton("noteBtn","insert","▣ Нотатка");
 
     makeButton("v56TableBtn","▦ Таблиця","insert",createTable);
 
@@ -5890,124 +5890,365 @@ else
 
 
 /* =========================================================
-   V77 — БАЗА: ЗАВАНТАЖЕНА КОРИСТУВАЧЕМ v70
-   НОТАТКА + СТАБІЛІЗАЦІЯ ВКЛАДОК
+   V78 — WORD COMPACT UI + HANDWRITING DEFAULT
+   БАЗА: ОРИГІНАЛЬНА v70
    ========================================================= */
 (function(){
 "use strict";
-const $77=id=>document.getElementById(id);
+const $78=id=>document.getElementById(id);
 
-function ribbon(){ return $77("sofiaRibbonV56"); }
-function head(){ return ribbon()?.querySelector(".v56-ribbon-head"); }
+function css(){
+ if($78("v78WordCss")) return;
+ const st=document.createElement("style");
+ st.id="v78WordCss";
+ st.textContent=`
+   /* Максимум робочої площі: компактно, як стрічка Word */
+   body{--v78-gap:2px}
+   #sofiaRibbonV56{
+     margin:1px 6px 2px!important;
+     padding:0!important;
+     border-radius:8px!important;
+     box-shadow:0 1px 4px rgba(15,23,42,.08)!important;
+   }
+   #sofiaRibbonV56 .v56-ribbon-head{
+     min-height:29px!important;
+     height:auto!important;
+     padding:1px 5px 0!important;
+     margin:0!important;
+     gap:1px!important;
+     display:flex!important;
+     align-items:end!important;
+   }
+   #sofiaRibbonV56 .v56-tab{
+     min-height:27px!important;
+     padding:4px 9px!important;
+     margin:0!important;
+     font-size:14px!important;
+     line-height:18px!important;
+     border-radius:6px 6px 0 0!important;
+   }
+   #sofiaRibbonV56 .v56-body{
+     min-height:0!important;
+     padding:3px 5px!important;
+     margin:0!important;
+     gap:3px!important;
+   }
+   #sofiaRibbonV56 .v56-panel{
+     min-height:0!important;
+     padding:0!important;
+     margin:0!important;
+     gap:2px!important;
+     align-items:center!important;
+   }
+   #sofiaRibbonV56 button,
+   #sofiaRibbonV56 select,
+   #sofiaRibbonV56 input:not([type="range"]):not([type="color"]){
+     min-height:28px!important;
+     height:28px!important;
+     padding:2px 7px!important;
+     margin:0!important;
+     font-size:14px!important;
+     line-height:20px!important;
+     border-radius:6px!important;
+   }
+   #sofiaRibbonV56 input[type="color"]{
+     width:34px!important;height:27px!important;padding:2px!important;margin:0!important;
+   }
+   #sofiaRibbonV56 input[type="range"]{
+     height:22px!important;margin:0 2px!important;
+   }
 
-function ensureNoteButton(){
-  const insert =
-    document.querySelector('.v56-panel[data-v56-panel="insert"]') ||
-    document.querySelector('[data-panel="insert"]');
-  if(!insert) return;
+   /* Панель форматування тексту — один компактний Word-подібний ряд */
+   #textFormatBar{
+     min-height:31px!important;
+     height:auto!important;
+     padding:2px 5px!important;
+     margin:1px 0 0!important;
+     gap:2px!important;
+     flex-wrap:wrap!important;
+   }
+   #textFormatBar button,
+   #textFormatBar select,
+   #textFormatBar input:not([type="color"]){
+     min-height:27px!important;
+     height:27px!important;
+     padding:2px 6px!important;
+     margin:0!important;
+     font-size:14px!important;
+   }
+   #textFormatBar input[type="color"]{
+     width:34px!important;height:27px!important;padding:2px!important;
+   }
 
-  let btn =
-    $77("noteBtn") ||
-    $77("v77NoteBtn") ||
-    [...insert.querySelectorAll("button")].find(b=>/Нотатка|Замітка|Стікер/i.test(b.textContent||""));
+   /* Верхні рядки теж щільніші */
+   .meta-row,.controls-row,.top-controls,.lesson-controls{
+     gap:4px!important;
+     margin-top:1px!important;
+     margin-bottom:1px!important;
+     padding-top:2px!important;
+     padding-bottom:2px!important;
+   }
 
-  if(!btn){
-    btn=document.createElement("button");
-    btn.type="button";
-    btn.id="v77NoteBtn";
-    btn.className="v56-command";
-    insert.appendChild(btn);
-  }
+   /* Сторінки майже впритул до стрічки */
+   #sofiaPageTabs,.sofia-page-tabs,.page-tabs{
+     margin-top:2px!important;
+     margin-bottom:2px!important;
+     padding-top:1px!important;
+     padding-bottom:1px!important;
+     gap:3px!important;
+   }
 
-  btn.textContent="📝 Нотатка";
-  btn.hidden=false;
-  btn.style.removeProperty("display");
-  btn.onclick=function(e){
-    e.preventDefault();
-    e.stopPropagation();
-
-    if(typeof fcanvas==="undefined" || !window.fabric) return;
-
-    const note=new fabric.Textbox("Нотатка",{
-      left:300,
-      top:220,
-      width:260,
-      fontFamily:"Segoe Script",
-      fontSize:28,
-      fill:"#273142",
-      backgroundColor:"#fff3a5",
-      padding:14,
-      editable:true,
-      erasable:false
-    });
-    note.sofiaNote=true;
-    try{
-      note.set({
-        shadow:new fabric.Shadow({
-          color:"rgba(0,0,0,.15)",
-          blur:5,
-          offsetX:2,
-          offsetY:2
-        })
-      });
-    }catch(_){}
-
-    fcanvas.add(note);
-    fcanvas.setActiveObject(note);
-    note.enterEditing?.();
-    note.selectAll?.();
-    fcanvas.requestRenderAll();
-
-    try{ pushHistory(); }catch(_){}
-    try{ autoSave(); }catch(_){}
-  };
+   /* Не допускаємо великих порожніх spacer-блоків біля ribbon */
+   .v78-hidden-spacer{
+     height:0!important;min-height:0!important;
+     margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;
+   }
+ `;
+ document.head.appendChild(st);
 }
 
-/* v70 already contains its own tab system.
-   We do NOT add another sticky mechanism here.
-   We only remove duplicate floating tab bars left by older experiments. */
-function removeDuplicateExperimentalBars(){
-  [
-    "v71FloatingTabs","v72StickyTabs","v73StickyTabs",
-    "v76StickyTabs","v76FloatingCommands"
-  ].forEach(id=>$77(id)?.remove());
+function handwriting(){
+ window.sofiaTextDefaults=window.sofiaTextDefaults||{};
+ window.sofiaTextDefaults.fontFamily="Segoe Script";
+ window.sofiaTextDefaults.fontSize=32;
+ window.sofiaTextDefaults.fill="#4a7fbd";
 
-  const rb=ribbon();
-  if(rb){
-    rb.classList.remove("v71-fixed-ribbon","v72-fixed","v72-collapsed","v71-collapsed");
-  }
+ // Known ribbon/text controls
+ ["fontFamily","textFontFamily","v57FontFamily"].forEach(id=>{
+   const el=$78(id);
+   if(el){
+     const has=[...el.options||[]].some(o=>o.value==="Segoe Script");
+     if(!has && el.tagName==="SELECT"){
+       const o=document.createElement("option");o.value="Segoe Script";o.textContent="Segoe Script";el.appendChild(o);
+     }
+     el.value="Segoe Script";
+   }
+ });
+ ["fontSize","textFontSize","v57TextSize"].forEach(id=>{
+   const el=$78(id); if(el) el.value="32";
+ });
 }
 
-function markVersion(){
-  const badge=$77("appVersionBadge");
-  if(badge) badge.textContent="v77";
-  document.documentElement.dataset.sofiaVersion="77";
+function compactEmptySpacer(){
+ const rb=$78("sofiaRibbonV56");
+ if(!rb) return;
+ const rr=rb.getBoundingClientRect();
+
+ document.querySelectorAll("div,section").forEach(el=>{
+   if(el===rb||el.contains(rb)||rb.contains(el)) return;
+   const r=el.getBoundingClientRect();
+   if(r.width<600 || r.height<5 || r.height>45) return;
+   if(rr.top-r.bottom<0 || rr.top-r.bottom>12) return;
+   if((el.textContent||"").trim()) return;
+   if(el.querySelector("button,input,select,textarea,canvas")) return;
+   el.classList.add("v78-hidden-spacer");
+ });
+}
+
+function note(){
+ const insert=document.querySelector('.v56-panel[data-v56-panel="insert"]');
+ if(!insert) return;
+ let b=$78("noteBtn")||$78("v78NoteBtn")||
+   [...insert.querySelectorAll("button")].find(x=>/Нотатка|Замітка|Стікер/i.test(x.textContent||""));
+ if(!b){
+   b=document.createElement("button");b.id="v78NoteBtn";b.type="button";insert.appendChild(b);
+ }
+ b.textContent="📝 Нотатка";
+ b.hidden=false;b.style.removeProperty("display");
+ b.onclick=e=>{
+   e.preventDefault();e.stopPropagation();
+   if(typeof fcanvas==="undefined"||!window.fabric)return;
+   const n=new fabric.Textbox("Нотатка",{
+     left:300,top:220,width:250,
+     fontFamily:"Segoe Script",fontSize:28,
+     fill:"#273142",backgroundColor:"#fff3a5",
+     padding:12,editable:true,erasable:false
+   });
+   n.sofiaNote=true;
+   fcanvas.add(n);fcanvas.setActiveObject(n);
+   n.enterEditing?.();n.selectAll?.();fcanvas.requestRenderAll();
+   try{pushHistory();autoSave()}catch(_){}
+ };
+}
+
+function version(){
+ let b=$78("appVersionBadge");
+ if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+ if(b)b.textContent="v78";
+ document.documentElement.dataset.sofiaVersion="78";
 }
 
 function init(){
-  removeDuplicateExperimentalBars();
-  ensureNoteButton();
+ css(); handwriting(); note(); compactEmptySpacer(); version();
+ [300,800,1600].forEach(ms=>setTimeout(()=>{handwriting();note();compactEmptySpacer()},ms));
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V79 — STICKY ВКЛАДКИ + ПОВНИЙ ЕКРАН БЕЗ ПУСТОГО МІСЦЯ
+   ========================================================= */
+(function(){
+"use strict";
+const $79=id=>document.getElementById(id);
+
+function addCss(){
+  if($79("v79Css")) return;
+  const st=document.createElement("style");
+  st.id="v79Css";
+  st.textContent=`
+    /* Закріплюємо саме рядок вкладок стрічки */
+    #sofiaRibbonV56 .v56-ribbon-head{
+      position:sticky!important;
+      top:0!important;
+      z-index:45000!important;
+      background:#fff!important;
+      box-shadow:0 1px 0 rgba(15,23,42,.08)!important;
+    }
+
+    /* У повному екрані прибираємо зайву висоту зверху */
+    :fullscreen #sofiaRibbonV56,
+    :-webkit-full-screen #sofiaRibbonV56{
+      margin-top:0!important;
+    }
+
+    :fullscreen #sofiaRibbonV56 .v56-ribbon-head,
+    :-webkit-full-screen #sofiaRibbonV56 .v56-ribbon-head{
+      top:0!important;
+    }
+
+    /* Не дозволяємо великим порожнім блокам залишатися перед стрічкою */
+    :fullscreen .v79-fullscreen-gap,
+    :-webkit-full-screen .v79-fullscreen-gap{
+      height:0!important;
+      min-height:0!important;
+      max-height:0!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      overflow:hidden!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function ribbon(){
+  return $79("sofiaRibbonV56");
+}
+
+function collapseFullscreenGaps(){
+  if(!document.fullscreenElement && !document.webkitFullscreenElement) return;
+
+  const rb=ribbon();
+  if(!rb) return;
+
+  // Не чіпаємо саму стрічку та її батьків.
+  const rr=rb.getBoundingClientRect();
+
+  document.querySelectorAll("div,section,main").forEach(el=>{
+    if(el===rb || el.contains(rb) || rb.contains(el)) return;
+
+    const r=el.getBoundingClientRect();
+    const cs=getComputedStyle(el);
+    const text=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+    // Шукаємо тільки реально порожні великі горизонтальні блоки
+    // безпосередньо над стрічкою у fullscreen.
+    if(
+      r.width > window.innerWidth*0.55 &&
+      r.height >= 25 && r.height <= 260 &&
+      rr.top - r.bottom >= -3 &&
+      rr.top - r.bottom <= 40 &&
+      !text &&
+      controls===0 &&
+      cs.position!=="fixed"
+    ){
+      el.classList.add("v79-fullscreen-gap");
+    }
+  });
+
+  // Якщо зайва висота сидить на контейнері стрічки.
+  let parent=rb.parentElement;
+  for(let i=0;i<4 && parent && parent!==document.body;i++,parent=parent.parentElement){
+    const pr=parent.getBoundingClientRect();
+    const rbRect=rb.getBoundingClientRect();
+    const topSpace=rbRect.top-pr.top;
+
+    if(topSpace>40){
+      parent.style.setProperty("padding-top","0","important");
+      parent.style.setProperty("margin-top","0","important");
+      parent.style.setProperty("row-gap","2px","important");
+      parent.style.setProperty("gap","2px","important");
+    }
+  }
+
+  rb.style.setProperty("margin-top","0","important");
+}
+
+function forceSticky(){
+  const h=rbHead();
+  if(!h) return;
+  h.style.setProperty("position","sticky","important");
+  h.style.setProperty("top","0","important");
+  h.style.setProperty("z-index","45000","important");
+  h.style.setProperty("background","#fff","important");
+}
+
+function rbHead(){
+  return ribbon()?.querySelector(".v56-ribbon-head");
+}
+
+function refresh(){
+  forceSticky();
+  collapseFullscreenGaps();
+}
+
+function markVersion(){
+  const b=$79("appVersionBadge");
+  if(b) b.textContent="v79";
+  document.documentElement.dataset.sofiaVersion="79";
+}
+
+function init(){
+  addCss();
   markVersion();
+  refresh();
+
+  window.addEventListener("scroll",forceSticky,true);
+  document.addEventListener("scroll",forceSticky,true);
+  window.addEventListener("resize",refresh);
+
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(refresh,80);
+    setTimeout(refresh,300);
+    setTimeout(refresh,900);
+  });
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(refresh,80);
+    setTimeout(refresh,300);
+    setTimeout(refresh,900);
+  });
 
   const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v77);
-    mo.__v77=setTimeout(()=>{
-      ensureNoteButton();
-      removeDuplicateExperimentalBars();
-    },60);
+    clearTimeout(mo.__v79);
+    mo.__v79=setTimeout(refresh,80);
   });
   mo.observe(document.body,{
-    childList:true,
     subtree:true,
+    childList:true,
     attributes:true,
-    attributeFilter:["hidden","class","style"]
+    attributeFilter:["class","style","hidden"]
   });
 
-  [300,800,1600].forEach(ms=>setTimeout(ensureNoteButton,ms));
+  [300,900,1600].forEach(ms=>setTimeout(refresh,ms));
 }
 
 if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
 else
-  setTimeout(init,220);
+  setTimeout(init,180);
 })();
