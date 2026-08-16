@@ -9231,3 +9231,194 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V127 — TEXT DEFAULTS + TEXT CONTEXT PROPERTIES
+   Times New Roman / italic / black by default.
+   Context properties opens for selected text too.
+   ========================================================= */
+(function(){
+"use strict";
+const PANEL_IDS=["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"];
+
+function fc(){
+  try{return typeof fcanvas!=="undefined" ? fcanvas : null}catch(_){return null}
+}
+function panels(){
+  return PANEL_IDS.map(id=>document.getElementById(id)).filter(Boolean);
+}
+function showPanels(){
+  panels().forEach(p=>p.classList.add("show"));
+}
+function hidePanels(){
+  panels().forEach(p=>p.classList.remove("show"));
+}
+function isText(o){
+  return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase());
+}
+
+/* ---------- DEFAULT TEXT STYLE ---------- */
+function applyDefaultTextStyle(o){
+  if(!o || !isText(o)) return;
+  if(!o.sofiaCursorText && !o.sofiaV113Text && !o.sofiaV112CursorText) return;
+
+  o.set({
+    fontFamily:"Times New Roman",
+    fontStyle:"italic",
+    fontWeight:"normal",
+    fill:"#000000",
+    scaleX:1,
+    scaleY:1
+  });
+
+  /* Keep notebook-sized font from V126, but make style exactly as requested. */
+  o.setCoords?.();
+  fc()?.requestRenderAll?.();
+}
+
+/* Also update any default toolbar controls so new text keeps the same style. */
+function syncTextControls(){
+  const fontCandidates=[
+    document.getElementById("fontFamily"),
+    document.getElementById("textFont"),
+    document.querySelector('select[id*="font" i]')
+  ].filter(Boolean);
+
+  fontCandidates.forEach(el=>{
+    try{
+      if([...el.options].some(o=>o.value==="Times New Roman" || o.textContent==="Times New Roman")){
+        el.value="Times New Roman";
+        el.dispatchEvent(new Event("change",{bubbles:true}));
+      }
+    }catch(_){}
+  });
+
+  const colorCandidates=[
+    document.getElementById("textColor"),
+    document.querySelector('input[type="color"][id*="text" i]')
+  ].filter(Boolean);
+
+  colorCandidates.forEach(el=>{
+    try{ el.value="#000000"; el.dispatchEvent(new Event("input",{bubbles:true})); }catch(_){}
+  });
+}
+
+/* ---------- TEXT CONTEXT PANEL ---------- */
+function refreshTextPanel(o){
+  if(!o || !isText(o)) return;
+
+  /* Use existing panel refresh logic, then force text controls to reflect selection. */
+  try{
+    if(typeof refreshObjectPanel==="function") refreshObjectPanel(o);
+  }catch(_){}
+
+  /* V102 panel ids */
+  const font=document.getElementById("v102Font");
+  const size=document.getElementById("v102FontSize");
+  const textColor=document.getElementById("v102TextColor");
+  const align=document.getElementById("v102Align");
+  const bold=document.getElementById("v102Bold");
+  const italic=document.getElementById("v102Italic");
+  const underline=document.getElementById("v102Underline");
+
+  if(font){
+    if(![...font.options].some(x=>x.value===o.fontFamily)){
+      const op=document.createElement("option");
+      op.value=o.fontFamily||"Times New Roman";
+      op.textContent=o.fontFamily||"Times New Roman";
+      font.appendChild(op);
+    }
+    font.value=o.fontFamily||"Times New Roman";
+  }
+  if(size) size.value=Math.round(o.fontSize||26);
+  if(textColor) textColor.value="#000000";
+  if(align) align.value=o.textAlign||"left";
+  bold?.classList.toggle("active",String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600);
+  italic?.classList.toggle("active",o.fontStyle==="italic");
+  underline?.classList.toggle("active",!!o.underline);
+
+  showPanels();
+}
+
+function bindFabric(){
+  const c=fc();
+  if(!c || c.__v127Bound) return;
+  c.__v127Bound=true;
+
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(!o) return;
+    setTimeout(()=>applyDefaultTextStyle(o),0);
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>refreshTextPanel(o),20);
+  });
+
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>refreshTextPanel(o),20);
+  });
+
+  /* User explicitly asked for context menu while working with text.
+     Show it when entering editing, but do not recreate it after × is clicked
+     unless selection/editing event happens again. */
+  c.on("text:editing:entered",e=>{
+    const o=e?.target || c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>refreshTextPanel(o),20);
+  });
+
+  c.on("text:changed",e=>{
+    const o=e?.target;
+    if(o && isText(o)){
+      applyDefaultTextStyle(o);
+    }
+  });
+
+  c.on("object:modified",e=>{
+    const o=e?.target;
+    if(isText(o)) setTimeout(()=>refreshTextPanel(o),20);
+  });
+}
+
+/* Make × close reliably. */
+function bindClose(){
+  ["v102ObjClose","v100ObjClose","v81ObjClose"].forEach(id=>{
+    const b=document.getElementById(id);
+    if(!b || b.__v127Close) return;
+    b.__v127Close=true;
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      hidePanels();
+    },true);
+  });
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v127";
+  document.documentElement.dataset.sofiaVersion="127";
+}
+
+function init(){
+  syncTextControls();
+  bindFabric();
+  bindClose();
+  mark();
+
+  [400,1000,1800].forEach(ms=>setTimeout(()=>{
+    syncTextControls();
+    bindFabric();
+    bindClose();
+  },ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
