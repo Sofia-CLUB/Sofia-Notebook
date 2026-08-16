@@ -9496,3 +9496,239 @@ if(document.readyState==="loading"){
   setTimeout(init,180);
 }
 })();
+
+
+
+/* =========================================================
+   V114 CLEAN — ПЕРЕМІЩЕННЯ ГРАФІКА ОНОВЛЮЄ ФУНКЦІЮ
+   База: V113 CLEAN.
+   При перетягуванні графіка "Рукою":
+   - зсув по X/Y переводиться у координатні одиниці;
+   - graphMeta.shiftX / shiftY оновлюються;
+   - формула графіка змінюється;
+   - поля X/Y у редакторі графіка синхронізуються;
+   - підпис формули на самому графіку також оновлюється.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $G=id=>document.getElementById(id);
+const dragStateG=new WeakMap();
+
+function canvasG(){
+  try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}
+}
+
+function isGraphG(o){
+  return !!(o && o.graphObject && o.graphMeta);
+}
+
+function numG(n,def=0){
+  n=Number(n);
+  return Number.isFinite(n)?n:def;
+}
+
+function roundG(n){
+  if(Math.abs(n)<1e-9)n=0;
+  return Number(n.toFixed(4));
+}
+
+/* Перерахунок пікселів у координатні одиниці.
+   Координатна площина V111 має логічний розмір 1180 × 820. */
+function pixelDeltaToWorldG(meta,dx,dy){
+  const r=meta?.range || {};
+  const xmin=numG(r.xmin,-10), xmax=numG(r.xmax,10);
+  const ymin=numG(r.ymin,-10), ymax=numG(r.ymax,10);
+
+  const spanX=(xmax-xmin)||20;
+  const spanY=(ymax-ymin)||20;
+
+  return {
+    dx: dx * spanX / 1180,
+    dy: -dy * spanY / 820
+  };
+}
+
+function findFormulaLabelG(graph){
+  if(!graph)return null;
+
+  /* У group шукаємо службовий підпис формули. */
+  const arr=graph._objects || graph.getObjects?.() || [];
+  return arr.find(o=>o?.isGraphFormulaLabel) || null;
+}
+
+function updateFormulaLabelG(graph){
+  if(!isGraphG(graph))return;
+
+  const label=findFormulaLabelG(graph);
+  if(!label)return;
+
+  try{
+    label.set({
+      text:shiftedFormulaLabel(graph.graphMeta)
+    });
+    label.dirty=true;
+  }catch(_){}
+}
+
+function syncGraphEditorG(graph){
+  if(!isGraphG(graph))return;
+
+  const meta=graph.graphMeta;
+
+  /* Якщо саме цей графік зараз відкритий у редакторі — оновлюємо дані. */
+  try{
+    if(typeof selectedGraphObject!=="undefined"){
+      selectedGraphObject=graph;
+    }
+  }catch(_){}
+
+  const sx=$G("graphShiftX");
+  const sy=$G("graphShiftY");
+  const formula=$G("selectedGraphFormula");
+
+  if(sx)sx.value=String(roundG(meta.shiftX||0));
+  if(sy)sy.value=String(roundG(meta.shiftY||0));
+
+  if(formula){
+    try{formula.textContent=shiftedFormulaLabel(meta)}catch(_){}
+  }
+}
+
+function saveGraphMetaG(graph){
+  if(!isGraphG(graph))return;
+  graph.graphMeta=JSON.parse(JSON.stringify(graph.graphMeta));
+  graph.graphName=graph.graphMeta.name || graph.graphName;
+  graph.dirty=true;
+  graph.setCoords?.();
+
+  const c=canvasG();
+  c?.requestRenderAll?.();
+
+  try{pushHistory();autoSave()}catch(_){}
+}
+
+/* Запам'ятовуємо початкове положення та початкові shiftX/Y
+   перед ручним перетягуванням. */
+function rememberStartG(graph){
+  if(!isGraphG(graph))return;
+
+  dragStateG.set(graph,{
+    left:numG(graph.left),
+    top:numG(graph.top),
+    shiftX:numG(graph.graphMeta.shiftX),
+    shiftY:numG(graph.graphMeta.shiftY)
+  });
+}
+
+function applyMovedGraphG(graph){
+  if(!isGraphG(graph))return;
+
+  let start=dragStateG.get(graph);
+
+  /* Якщо Fabric не дав mouse:down по target, беремо останню відому позицію
+     без стрибка функції. */
+  if(!start){
+    rememberStartG(graph);
+    return;
+  }
+
+  const dx=numG(graph.left)-start.left;
+  const dy=numG(graph.top)-start.top;
+
+  /* Масштабування/обертання графіка не повинно міняти формулу як зсув. */
+  if(Math.abs(dx)<0.01 && Math.abs(dy)<0.01){
+    dragStateG.delete(graph);
+    return;
+  }
+
+  const world=pixelDeltaToWorldG(graph.graphMeta,dx,dy);
+
+  graph.graphMeta.shiftX=roundG(start.shiftX+world.dx);
+  graph.graphMeta.shiftY=roundG(start.shiftY+world.dy);
+
+  updateFormulaLabelG(graph);
+  syncGraphEditorG(graph);
+  saveGraphMetaG(graph);
+
+  /* Нова база для наступного drag. */
+  rememberStartG(graph);
+}
+
+/* Після редагування параметрів/заміни графіка також фіксуємо позицію. */
+function rememberAllGraphsG(){
+  const c=canvasG();
+  if(!c)return;
+  c.getObjects().filter(isGraphG).forEach(rememberStartG);
+}
+
+function bindGraphDragG(){
+  const c=canvasG();
+  if(!c || c.__v114GraphDragBound)return;
+  c.__v114GraphDragBound=true;
+
+  c.on("mouse:down",opt=>{
+    const o=opt?.target;
+    if(isGraphG(o)) rememberStartG(o);
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    if(isGraphG(o)){
+      rememberStartG(o);
+      syncGraphEditorG(o);
+    }
+  });
+
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    if(isGraphG(o)){
+      rememberStartG(o);
+      syncGraphEditorG(o);
+    }
+  });
+
+  /* Fabric викликає object:modified після завершення drag. */
+  c.on("object:modified",e=>{
+    const o=e?.target;
+    if(isGraphG(o)) applyMovedGraphG(o);
+  });
+
+  /* Новий/дубльований/перебудований графік. */
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(isGraphG(o)){
+      setTimeout(()=>{
+        rememberStartG(o);
+        updateFormulaLabelG(o);
+      },0);
+    }
+  });
+
+  rememberAllGraphsG();
+}
+
+function markG(){
+  const b=$G("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v114";
+  document.documentElement.dataset.sofiaVersion="114-clean";
+}
+
+function initG(){
+  bindGraphDragG();
+  markG();
+
+  /* На випадок відновлення сторінки з localStorage після основного init. */
+  [400,1000].forEach(ms=>setTimeout(()=>{
+    bindGraphDragG();
+    rememberAllGraphsG();
+  },ms));
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(initG,220),{once:true});
+}else{
+  setTimeout(initG,220);
+}
+})();
