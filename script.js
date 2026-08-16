@@ -10139,3 +10139,179 @@ if(document.readyState==="loading"){
   setTimeout(initR120,160);
 }
 })();
+
+
+
+/* =========================================================
+   V121 CLEAN — ЛІВА ПАНЕЛЬ НЕРУХОМА
+   База: V120 від завантаженої користувачем V119.
+   - права панель лишається fixed;
+   - ліва панель теж fixed;
+   - ліва починається ПІД lessonbar ("Ім’я та прізвище");
+   - обидві бокові панелі симетричні;
+   - робочий аркуш / Fabric canvas НЕ переносимо і НЕ перебудовуємо.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $L121=id=>document.getElementById(id);
+
+function leftRail121(){
+  return document.querySelector(
+    ".side-tools,.left-toolbar,.left-tools,.tool-sidebar"
+  ) || document.querySelector(".side-tool[data-tool]")?.parentElement || null;
+}
+
+function lessonBottom121(){
+  const lesson=document.querySelector(".lessonbar");
+  if(lesson){
+    const r=lesson.getBoundingClientRect();
+    if(r.height>10) return Math.round(r.bottom);
+  }
+
+  const nameField=
+    $L121("studentName") ||
+    $L121("studentNameInput") ||
+    document.querySelector('input[placeholder*="прізвище" i]') ||
+    document.querySelector('input[placeholder*="ім’я" i]');
+
+  if(nameField){
+    const r=nameField.getBoundingClientRect();
+    return Math.round(r.bottom+10);
+  }
+
+  return 165;
+}
+
+function addCss121(){
+  if($L121("v121LeftFixedCss")) return;
+
+  const st=document.createElement("style");
+  st.id="v121LeftFixedCss";
+  st.textContent=`
+    .side-tools,
+    .left-toolbar,
+    .left-tools,
+    .tool-sidebar{
+      position:fixed!important;
+      left:0!important;
+      bottom:0!important;
+
+      width:76px!important;
+      min-width:76px!important;
+      max-width:76px!important;
+
+      background:#fff!important;
+      background-color:#fff!important;
+      opacity:1!important;
+      visibility:visible!important;
+
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+
+      border-right:1px solid #d8e2ef!important;
+      box-shadow:4px 0 14px rgba(15,23,42,.08)!important;
+
+      z-index:115000!important;
+      transform:none!important;
+    }
+
+    .side-tools .side-tool,
+    .left-toolbar .side-tool,
+    .left-tools .side-tool,
+    .tool-sidebar .side-tool{
+      width:100%!important;
+      box-sizing:border-box!important;
+      flex-shrink:0!important;
+    }
+
+    /* Fullscreen — та сама fixed-панель */
+    #pageViewport:fullscreen .side-tools,
+    #pageViewport:fullscreen .left-toolbar,
+    #pageViewport:fullscreen .left-tools,
+    #pageViewport:fullscreen .tool-sidebar,
+    #pageViewport:-webkit-full-screen .side-tools,
+    #pageViewport:-webkit-full-screen .left-toolbar,
+    #pageViewport:-webkit-full-screen .left-tools,
+    #pageViewport:-webkit-full-screen .tool-sidebar{
+      position:fixed!important;
+      left:0!important;
+      bottom:0!important;
+      width:76px!important;
+      min-width:76px!important;
+      max-width:76px!important;
+      transform:none!important;
+    }
+
+    @media(max-width:900px){
+      .side-tools,
+      .left-toolbar,
+      .left-tools,
+      .tool-sidebar{
+        width:66px!important;
+        min-width:66px!important;
+        max-width:66px!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function lockLeft121(){
+  const rail=leftRail121();
+  if(!rail) return;
+
+  const top=lessonBottom121();
+  const width=window.innerWidth<=900?66:76;
+
+  rail.style.setProperty("position","fixed","important");
+  rail.style.setProperty("left","0","important");
+  rail.style.setProperty("top",top+"px","important");
+  rail.style.setProperty("bottom","0","important");
+  rail.style.setProperty("height","auto","important");
+  rail.style.setProperty("max-height",`calc(100vh - ${top}px)`,"important");
+
+  rail.style.setProperty("width",width+"px","important");
+  rail.style.setProperty("min-width",width+"px","important");
+  rail.style.setProperty("max-width",width+"px","important");
+
+  rail.style.setProperty("background","#fff","important");
+  rail.style.setProperty("opacity","1","important");
+  rail.style.setProperty("visibility","visible","important");
+
+  rail.style.setProperty("overflow-y","auto","important");
+  rail.style.setProperty("overflow-x","hidden","important");
+
+  rail.style.setProperty("z-index","115000","important");
+  rail.style.setProperty("transform","none","important");
+}
+
+function mark121(){
+  const b=$L121("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v121";
+  document.documentElement.dataset.sofiaVersion="121-from-user119-both-fixed";
+}
+
+function repair121(){
+  addCss121();
+  lockLeft121();
+}
+
+function init121(){
+  repair121();
+  mark121();
+
+  [250,700,1400].forEach(ms=>setTimeout(lockLeft121,ms));
+}
+
+window.addEventListener("resize",()=>setTimeout(lockLeft121,80));
+document.addEventListener("fullscreenchange",()=>setTimeout(lockLeft121,100));
+document.addEventListener("webkitfullscreenchange",()=>setTimeout(lockLeft121,100));
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init121,160),{once:true});
+}else{
+  setTimeout(init121,160);
+}
+})();
