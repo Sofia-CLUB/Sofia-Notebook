@@ -8004,3 +8004,411 @@ if(document.readyState==="loading")
  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200),{once:true});
 else setTimeout(init,200);
 })();
+
+
+
+/* =========================================================
+   V121 — БЕЗПЕРЕРВНИЙ АРКУШ + FIXED RIGHT + WORD CURSOR
+   Base: working V107/V120. Does not rebuild the workspace DOM.
+   ========================================================= */
+(function(){
+"use strict";
+const $121=id=>document.getElementById(id);
+
+const GROW_BY = 1800;
+const MIN_HEIGHT = 2600;
+let cursorTypingObject = null;
+
+/* ---------- CSS ---------- */
+function addCss(){
+  if($121("v121Css")) return;
+  const st=document.createElement("style");
+  st.id="v121Css";
+  st.textContent=`
+    /* right rail always fixed and transparent */
+    #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      left:auto!important;
+      bottom:0!important;
+      z-index:76000!important;
+      background:transparent!important;
+      border-left:0!important;
+      box-shadow:none!important;
+    }
+    #v86Dock .v86tab,#v86Help{
+      background:transparent!important;
+    }
+    #v86Dock .v86tab:hover,#v86Help:hover{
+      background:rgba(238,244,251,.92)!important;
+    }
+
+    /* notebook/canvas may grow vertically; no visual "end" */
+    #notebook{
+      min-height:${MIN_HEIGHT}px!important;
+      height:auto!important;
+      overflow:visible!important;
+      background-repeat:repeat!important;
+      background-position:left top!important;
+    }
+
+    body.v121-cursor-mode .upper-canvas,
+    body.v121-cursor-mode canvas{
+      cursor:text!important;
+    }
+
+    /* one visible blinking caret on empty click before text starts */
+    #v121Caret{
+      position:absolute;
+      width:2px;
+      height:34px;
+      background:#173b78;
+      z-index:78000;
+      pointer-events:none;
+      display:none;
+      animation:v121blink 1s steps(1,end) infinite;
+    }
+    #v121Caret.show{display:block}
+    @keyframes v121blink{0%,48%{opacity:1}49%,100%{opacity:.1}}
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------- INFINITE VERTICAL FABRIC CANVAS ---------- */
+function fc(){
+  try{return typeof fcanvas!=="undefined" ? fcanvas : null}catch(_){return null}
+}
+function notebook(){
+  return $121("notebook");
+}
+
+function ensureCanvasHeight(targetHeight){
+  const c=fc(), nb=notebook();
+  if(!c || !nb) return;
+
+  const h=Math.max(MIN_HEIGHT, Math.ceil(targetHeight));
+  const current=Math.max(c.getHeight?.()||0, nb.scrollHeight||0, nb.offsetHeight||0);
+  if(current >= h-50) return;
+
+  /* Resize Fabric itself — upper/lower canvas follow automatically. */
+  try{
+    c.setHeight(h);
+    c.calcOffset?.();
+    c.requestRenderAll?.();
+  }catch(_){}
+
+  nb.style.setProperty("min-height",h+"px","important");
+
+  /* Fabric wrapper must follow height too. */
+  const wrap=document.querySelector(".canvas-container");
+  if(wrap){
+    wrap.style.setProperty("height",h+"px","important");
+    wrap.style.setProperty("min-height",h+"px","important");
+  }
+}
+
+function maxObjectBottom(){
+  const c=fc(); if(!c) return 0;
+  let max=0;
+  c.getObjects().forEach(o=>{
+    try{
+      const b=o.getBoundingRect?.(true,true);
+      if(b) max=Math.max(max,b.top+b.height);
+      else max=Math.max(max,(o.top||0)+(o.height||0)*(o.scaleY||1));
+    }catch(_){}
+  });
+  return max;
+}
+
+function initialInfiniteHeight(){
+  const c=fc(); if(!c)return;
+  const vh=window.innerHeight||900;
+  ensureCanvasHeight(Math.max(MIN_HEIGHT, vh*2.6, maxObjectBottom()+800));
+}
+
+function autoGrowOnScroll(){
+  const c=fc(); if(!c)return;
+
+  const pageY=window.scrollY + window.innerHeight;
+  const canvas=document.querySelector(".upper-canvas")||document.querySelector("canvas");
+  if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const canvasBottomOnPage=window.scrollY + rect.top + (c.getHeight?.()||rect.height);
+
+  if(canvasBottomOnPage - pageY < 650){
+    ensureCanvasHeight((c.getHeight?.()||rect.height)+GROW_BY);
+  }
+}
+
+function autoGrowForPoint(y){
+  const c=fc(); if(!c)return;
+  if(y > (c.getHeight?.()||0)-500){
+    ensureCanvasHeight(y+GROW_BY);
+  }
+}
+
+/* ---------- CURSOR MODE ---------- */
+function cursorButton(){
+  return $121("v105CursorBtn") ||
+         $121("v104CursorBtn") ||
+         [...document.querySelectorAll("button")].find(b=>(b.textContent||"").trim()==="Курсор");
+}
+function handButton(){
+  return document.querySelector('.side-tool[data-tool="select"],.side-tool[data-tool="hand"],#handBtn');
+}
+
+function isCursorMode(){
+  const b=cursorButton();
+  return document.body.classList.contains("v121-cursor-mode") ||
+         !!b?.classList.contains("active");
+}
+
+function setCursorMode(on){
+  document.body.classList.toggle("v121-cursor-mode",!!on);
+  const b=cursorButton();
+  if(b) b.classList.toggle("active",!!on);
+
+  if(on){
+    document.body.classList.remove("v96-hand-mode","v99-hand-mode","v96-dragging","v99-dragging");
+    const hb=handButton();
+    hb?.classList.remove("active","selected","v96-hand-active","v99-hand-active");
+    try{
+      const c=fc();
+      if(c){
+        c.isDrawingMode=false;
+        c.selection=true;
+        c.defaultCursor="text";
+        c.hoverCursor="text";
+        c.requestRenderAll?.();
+      }
+    }catch(_){}
+  }
+}
+
+function bindCursorButton(){
+  const b=cursorButton();
+  if(!b || b.__v121Bound)return;
+  b.__v121Bound=true;
+  b.addEventListener("click",e=>{
+    setCursorMode(true);
+  },true);
+
+  /* Any side drawing tool disables cursor mode. */
+  if(!document.__v121ToolExit){
+    document.__v121ToolExit=true;
+    document.addEventListener("click",e=>{
+      const t=e.target.closest?.(".side-tool[data-tool]");
+      if(!t)return;
+      setCursorMode(false);
+    },true);
+  }
+}
+
+/* ---------- BLINKING CARET + REAL TYPING ---------- */
+function ensureCaret(){
+  let el=$121("v121Caret");
+  if(!el){
+    el=document.createElement("div");
+    el.id="v121Caret";
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function canvasEl(){
+  return document.querySelector(".upper-canvas") ||
+         document.querySelector("canvas.upper-canvas") ||
+         document.querySelector("canvas");
+}
+function fabricPoint(e){
+  const cv=canvasEl();
+  if(!cv)return null;
+  const r=cv.getBoundingClientRect();
+  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top)return null;
+
+  /* The canvas may be taller than viewport; allow clicks anywhere visible. */
+  const c=fc();
+  try{
+    if(c){
+      const p=c.getPointer(e);
+      return {x:p.x,y:p.y,screenX:e.clientX,screenY:e.clientY};
+    }
+  }catch(_){}
+  return {x:e.clientX-r.left,y:e.clientY-r.top,screenX:e.clientX,screenY:e.clientY};
+}
+
+function showCaret(screenX,screenY){
+  const el=ensureCaret();
+  el.style.left=(window.scrollX+screenX)+"px";
+  el.style.top=(window.scrollY+screenY-17)+"px";
+  el.classList.add("show");
+}
+function hideCaret(){
+  $121("v121Caret")?.classList.remove("show");
+}
+
+function finishOldTypingIfEmpty(){
+  const c=fc();
+  if(!c || !cursorTypingObject)return;
+  try{
+    if(cursorTypingObject.isEditing) cursorTypingObject.exitEditing();
+    if(!(cursorTypingObject.text||"").trim()) c.remove(cursorTypingObject);
+  }catch(_){}
+  cursorTypingObject=null;
+}
+
+function createEditableTextAt(x,y){
+  const c=fc();
+  if(!c || !window.fabric)return;
+
+  finishOldTypingIfEmpty();
+  autoGrowForPoint(y);
+
+  const t=new fabric.IText("",{
+    left:x,
+    top:y,
+    originX:"left",
+    originY:"top",
+    fontFamily:"Segoe Script",
+    fontSize:26,
+    fill:"#4a7fbd",
+    editable:true,
+    selectable:true,
+    evented:true,
+    padding:0
+  });
+  t.sofiaCursorText=true;
+  cursorTypingObject=t;
+
+  c.add(t);
+  c.setActiveObject(t);
+  t.enterEditing();
+  if("selectionStart" in t){t.selectionStart=0;t.selectionEnd=0;}
+  c.requestRenderAll?.();
+  hideCaret();
+
+  t.on("changed",()=>{
+    const b=t.getBoundingRect?.(true,true);
+    if(b) autoGrowForPoint(b.top+b.height+400);
+  });
+
+  t.on("editing:exited",()=>{
+    try{
+      if(!(t.text||"").trim()) c.remove(t);
+      c.requestRenderAll?.();
+      autoSave?.();
+    }catch(_){}
+    if(cursorTypingObject===t)cursorTypingObject=null;
+  });
+}
+
+function bindCursorTyping(){
+  if(document.__v121TypingBound)return;
+  document.__v121TypingBound=true;
+
+  /* Capture lets this work on every visible pixel of the Fabric canvas. */
+  document.addEventListener("pointerdown",e=>{
+    if(!isCursorMode() || e.button!==0)return;
+
+    const p=fabricPoint(e);
+    if(!p)return;
+
+    /* Existing object click: allow normal Fabric selection/editing. */
+    try{
+      const target=fc()?.findTarget?.(e);
+      if(target && !target.sofiaCursorText)return;
+    }catch(_){}
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    window.sofiaInsertPoint={x:p.x,y:p.y,active:true,setAt:Date.now()};
+    showCaret(p.screenX,p.screenY);
+    createEditableTextAt(p.x,p.y);
+  },true);
+}
+
+/* ---------- INSERTED OBJECTS GO TO CURSOR ---------- */
+function bindObjectPlacement(){
+  const c=fc();
+  if(!c || c.__v121PlacementBound)return;
+  c.__v121PlacementBound=true;
+
+  c.on("object:added",ev=>{
+    const o=ev?.target;
+    const pt=window.sofiaInsertPoint;
+    if(!o || !pt?.active)return;
+    if(o.sofiaCursorText)return;
+
+    /* Do not move freehand/drawn objects. */
+    const type=(o.type||"").toLowerCase();
+    const activeTool=(document.querySelector(".side-tool.active[data-tool]")?.dataset.tool||"");
+    if(["pen","marker","eraser","line","curve","polyline","wave","arrow","rectangle","ellipse","triangle"].includes(activeTool))return;
+    if(["path","line","polyline"].includes(type))return;
+    if(o.isBackground||o.backgroundObject||o.sofiaInstrument||o.isInstrument)return;
+
+    setTimeout(()=>{
+      try{
+        o.set({left:pt.x,top:pt.y,originX:"left",originY:"top"});
+        o.setCoords?.();
+        c.setActiveObject?.(o);
+        c.requestRenderAll?.();
+        autoGrowForPoint(pt.y+(o.getScaledHeight?.()||100)+500);
+      }catch(_){}
+    },0);
+  });
+}
+
+/* ---------- RIGHT PANEL FIXED ---------- */
+function fixRightDock(){
+  const d=$121("v86Dock");
+  if(!d)return;
+  d.style.setProperty("position","fixed","important");
+  d.style.setProperty("right","0","important");
+  d.style.setProperty("left","auto","important");
+  d.style.setProperty("bottom","0","important");
+  d.style.setProperty("background","transparent","important");
+  d.style.setProperty("box-shadow","none","important");
+}
+
+/* ---------- INIT ---------- */
+function mark(){
+  const b=$121("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v121";
+  document.documentElement.dataset.sofiaVersion="121";
+}
+function init(){
+  addCss();
+  ensureCaret();
+  initialInfiniteHeight();
+  fixRightDock();
+  bindCursorButton();
+  bindCursorTyping();
+  bindObjectPlacement();
+  mark();
+
+  window.addEventListener("scroll",autoGrowOnScroll,{passive:true});
+  window.addEventListener("resize",()=>{
+    initialInfiniteHeight();
+    fixRightDock();
+  });
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(()=>{
+      initialInfiniteHeight();
+      fixRightDock();
+    },120);
+  });
+
+  [400,1000,1800].forEach(ms=>setTimeout(()=>{
+    initialInfiniteHeight();
+    fixRightDock();
+    bindCursorButton();
+    bindObjectPlacement();
+  },ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
