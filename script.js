@@ -735,9 +735,9 @@ $("insertAngleBtn").onclick=()=>{
   groupAndPlace(o,360,360);$("anglePanel").classList.add("hidden");
 };
 
-/* ---------- Замітка ---------- */
+/* ---------- Нотатка ---------- */
 $("noteBtn").onclick=()=>{
-  const t=new fabric.Textbox("Замітка",{left:380,top:280,width:230,fontSize:22,fill:"#273142",backgroundColor:"#fff19a",padding:14,fontFamily:"Arial",editable:true});
+  const t=new fabric.Textbox("Нотатка",{left:380,top:280,width:230,fontSize:22,fill:"#273142",backgroundColor:"#fff19a",padding:14,fontFamily:"Arial",editable:true});
   fcanvas.add(t);fcanvas.setActiveObject(t);pushHistory();autoSave();setTool("select");
 };
 
@@ -1201,7 +1201,7 @@ const CSS_PX_PER_CM=96/2.54;
 function insertTextIntoBoard(text){
   let obj=fcanvas.getActiveObject();
   if(!(obj&&["i-text","textbox"].includes(obj.type))){
-    obj=new fabric.IText("",{left:110,top:190,fontSize:32,fontFamily:"Segoe Script",fontStyle:"normal",fill:"#4a7fbd",erasable:false});fcanvas.add(obj);fcanvas.setActiveObject(obj);obj.enterEditing();
+    obj=new fabric.IText("",{left:110,top:190,fontSize:38,fontFamily:"Segoe Script",fontStyle:"normal",fill:"#4a7fbd",erasable:false});fcanvas.add(obj);fcanvas.setActiveObject(obj);obj.enterEditing();
   }
   if(obj.enterEditing&&!obj.isEditing)obj.enterEditing();
   obj.insertChars(text,null,obj.selectionStart,obj.selectionEnd);obj.setCoords();fcanvas.requestRenderAll();pushHistory();autoSave();syncTextFormatBar();
@@ -2121,7 +2121,7 @@ $("subject").onchange=()=>{
     ["pointBtn","Точка"],
     ["vertexLabelBtn","Вершина"],
     ["ukrainianBtn","Розбір"],
-    ["noteBtn","Замітка"],
+    ["noteBtn","Нотатка"],
     ["groupBtn","Групувати"],
     ["ungroupBtn","Розгрупувати"],
     ["explodeShapeBtn","Розкласти фігуру"],
@@ -2886,7 +2886,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     moveButton("mediaBtn","insert","📎 Фото / відео / файл");
     moveButton("elementsBtn","insert","✦ Елементи");
     moveButton("geometryBtn","insert","📐 Прилади");
-    moveButton("noteBtn","insert","▣ Замітка");
+    moveButton("noteBtn","insert","📝 Нотатка");
 
     makeButton("v56TableBtn","▦ Таблиця","insert",createTable);
 
@@ -2989,7 +2989,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   /* ---------- Note ---------- */
   function createNote(){
     if(typeof fcanvas==="undefined"||!window.fabric)return;
-    const t=new fabric.Textbox("Замітка",{
+    const t=new fabric.Textbox("Нотатка",{
       left:360,top:260,width:260,fontSize:22,fill:"#273142",
       backgroundColor:"#fff19a",padding:14,fontFamily:"Arial",editable:true
     });
@@ -3459,7 +3459,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     const t=new fabric.IText("Текст",{
       left:300,top:200,
       fontFamily:"Segoe Script",
-      fontSize:32,
+      fontSize:38,
       fill:"#4a7fbd",
       fontStyle:"normal",
       editable:true,
@@ -3502,7 +3502,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
         <option>Comic Sans MS</option>
       </select>
 
-      <input id="v57TextSize" type="number" min="8" max="120" value="32"
+      <input id="v57TextSize" type="number" min="8" max="120" value="38"
         title="Розмір шрифту" style="width:70px">
 
       <button id="v57TextSmaller" type="button" title="Зменшити шрифт">A−</button>
@@ -5890,471 +5890,124 @@ else
 
 
 /* =========================================================
-   V73 — БАЗА v70
-   ТІЛЬКИ 2 ВИПРАВЛЕННЯ:
-   1) прибрати зайві вертикальні проміжки;
-   2) вкладки завжди видимі при прокрутці.
+   V77 — БАЗА: ЗАВАНТАЖЕНА КОРИСТУВАЧЕМ v70
+   НОТАТКА + СТАБІЛІЗАЦІЯ ВКЛАДОК
    ========================================================= */
 (function(){
 "use strict";
-const $73=id=>document.getElementById(id);
+const $77=id=>document.getElementById(id);
 
-function ribbon(){return $73("sofiaRibbonV56")}
-function ribbonHead(){return ribbon()?.querySelector(".v56-ribbon-head")}
+function ribbon(){ return $77("sofiaRibbonV56"); }
+function head(){ return ribbon()?.querySelector(".v56-ribbon-head"); }
 
-/* ---------- 1. Прибираємо зайві проміжки ---------- */
-function compactLayout(){
-  const rb=ribbon();
-  if(!rb)return;
+function ensureNoteButton(){
+  const insert =
+    document.querySelector('.v56-panel[data-v56-panel="insert"]') ||
+    document.querySelector('[data-panel="insert"]');
+  if(!insert) return;
 
-  rb.style.setProperty("margin-top","0","important");
-  rb.style.setProperty("margin-bottom","2px","important");
-  rb.style.setProperty("padding-top","0","important");
+  let btn =
+    $77("noteBtn") ||
+    $77("v77NoteBtn") ||
+    [...insert.querySelectorAll("button")].find(b=>/Нотатка|Замітка|Стікер/i.test(b.textContent||""));
 
-  const h=ribbonHead();
-  if(h){
-    h.style.setProperty("margin","0","important");
-    h.style.setProperty("padding-top","2px","important");
-    h.style.setProperty("padding-bottom","0","important");
+  if(!btn){
+    btn=document.createElement("button");
+    btn.type="button";
+    btn.id="v77NoteBtn";
+    btn.className="v56-command";
+    insert.appendChild(btn);
   }
 
-  // Зменшуємо лише layout-gap у батьківських контейнерах стрічки.
-  let parent=rb.parentElement;
-  for(let i=0;i<4 && parent && parent!==document.body;i++,parent=parent.parentElement){
-    const cs=getComputedStyle(parent);
-    const pt=parseFloat(cs.paddingTop)||0;
-    const pb=parseFloat(cs.paddingBottom)||0;
-    const mt=parseFloat(cs.marginTop)||0;
-    const gap=parseFloat(cs.rowGap||cs.gap)||0;
+  btn.textContent="📝 Нотатка";
+  btn.hidden=false;
+  btn.style.removeProperty("display");
+  btn.onclick=function(e){
+    e.preventDefault();
+    e.stopPropagation();
 
-    if(pt>8)parent.style.setProperty("padding-top","2px","important");
-    if(pb>16)parent.style.setProperty("padding-bottom","2px","important");
-    if(mt>8)parent.style.setProperty("margin-top","0","important");
-    if(gap>8)parent.style.setProperty("row-gap","2px","important");
-  }
+    if(typeof fcanvas==="undefined" || !window.fabric) return;
 
-  // Шукаємо реальні пусті блоки без контенту безпосередньо над стрічкою.
-  const rbTop=rb.getBoundingClientRect().top;
-  document.querySelectorAll("div,section").forEach(el=>{
-    if(el===rb || el.contains(rb) || rb.contains(el))return;
+    const note=new fabric.Textbox("Нотатка",{
+      left:300,
+      top:220,
+      width:260,
+      fontFamily:"Segoe Script",
+      fontSize:28,
+      fill:"#273142",
+      backgroundColor:"#fff3a5",
+      padding:14,
+      editable:true,
+      erasable:false
+    });
+    note.sofiaNote=true;
+    try{
+      note.set({
+        shadow:new fabric.Shadow({
+          color:"rgba(0,0,0,.15)",
+          blur:5,
+          offsetX:2,
+          offsetY:2
+        })
+      });
+    }catch(_){}
 
-    const r=el.getBoundingClientRect();
-    const cs=getComputedStyle(el);
-    const text=(el.textContent||"").trim();
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+    fcanvas.add(note);
+    fcanvas.setActiveObject(note);
+    note.enterEditing?.();
+    note.selectAll?.();
+    fcanvas.requestRenderAll();
 
-    if(
-      cs.position!=="fixed" &&
-      r.bottom<=rbTop &&
-      rbTop-r.bottom<120 &&
-      r.height>=12 &&
-      r.height<=180 &&
-      !text &&
-      controls===0
-    ){
-      el.style.setProperty("height","0","important");
-      el.style.setProperty("min-height","0","important");
-      el.style.setProperty("margin","0","important");
-      el.style.setProperty("padding","0","important");
-      el.style.setProperty("border","0","important");
-      el.style.setProperty("overflow","hidden","important");
-    }
-  });
-}
-
-/* ---------- 2. Закріплені вкладки ---------- */
-function ensureStickyTabs(){
-  if($73("v73StickyTabs"))return;
-
-  const box=document.createElement("div");
-  box.id="v73StickyTabs";
-  box.innerHTML=`<div id="v73StickyTabButtons"></div>`;
-  document.body.appendChild(box);
-
-  refreshStickyTabs();
-}
-
-function refreshStickyTabs(){
-  const host=$73("v73StickyTabButtons");
-  if(!host)return;
-
-  host.innerHTML="";
-  document.querySelectorAll("#sofiaRibbonV56 .v56-tab").forEach(orig=>{
-    const b=document.createElement("button");
-    b.type="button";
-    b.className="v73-tab"+(orig.classList.contains("active")?" active":"");
-    b.textContent=orig.textContent;
-
-    b.onclick=()=>{
-      orig.click();
-
-      // Після натискання плаваючої вкладки показуємо її команди.
-      ribbon()?.classList.remove("v70-collapsed");
-
-      // Прокручуємо до реальної стрічки тільки якщо вона близько.
-      const r=ribbon()?.getBoundingClientRect();
-      if(r && r.top>-120 && r.top<innerHeight){
-        ribbonHead()?.scrollIntoView({block:"start",behavior:"smooth"});
-      }
-
-      setTimeout(refreshStickyTabs,0);
-    };
-
-    host.appendChild(b);
-  });
-}
-
-function findScrollContainer(){
-  // Визначаємо реальний контейнер, який прокручується.
-  let el=ribbon()?.parentElement;
-  while(el && el!==document.body){
-    const cs=getComputedStyle(el);
-    const scrollable=/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight>el.clientHeight+20;
-    if(scrollable)return el;
-    el=el.parentElement;
-  }
-
-  // Fallback: шукаємо будь-який великий вертикально прокручуваний контейнер.
-  const candidates=[...document.querySelectorAll("body *")].filter(el=>{
-    const cs=getComputedStyle(el);
-    return /(auto|scroll)/.test(cs.overflowY) && el.scrollHeight>el.clientHeight+100;
-  });
-  return candidates.sort((a,b)=>(b.clientHeight*b.clientWidth)-(a.clientHeight*a.clientWidth))[0]||window;
-}
-
-let scrollHost=null;
-
-function stickyTop(){
-  // Вкладки мають бути трохи нижче верхньої шапки.
-  const headers=[
-    document.querySelector("header"),
-    document.querySelector(".app-header"),
-    document.querySelector(".topbar"),
-    document.querySelector(".brandbar")
-  ].filter(Boolean);
-
-  let bottom=0;
-  headers.forEach(el=>{
-    const r=el.getBoundingClientRect();
-    if(r.top<=4 && r.bottom>bottom && r.bottom<260)bottom=r.bottom;
-  });
-  return Math.max(0,bottom)+2;
-}
-
-function updateSticky(){
-  const bar=$73("v73StickyTabs");
-  const head=ribbonHead();
-  if(!bar||!head)return;
-
-  const hr=head.getBoundingClientRect();
-  const shouldShow=hr.bottom<stickyTop()+4 || hr.top<stickyTop()-4;
-
-  bar.style.top=stickyTop()+"px";
-  bar.classList.toggle("show",shouldShow);
-
-  refreshStickyTabs();
-}
-
-function bindScroll(){
-  scrollHost=findScrollContainer();
-
-  const handler=()=>{
-    updateSticky();
-
-    // Під час прокрутки вниз лишаємо тільки вкладки в оригінальній стрічці.
-    const h=ribbonHead()?.getBoundingClientRect();
-    if(h && h.top<stickyTop()-10){
-      ribbon()?.classList.add("v70-collapsed");
-    }
+    try{ pushHistory(); }catch(_){}
+    try{ autoSave(); }catch(_){}
   };
-
-  if(scrollHost===window){
-    window.addEventListener("scroll",handler,{passive:true});
-  }else{
-    scrollHost.addEventListener("scroll",handler,{passive:true});
-  }
-
-  // Додатково ловимо scroll у capture для нестандартних контейнерів.
-  document.addEventListener("scroll",handler,true);
 }
 
-/* ---------- CSS ---------- */
-function addCss(){
-  if($73("v73Css"))return;
-  const st=document.createElement("style");
-  st.id="v73Css";
-  st.textContent=`
-    #sofiaRibbonV56{
-      margin-top:0!important;
-      margin-bottom:2px!important;
-    }
+/* v70 already contains its own tab system.
+   We do NOT add another sticky mechanism here.
+   We only remove duplicate floating tab bars left by older experiments. */
+function removeDuplicateExperimentalBars(){
+  [
+    "v71FloatingTabs","v72StickyTabs","v73StickyTabs",
+    "v76StickyTabs","v76FloatingCommands"
+  ].forEach(id=>$77(id)?.remove());
 
-    #v73StickyTabs{
-      position:fixed;
-      left:88px;
-      right:8px;
-      z-index:40000;
-      display:none;
-      align-items:center;
-      gap:3px;
-      padding:3px 6px;
-      background:#fff;
-      border:1px solid #dfe7f1;
-      border-radius:0 0 10px 10px;
-      box-shadow:0 3px 10px rgba(15,23,42,.14);
-    }
-    #v73StickyTabs.show{display:flex}
+  const rb=ribbon();
+  if(rb){
+    rb.classList.remove("v71-fixed-ribbon","v72-fixed","v72-collapsed","v71-collapsed");
+  }
+}
 
-    #v73StickyTabButtons{
-      display:flex;
-      gap:2px;
-      overflow-x:auto;
-      white-space:nowrap;
-      scrollbar-width:thin;
-      flex:1;
-    }
-
-    .v73-tab{
-      border:0;
-      background:transparent;
-      border-radius:7px;
-      padding:7px 10px;
-      white-space:nowrap;
-      font:600 15px/1 inherit;
-      cursor:pointer;
-    }
-    .v73-tab.active{
-      background:#edf3ff;
-      color:#173b78;
-      box-shadow:inset 0 -2px 0 #2b5eaa;
-    }
-
-    @media(max-width:800px){
-      #v73StickyTabs{left:64px}
-    }
-  `;
-  document.head.appendChild(st);
+function markVersion(){
+  const badge=$77("appVersionBadge");
+  if(badge) badge.textContent="v77";
+  document.documentElement.dataset.sofiaVersion="77";
 }
 
 function init(){
-  addCss();
-  compactLayout();
-  ensureStickyTabs();
-  bindScroll();
-  updateSticky();
-
-  // Натискання оригінальної вкладки — її команди відкриваються.
-  document.querySelectorAll("#sofiaRibbonV56 .v56-tab").forEach(tab=>{
-    if(tab.dataset.v73)return;
-    tab.dataset.v73="1";
-    tab.addEventListener("click",()=>{
-      ribbon()?.classList.remove("v70-collapsed");
-      setTimeout(refreshStickyTabs,0);
-    },true);
-  });
+  removeDuplicateExperimentalBars();
+  ensureNoteButton();
+  markVersion();
 
   const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v73);
-    mo.__v73=setTimeout(()=>{
-      compactLayout();
-      updateSticky();
-    },40);
+    clearTimeout(mo.__v77);
+    mo.__v77=setTimeout(()=>{
+      ensureNoteButton();
+      removeDuplicateExperimentalBars();
+    },60);
   });
   mo.observe(document.body,{
     childList:true,
     subtree:true,
     attributes:true,
-    attributeFilter:["class","style"]
+    attributeFilter:["hidden","class","style"]
   });
 
-  [250,700,1500,2500].forEach(ms=>setTimeout(()=>{
-    compactLayout();
-    updateSticky();
-  },ms));
-
-  const badge=$73("appVersionBadge");
-  if(badge)badge.textContent="v73";
-  document.documentElement.dataset.sofiaVersion="73";
+  [300,800,1600].forEach(ms=>setTimeout(ensureNoteButton,ms));
 }
 
 if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
 else
-  setTimeout(init,200);
-})();
-
-
-
-/* =========================================================
-   V74 — ЖОРСТКО ПРИБИРАЄМО ВЕРТИКАЛЬНІ GAP + ТЕКСТ 32 PX
-   База: v73/v70.
-   ========================================================= */
-(function(){
-"use strict";
-const $74=id=>document.getElementById(id);
-
-function ribbon(){return $74("sofiaRibbonV56")}
-
-function isFullscreen(){
-  return !!document.fullscreenElement ||
-         !!document.webkitFullscreenElement ||
-         document.body.classList.contains("fullscreen") ||
-         document.documentElement.classList.contains("fullscreen");
-}
-
-function metadataRow(){
-  const ids=["studentName","classSelect","subject","workType","dateMode","paperType"];
-  const els=ids.map(id=>$74(id)).filter(Boolean);
-  if(!els.length)return null;
-  let p=els[0].parentElement;
-  while(p && p!==document.body){
-    if(els.every(el=>p.contains(el)))return p;
-    p=p.parentElement;
-  }
-  return els[0].parentElement;
-}
-
-function compactHard(){
-  const rb=ribbon();
-  if(!rb)return;
-
-  const meta=metadataRow();
-  if(meta){
-    meta.style.setProperty("margin-bottom","0","important");
-    meta.style.setProperty("padding-bottom","0","important");
-  }
-
-  // Стрічку підтягуємо максимально близько до панелі клас/предмет/дата.
-  rb.style.setProperty("margin-top","0","important");
-  rb.style.setProperty("margin-bottom","2px","important");
-  rb.style.setProperty("padding-top","0","important");
-
-  // Якщо між metadata і ribbon є будь-які sibling-блоки без важливих контролів —
-  // стискаємо їх до нуля.
-  if(meta){
-    let n=meta.nextElementSibling;
-    while(n && n!==rb){
-      const controls=n.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-      const txt=(n.textContent||"").trim();
-      if(controls===0 && txt===""){
-        n.style.setProperty("height","0","important");
-        n.style.setProperty("min-height","0","important");
-        n.style.setProperty("margin","0","important");
-        n.style.setProperty("padding","0","important");
-        n.style.setProperty("border","0","important");
-        n.style.setProperty("overflow","hidden","important");
-      }
-      n=n.nextElementSibling;
-    }
-  }
-
-  // Стискаємо батьківські layout-контейнери навколо ribbon.
-  let par=rb.parentElement;
-  for(let i=0;i<4 && par && par!==document.body;i++,par=par.parentElement){
-    par.style.setProperty("row-gap","0","important");
-    par.style.setProperty("column-gap","0","important");
-    if((parseFloat(getComputedStyle(par).paddingTop)||0)>8)
-      par.style.setProperty("padding-top","0","important");
-    if((parseFloat(getComputedStyle(par).marginTop)||0)>8)
-      par.style.setProperty("margin-top","0","important");
-  }
-
-  // У fullscreen прибираємо великий пустий блок над ribbon за геометрією.
-  if(isFullscreen()){
-    const rr=rb.getBoundingClientRect();
-    document.querySelectorAll("div,section,main").forEach(el=>{
-      if(el===rb || el.contains(rb) || rb.contains(el))return;
-      const r=el.getBoundingClientRect();
-      const cs=getComputedStyle(el);
-      const txt=(el.textContent||"").trim();
-      const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-
-      if(
-        cs.position!=="fixed" &&
-        r.bottom<=rr.top &&
-        rr.top-r.bottom<260 &&
-        r.height>=20 &&
-        r.height<=260 &&
-        txt==="" &&
-        controls===0
-      ){
-        el.dataset.v74Gap="1";
-        el.style.setProperty("height","0","important");
-        el.style.setProperty("min-height","0","important");
-        el.style.setProperty("max-height","0","important");
-        el.style.setProperty("margin","0","important");
-        el.style.setProperty("padding","0","important");
-        el.style.setProperty("border","0","important");
-        el.style.setProperty("overflow","hidden","important");
-      }
-    });
-
-    // Після стискання spacer-а компенсуємо залишковий реальний gap.
-    requestAnimationFrame(()=>{
-      const m=metadataRow();
-      const r1=m?.getBoundingClientRect();
-      const r2=rb.getBoundingClientRect();
-      if(r1 && r2){
-        const gap=r2.top-r1.bottom;
-        if(gap>8){
-          rb.style.setProperty("margin-top",`-${gap-4}px`,"important");
-        }
-      }
-    });
-  }
-}
-
-function restoreFullscreenArtifacts(){
-  if(isFullscreen())return;
-  document.querySelectorAll('[data-v74-gap="1"]').forEach(el=>{
-    ["height","min-height","max-height","margin","padding","border","overflow"]
-      .forEach(k=>el.style.removeProperty(k));
-    delete el.dataset.v74Gap;
-  });
-  setTimeout(compactHard,30);
-}
-
-function enforceText32(){
-  // Панелі за замовчуванням показують 32, але активний уже відформатований текст не чіпаємо.
-  if(window.sofiaTextDefaults)window.sofiaTextDefaults.fontSize=32;
-  const size=$74("v57TextSize");
-  if(size && !(window.fcanvas?.getActiveObject?.()))size.value=32;
-}
-
-function mark(){
-  const badge=$74("appVersionBadge");
-  if(badge)badge.textContent="v74";
-  document.documentElement.dataset.sofiaVersion="74";
-}
-
-function init(){
-  enforceText32();
-  compactHard();
-  mark();
-
-  document.addEventListener("fullscreenchange",()=>{
-    restoreFullscreenArtifacts();
-    [50,150,350].forEach(ms=>setTimeout(compactHard,ms));
-  });
-  document.addEventListener("webkitfullscreenchange",()=>{
-    restoreFullscreenArtifacts();
-    [50,150,350].forEach(ms=>setTimeout(compactHard,ms));
-  });
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v74);
-    mo.__v74=setTimeout(()=>{
-      enforceText32();
-      compactHard();
-    },35);
-  });
-  mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style","hidden"]});
-
-  [250,700,1500,2500].forEach(ms=>setTimeout(compactHard,ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200),{once:true});
-else
-  setTimeout(init,200);
+  setTimeout(init,220);
 })();
