@@ -5752,3 +5752,218 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V90 — УСЯ НАВІГАЦІЯ СТОРІНОК ЛИШЕ ЗНИЗУ
+   ========================================================= */
+(function(){
+"use strict";
+const $90=id=>document.getElementById(id);
+
+function findPageBar(){
+  return $90("sofiaPageTabs") ||
+         document.querySelector(".sofia-page-tabs,.page-tabs") ||
+         [...document.querySelectorAll("div")].find(el=>{
+           const t=(el.textContent||"").replace(/\s+/g," ");
+           return t.includes("Нова сторінка") && t.includes("Видалити сторінку");
+         });
+}
+
+function findNewBtn(){
+  return $90("addPageBtn") ||
+         [...document.querySelectorAll("button")].find(b=>/Нова сторінка/i.test(b.textContent||""));
+}
+function findDeleteBtn(){
+  return $90("deletePageBtn") ||
+         [...document.querySelectorAll("button")].find(b=>/Видалити сторінку/i.test(b.textContent||""));
+}
+
+function addCss(){
+  if($90("v90Css")) return;
+  const st=document.createElement("style");
+  st.id="v90Css";
+  st.textContent=`
+    /* ЄДИНА панель сторінок — внизу */
+    .v90-pagebar-bottom{
+      position:fixed!important;
+      left:86px!important;
+      right:78px!important;
+      bottom:0!important;
+      top:auto!important;
+      z-index:74500!important;
+      display:flex!important;
+      align-items:center!important;
+      flex-wrap:nowrap!important;
+      gap:5px!important;
+      min-height:46px!important;
+      max-height:52px!important;
+      margin:0!important;
+      padding:4px 8px!important;
+      background:rgba(246,249,253,.98)!important;
+      border-top:1px solid #d4dfec!important;
+      border-bottom:0!important;
+      border-radius:0!important;
+      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      white-space:nowrap!important;
+    }
+
+    .v90-pagebar-bottom button{
+      min-height:34px!important;
+      height:34px!important;
+      margin:0!important;
+      padding:3px 10px!important;
+      flex:0 0 auto!important;
+    }
+
+    /* Забороняємо старій копії/обгортці зверху займати місце */
+    .v90-hide-top-pagebar{
+      display:none!important;
+      height:0!important;
+      min-height:0!important;
+      max-height:0!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      overflow:hidden!important;
+    }
+
+    /* робоча область не перекривається нижньою панеллю */
+    body{
+      padding-bottom:50px!important;
+    }
+
+    :fullscreen .v90-pagebar-bottom,
+    :-webkit-full-screen .v90-pagebar-bottom{
+      left:78px!important;
+      right:70px!important;
+      bottom:0!important;
+    }
+
+    body.v89-right-collapsed .v90-pagebar-bottom{
+      right:4px!important;
+    }
+
+    @media(max-width:900px){
+      .v90-pagebar-bottom{
+        left:68px!important;
+        right:68px!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function moveAllPageControlsToBottom(){
+  const bar=findPageBar();
+  if(!bar) return;
+
+  // Це єдина панель сторінок.
+  bar.classList.remove("v88-page-bottom");
+  bar.classList.add("v90-pagebar-bottom");
+
+  const newBtn=findNewBtn();
+  const delBtn=findDeleteBtn();
+
+  // Якщо кнопки опинились поза панеллю — переносимо їх у неї.
+  if(newBtn && newBtn.parentElement!==bar){
+    bar.appendChild(newBtn);
+  }
+  if(delBtn && delBtn.parentElement!==bar){
+    bar.appendChild(delBtn);
+  }
+
+  // Порядок: навігація/лічильник -> Нова сторінка -> вкладки сторінок -> Видалити сторінку.
+  const pageTabButtons=[...bar.querySelectorAll("button")].filter(b=>{
+    const t=(b.textContent||"").trim();
+    return /^Сторінка\s+\d+/i.test(t);
+  });
+
+  // Ставимо "Нова сторінка" перед першою вкладкою сторінки.
+  if(newBtn){
+    if(pageTabButtons[0]) bar.insertBefore(newBtn,pageTabButtons[0]);
+  }
+
+  // "Видалити сторінку" завжди остання.
+  if(delBtn){
+    bar.appendChild(delBtn);
+  }
+
+  // Прибираємо inline top/margins, які могли лишитись від старих версій.
+  ["top","marginTop","marginBottom","position"].forEach(k=>{
+    bar.style[k]="";
+  });
+}
+
+function hideAnyDuplicateTopBars(){
+  const main=findPageBar();
+  if(!main) return;
+
+  document.querySelectorAll("div,section").forEach(el=>{
+    if(el===main || el.contains(main) || main.contains(el)) return;
+
+    const t=(el.textContent||"").replace(/\s+/g," ").trim();
+    if(!t) return;
+
+    const hasNew=/Нова сторінка/i.test(t);
+    const hasDel=/Видалити сторінку/i.test(t);
+    const hasPages=/Сторінка\s+\d+/i.test(t);
+
+    // Ховаємо лише дубль навігації, який знаходиться у верхній частині.
+    if((hasNew||hasDel) && hasPages){
+      const r=el.getBoundingClientRect();
+      if(r.top < window.innerHeight*0.55){
+        el.classList.add("v90-hide-top-pagebar");
+      }
+    }
+  });
+
+  // Якщо "Нова сторінка" / "Видалити сторінку" лишилися окремими зверху,
+  // переносимо їх у нижню панель.
+  const newBtn=findNewBtn();
+  const delBtn=findDeleteBtn();
+  if(newBtn && newBtn.parentElement!==main) main.appendChild(newBtn);
+  if(delBtn && delBtn.parentElement!==main) main.appendChild(delBtn);
+}
+
+function repair(){
+  moveAllPageControlsToBottom();
+  hideAnyDuplicateTopBars();
+}
+
+function markVersion(){
+  let b=$90("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b) b.textContent="v90";
+  document.documentElement.dataset.sofiaVersion="90";
+}
+
+function init(){
+  addCss();
+  repair();
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v90);
+    mo.__v90=setTimeout(repair,70);
+  });
+  mo.observe(document.body,{
+    childList:true,
+    subtree:true,
+    attributes:true,
+    attributeFilter:["class","style"]
+  });
+
+  [250,700,1400,2200].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
