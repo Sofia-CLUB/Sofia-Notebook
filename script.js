@@ -9422,3 +9422,271 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V128 — CLEAR NOTEBOOK TEXT + NON-BLOCKING TEXT CONTEXT
+   ========================================================= */
+(function(){
+"use strict";
+const $128=id=>document.getElementById(id);
+const PANEL_IDS=["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"];
+
+function fc(){try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}}
+function panels(){return PANEL_IDS.map(id=>$128(id)).filter(Boolean)}
+function isText(o){return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase())}
+function paperStep(){
+  const candidates=[
+    document.getElementById("paperSize"),
+    document.querySelector('input[type="range"][id*="paper" i]'),
+    document.querySelector('input[type="range"][id*="line" i]')
+  ].filter(Boolean);
+  for(const el of candidates){
+    const n=Number(el.value);
+    if(Number.isFinite(n)&&n>8) return n;
+  }
+  return 32;
+}
+function paperType(){
+  const el=document.getElementById("paperType") || document.querySelector('select[id*="paper" i]');
+  return String(el?.value||"").toLowerCase();
+}
+function targetFontSize(){
+  const step=paperStep();
+  /* More airy and notebook-like: approx 82% of the row height. */
+  return Math.max(16,Math.min(48,Math.round(step*0.82)));
+}
+function snapPoint(x,y,fs){
+  const step=paperStep();
+  const type=paperType();
+  const lineBox=Math.max(fs*1.05,fs+2);
+  const row=Math.max(0,Math.floor(y/step));
+  let sy=row*step + Math.max(0,(step-lineBox)/2);
+
+  let sx=x;
+  if(/grid|cell|кліт|millimeter|coordinate/.test(type)){
+    sx=Math.floor(x/step)*step + Math.max(2,Math.round(step*.12));
+  }
+  return {x:sx,y:sy};
+}
+
+/* ---------- CLEAN TEXT APPEARANCE ---------- */
+function cleanText(o){
+  if(!o || !isText(o)) return;
+
+  const fs=targetFontSize();
+  const pt=snapPoint(Number(o.left)||0,Number(o.top)||0,fs);
+
+  /* Use browser-native text rendering with no shadows / no stretch. */
+  o.set({
+    left:pt.x,
+    top:pt.y,
+    fontFamily:"Times New Roman",
+    fontStyle:"italic",
+    fontWeight:"normal",
+    fill:"#000000",
+    fontSize:fs,
+    lineHeight:1.22,
+    charSpacing:0,
+    scaleX:1,
+    scaleY:1,
+    shadow:null,
+    stroke:null,
+    strokeWidth:0,
+    paintFirst:"fill",
+    objectCaching:false,
+    noScaleCache:true
+  });
+
+  /* Crisp text while zooming/scaling. */
+  o.dirty=true;
+  o.setCoords?.();
+}
+
+/* Existing large/distorted text gets normalized only when user selects it. */
+function normalizeSelectedText(o){
+  if(!isText(o)) return;
+  cleanText(o);
+  fc()?.requestRenderAll?.();
+}
+
+/* ---------- TEXT CONTEXT MENU ----------
+   Open when user puts caret in text, but place it near right edge and
+   never let it block the ribbon/buttons. */
+function placePanel(){
+  const panel=panels()[0];
+  if(!panel) return;
+  panel.style.setProperty("position","fixed","important");
+  panel.style.setProperty("right","84px","important");
+  panel.style.setProperty("left","auto","important");
+  panel.style.setProperty("top","150px","important");
+  panel.style.setProperty("z-index","88000","important");
+  panel.style.setProperty("max-height","calc(100vh - 220px)","important");
+  panel.style.setProperty("overflow","auto","important");
+  panel.style.setProperty("background","rgba(255,255,255,.86)","important");
+  panel.style.setProperty("backdrop-filter","blur(6px)","important");
+  panel.style.setProperty("-webkit-backdrop-filter","blur(6px)","important");
+}
+function showTextPanel(o){
+  if(!o || !isText(o)) return;
+  try{
+    if(typeof refreshObjectPanel==="function") refreshObjectPanel(o);
+  }catch(_){}
+  panels().forEach(p=>p.classList.add("show"));
+  placePanel();
+}
+function hidePanels(){
+  panels().forEach(p=>p.classList.remove("show"));
+}
+
+/* ---------- FABRIC EVENTS ---------- */
+function bindFabric(){
+  const c=fc();
+  if(!c || c.__v128Bound) return;
+  c.__v128Bound=true;
+
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(isText(o)) setTimeout(()=>{
+      cleanText(o);
+      c.requestRenderAll?.();
+    },0);
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    if(isText(o)){
+      normalizeSelectedText(o);
+      setTimeout(()=>showTextPanel(o),20);
+    }
+  });
+
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    if(isText(o)){
+      normalizeSelectedText(o);
+      setTimeout(()=>showTextPanel(o),20);
+    }
+  });
+
+  c.on("text:editing:entered",e=>{
+    const o=e?.target || c.getActiveObject?.();
+    if(isText(o)){
+      cleanText(o);
+      setTimeout(()=>showTextPanel(o),20);
+    }
+  });
+
+  c.on("text:changed",e=>{
+    const o=e?.target;
+    if(isText(o)){
+      o.set({
+        fontFamily:"Times New Roman",
+        fontStyle:"italic",
+        fill:"#000000",
+        lineHeight:1.22,
+        charSpacing:0,
+        shadow:null,
+        stroke:null,
+        strokeWidth:0,
+        scaleX:1,
+        scaleY:1,
+        objectCaching:false
+      });
+      o.dirty=true;
+      c.requestRenderAll?.();
+    }
+  });
+
+  c.on("selection:cleared",()=>{
+    hidePanels();
+  });
+}
+
+/* ---------- DO NOT BLOCK UI ----------
+   Clicking any toolbar/menu command temporarily hides context panel,
+   but does NOT exit text editing or cursor mode. */
+function bindUiClicks(){
+  if(document.__v128UiBound) return;
+  document.__v128UiBound=true;
+
+  document.addEventListener("pointerdown",e=>{
+    const t=e.target;
+    if(!(t instanceof Element)) return;
+
+    const inProps=t.closest("#v102ObjectPanel,#v100ObjectPanel,#v81ObjectPanel");
+    if(inProps) return;
+
+    const isUi=t.closest(`
+      button,input,select,textarea,label,a,[role="button"],
+      #v86Dock,.ribbon,.toolbar,.topbar,.panel,.modal,.dialog,
+      .floating-panel,.context-panel,.tool-panel,.teacher-tools,
+      #v99PageDock,.page-tabs,.pages-bar,.page-bar
+    `);
+
+    if(isUi){
+      hidePanels();
+    }
+  },true);
+}
+
+/* clicking back into the active text restores context */
+function bindCanvasIntent(){
+  if(document.__v128CanvasIntent) return;
+  document.__v128CanvasIntent=true;
+
+  document.addEventListener("pointerdown",e=>{
+    const canvas=document.querySelector(".upper-canvas")||
+                 document.querySelector("canvas.upper-canvas")||
+                 document.querySelector("canvas");
+    if(!canvas) return;
+    const r=canvas.getBoundingClientRect();
+    if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) return;
+
+    let target=null;
+    try{target=fc()?.findTarget?.(e)||null}catch(_){}
+    if(target && isText(target)){
+      setTimeout(()=>showTextPanel(target),35);
+    }
+  },true);
+}
+
+function bindClose(){
+  ["v102ObjClose","v100ObjClose","v81ObjClose"].forEach(id=>{
+    const b=$128(id);
+    if(!b||b.__v128Close)return;
+    b.__v128Close=true;
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      hidePanels();
+    },true);
+  });
+}
+
+function mark(){
+  const b=$128("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v128";
+  document.documentElement.dataset.sofiaVersion="128";
+}
+
+function init(){
+  bindFabric();
+  bindUiClicks();
+  bindCanvasIntent();
+  bindClose();
+  mark();
+
+  [400,1000,1800].forEach(ms=>setTimeout(()=>{
+    bindFabric();
+    bindClose();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
