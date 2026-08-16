@@ -5743,302 +5743,6 @@ else
 
 
 
-/* =========================================================
-   V94 — КУРСОР ВСТАВКИ ЯК У MS WORD
-   ========================================================= */
-(function(){
-"use strict";
-const $94=id=>document.getElementById(id);
-
-let insertPoint={x:180,y:160,active:false};
-let suppressMove=false;
-let lastCanvasClick=0;
-
-function addCss(){
-  if($94("v94Css")) return;
-  const st=document.createElement("style");
-  st.id="v94Css";
-  st.textContent=`
-    #v94InsertCaret{
-      position:absolute;
-      z-index:76000;
-      width:2px;
-      height:34px;
-      background:#173b78;
-      border-radius:2px;
-      pointer-events:none;
-      display:none;
-      animation:v94blink 1s steps(1,end) infinite;
-      box-shadow:0 0 0 1px rgba(255,255,255,.55);
-    }
-    #v94InsertCaret.show{display:block}
-    @keyframes v94blink{0%,48%{opacity:1}49%,100%{opacity:.12}}
-
-    #v94CursorHint{
-      position:fixed;
-      left:94px;
-      bottom:58px;
-      z-index:76000;
-      display:none;
-      background:rgba(23,59,120,.92);
-      color:#fff;
-      padding:5px 8px;
-      border-radius:7px;
-      font:12px/1.2 Arial,sans-serif;
-      pointer-events:none;
-    }
-    #v94CursorHint.show{display:block}
-
-    /* На робочому полі курсор миші схожий на текстовий */
-    body.v94-insert-ready .upper-canvas,
-    body.v94-insert-ready canvas{
-      cursor:text!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function ensureCaret(){
-  let c=$94("v94InsertCaret");
-  if(!c){
-    c=document.createElement("div");
-    c.id="v94InsertCaret";
-    document.body.appendChild(c);
-  }
-  let h=$94("v94CursorHint");
-  if(!h){
-    h=document.createElement("div");
-    h.id="v94CursorHint";
-    h.textContent="Місце вставки";
-    document.body.appendChild(h);
-  }
-  return c;
-}
-
-function canvasEl(){
-  return document.querySelector(".upper-canvas") ||
-         document.querySelector("canvas.upper-canvas") ||
-         document.querySelector("canvas");
-}
-
-function canvasPointFromEvent(e){
-  const c=canvasEl();
-  if(!c) return null;
-  const r=c.getBoundingClientRect();
-  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return null;
-
-  let x=e.clientX-r.left;
-  let y=e.clientY-r.top;
-
-  // Fabric zoom/viewport aware conversion where available.
-  try{
-    if(typeof fcanvas!=="undefined"){
-      const p=fcanvas.getPointer(e);
-      x=p.x; y=p.y;
-    }
-  }catch(_){}
-
-  return {x,y,screenX:e.clientX,screenY:e.clientY};
-}
-
-function positionCaret(screenX,screenY){
-  const c=ensureCaret();
-  c.style.left=(screenX-1)+"px";
-  c.style.top=(screenY-17)+"px";
-  c.classList.add("show");
-  $94("v94CursorHint")?.classList.add("show");
-  clearTimeout(positionCaret._t);
-  positionCaret._t=setTimeout(()=>$94("v94CursorHint")?.classList.remove("show"),900);
-}
-
-function setInsertPointFromEvent(e){
-  const p=canvasPointFromEvent(e);
-  if(!p) return;
-  insertPoint={x:p.x,y:p.y,active:true};
-  positionCaret(p.screenX,p.screenY);
-  document.body.classList.add("v94-insert-ready");
-  lastCanvasClick=Date.now();
-}
-
-function currentTool(){
-  try{
-    if(typeof activeTool!=="undefined") return activeTool;
-  }catch(_){}
-  const active=document.querySelector(".side-tool.active[data-tool],.side-tool[data-tool].selected");
-  return active?.dataset.tool || "";
-}
-
-function shouldSetCaret(e){
-  if(e.button!==0) return false;
-  const p=canvasPointFromEvent(e);
-  if(!p) return false;
-
-  // Don't steal clicks while actively drawing/erasing/using geometry tools.
-  const t=currentTool();
-  const drawingTools=["pen","marker","eraser","line","curve","polyline","wave","arrow","rectangle","ellipse","triangle"];
-  if(drawingTools.includes(t)) return false;
-
-  // If clicking an existing Fabric object, selection should win.
-  try{
-    if(typeof fcanvas!=="undefined"){
-      const target=fcanvas.findTarget?.(e);
-      if(target) return false;
-    }
-  }catch(_){}
-
-  return true;
-}
-
-function bindCanvasClick(){
-  document.addEventListener("pointerdown",e=>{
-    if(!shouldSetCaret(e)) return;
-    setInsertPointFromEvent(e);
-  },true);
-}
-
-function isDrawablePrimitive(o){
-  if(!o) return true;
-  const t=(o.type||"").toLowerCase();
-
-  // Objects drawn directly with mouse should stay where user drew them.
-  if(["path","line","polyline"].includes(t)) return true;
-
-  // Geometric shapes are only moved when they are inserted by a command,
-  // not when just drawn. We distinguish by time since a canvas click.
-  if(["rect","circle","ellipse","triangle","polygon"].includes(t)){
-    return Date.now()-lastCanvasClick < 700;
-  }
-  return false;
-}
-
-function moveNewObjectToCaret(o){
-  if(!insertPoint.active || suppressMove || !o) return;
-  if(isDrawablePrimitive(o)) return;
-
-  // Don't reposition background/grid/ruler/measurement objects.
-  if(o.isBackground || o.sofiaInstrument || o.isInstrument || o.excludeFromInsertCursor) return;
-
-  suppressMove=true;
-  try{
-    const w=(o.getScaledWidth?.()||o.width||40);
-    const h=(o.getScaledHeight?.()||o.height||30);
-
-    o.set({
-      left:insertPoint.x,
-      top:insertPoint.y
-    });
-    o.setCoords?.();
-
-    // Advance cursor approximately after inserted object, Word-like.
-    insertPoint.x += Math.min(Math.max(w+10,35),220);
-
-    fcanvas?.requestRenderAll?.();
-    try{autoSave()}catch(_){}
-  }finally{
-    setTimeout(()=>{suppressMove=false},0);
-  }
-}
-
-function bindObjectInsert(){
-  if(typeof fcanvas==="undefined" || fcanvas.__v94CursorBound) return;
-  fcanvas.__v94CursorBound=true;
-
-  fcanvas.on("object:added",e=>{
-    const o=e?.target;
-    setTimeout(()=>moveNewObjectToCaret(o),0);
-  });
-
-  fcanvas.on("selection:created",()=>{
-    $94("v94InsertCaret")?.classList.remove("show");
-  });
-  fcanvas.on("selection:updated",()=>{
-    $94("v94InsertCaret")?.classList.remove("show");
-  });
-}
-
-function patchTextTool(){
-  // Existing text tool already creates text at clicked point in later versions.
-  // This patch simply ensures default caret position is used if text is created by a toolbar button.
-  const textButtons=[...document.querySelectorAll("button")].filter(b=>
-    /^Текст$/i.test((b.textContent||"").trim()) || /T Текст/i.test((b.textContent||"").trim())
-  );
-
-  textButtons.forEach(b=>{
-    if(b.__v94Bound) return;
-    b.__v94Bound=true;
-    b.addEventListener("click",()=>{
-      document.body.classList.add("v94-insert-ready");
-      const h=$94("v94CursorHint");
-      if(h){
-        h.textContent="Клацніть на аркуші — текст з’явиться саме там";
-        h.classList.add("show");
-        clearTimeout(patchTextTool._t);
-        patchTextTool._t=setTimeout(()=>h.classList.remove("show"),1800);
-      }
-    },true);
-  });
-}
-
-function updateCaretAfterScroll(){
-  if(!insertPoint.active) return;
-  try{
-    const c=canvasEl();
-    if(!c) return;
-    const r=c.getBoundingClientRect();
-
-    // Convert canvas point back to screen coords.
-    let sx=r.left+insertPoint.x, sy=r.top+insertPoint.y;
-    if(typeof fcanvas!=="undefined"){
-      const v=fcanvas.viewportTransform||[1,0,0,1,0,0];
-      sx=r.left + insertPoint.x*v[0] + v[4];
-      sy=r.top + insertPoint.y*v[3] + v[5];
-    }
-    positionCaret(sx,sy);
-  }catch(_){}
-}
-
-function markVersion(){
-  let b=$94("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  }
-  if(b) b.textContent="v94";
-  document.documentElement.dataset.sofiaVersion="94";
-}
-
-function init(){
-  addCss();
-  ensureCaret();
-  bindCanvasClick();
-  bindObjectInsert();
-  patchTextTool();
-  markVersion();
-
-  window.addEventListener("scroll",updateCaretAfterScroll,true);
-  window.addEventListener("resize",updateCaretAfterScroll);
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v94);
-    mo.__v94=setTimeout(()=>{
-      bindObjectInsert();
-      patchTextTool();
-    },80);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,900,1600].forEach(ms=>setTimeout(()=>{
-    bindObjectInsert();
-    patchTextTool();
-  },ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
-else
-  setTimeout(init,160);
-})();
-
-
 
 /* =========================================================
    V95 — FIX HIERARCHYREQUESTERROR + STABLE PAGE DOCK
@@ -6127,188 +5831,6 @@ else
   setTimeout(init,140);
 })();
 
-
-
-/* =========================================================
-   V97 — УСІ ВСТАВЛЕНІ ОБ'ЄКТИ СТАВЛЯТЬСЯ САМЕ В КУРСОР
-   ========================================================= */
-(function(){
-"use strict";
-const $97=id=>document.getElementById(id);
-
-window.sofiaInsertPoint = window.sofiaInsertPoint || {
-  x:180, y:160, active:false, setAt:0
-};
-
-let ignoreMove=false;
-
-function canvasEl(){
-  return document.querySelector(".upper-canvas") ||
-         document.querySelector("canvas.upper-canvas") ||
-         document.querySelector("canvas");
-}
-
-function currentTool(){
-  const active=document.querySelector(
-    '.side-tool.active[data-tool],.side-tool.selected[data-tool],.side-tool[data-tool].v96-hand-active'
-  );
-  return active?.dataset.tool || "";
-}
-
-function isDrawingTool(){
-  return ["pen","marker","eraser","line","curve","polyline","wave","arrow","rectangle","ellipse","triangle"].includes(currentTool());
-}
-
-function pointerOnCanvas(e){
-  const c=canvasEl();
-  if(!c) return null;
-  const r=c.getBoundingClientRect();
-  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return null;
-
-  try{
-    if(typeof fcanvas!=="undefined"){
-      const p=fcanvas.getPointer(e);
-      return {x:p.x,y:p.y};
-    }
-  }catch(_){}
-
-  return {x:e.clientX-r.left,y:e.clientY-r.top};
-}
-
-function rememberCursor(e){
-  if(isDrawingTool()) return;
-  const p=pointerOnCanvas(e);
-  if(!p) return;
-
-  // If user clicked an existing object, this is selection, not a new insertion point.
-  try{
-    if(typeof fcanvas!=="undefined" && fcanvas.findTarget?.(e)) return;
-  }catch(_){}
-
-  window.sofiaInsertPoint={
-    x:p.x,
-    y:p.y,
-    active:true,
-    setAt:Date.now()
-  };
-}
-
-function bindCursor(){
-  if(document.__v97CursorBound) return;
-  document.__v97CursorBound=true;
-  document.addEventListener("pointerdown",rememberCursor,true);
-}
-
-function shouldMoveNewObject(o){
-  if(!o || !window.sofiaInsertPoint?.active || ignoreMove) return false;
-
-  // Never relocate technical/background objects.
-  if(
-    o.isBackground ||
-    o.backgroundObject ||
-    o.sofiaInstrument ||
-    o.isInstrument ||
-    o.excludeFromInsertCursor
-  ) return false;
-
-  // When drawing with mouse, object geometry must stay where it was drawn.
-  if(isDrawingTool()) return false;
-
-  return true;
-}
-
-function moveExactlyToCursor(o){
-  if(!shouldMoveNewObject(o)) return;
-
-  const pt=window.sofiaInsertPoint;
-  ignoreMove=true;
-  try{
-    o.set({
-      left:pt.x,
-      top:pt.y,
-      originX:"left",
-      originY:"top"
-    });
-    o.setCoords?.();
-
-    if(typeof fcanvas!=="undefined"){
-      fcanvas.setActiveObject?.(o);
-      fcanvas.requestRenderAll?.();
-    }
-
-    try{ autoSave(); }catch(_){}
-  }finally{
-    setTimeout(()=>{ignoreMove=false},0);
-  }
-}
-
-function bindFabric(){
-  if(typeof fcanvas==="undefined" || fcanvas.__v97ExactInsertBound) return;
-  fcanvas.__v97ExactInsertBound=true;
-
-  fcanvas.on("object:added",e=>{
-    const o=e?.target;
-    setTimeout(()=>moveExactlyToCursor(o),0);
-  });
-}
-
-function patchCommonInsertButtons(){
-  const words=[
-    "Нотатка","Зображення","Таблиця","Фігури","Картки",
-    "Тест","Списки","AI","Вставка","Медіа","Фото","Відео"
-  ];
-
-  [...document.querySelectorAll("button")].forEach(b=>{
-    if(b.__v97InsertAware) return;
-    const t=(b.textContent||"").trim();
-    if(!words.some(w=>t.includes(w))) return;
-    b.__v97InsertAware=true;
-
-    b.addEventListener("click",()=>{
-      // Keep current cursor point as insertion anchor.
-      // If user has not placed cursor yet, use a sensible visible default.
-      if(!window.sofiaInsertPoint?.active){
-        window.sofiaInsertPoint={x:180,y:160,active:true,setAt:Date.now()};
-      }
-    },true);
-  });
-}
-
-function markVersion(){
-  let b=$97("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  }
-  if(b) b.textContent="v97";
-  document.documentElement.dataset.sofiaVersion="97";
-}
-
-function init(){
-  bindCursor();
-  bindFabric();
-  patchCommonInsertButtons();
-  markVersion();
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v97);
-    mo.__v97=setTimeout(()=>{
-      bindFabric();
-      patchCommonInsertButtons();
-    },80);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,900,1600].forEach(ms=>setTimeout(()=>{
-    bindFabric();
-    patchCommonInsertButtons();
-  },ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
-else
-  setTimeout(init,150);
-})();
 
 
 
@@ -7183,76 +6705,45 @@ else setTimeout(init,180);
 
 
 /* =========================================================
-   V105 — clean patch from V103
-   1) fixed transparent right dock
-   2) correct page tabs (no injected duplicate labels)
-   3) one Parasochka signature
-   4) explicit Cursor mode + Hand mode visual cursor
+   V113 — STABLE CURSOR + FIXED LEFT PANEL
+   One cursor system only. No animation loop / no MutationObserver storm.
    ========================================================= */
 (function(){
 "use strict";
-const $105=id=>document.getElementById(id);
+const $113=id=>document.getElementById(id);
 
-function css(){
-  if($105("v105Css")) return;
+let cursorMode=true;
+let activeTypingObject=null;
+
+/* ---------- CSS ---------- */
+function addCss(){
+  if($113("v113Css")) return;
   const st=document.createElement("style");
-  st.id="v105Css";
+  st.id="v113Css";
   st.textContent=`
-    /* RIGHT PANEL: always fixed, transparent, never travels with the sheet */
-    #v86Dock{
+    :root{
+      --v113-left-top: 188px;
+      --v113-left-width: 86px;
+    }
+
+    /* left panel is ALWAYS fixed */
+    .side-tools,
+    .left-toolbar,
+    .left-tools,
+    .tool-sidebar{
       position:fixed!important;
-      right:0!important;
-      top:128px!important;
+      left:0!important;
+      top:var(--v113-left-top)!important;
       bottom:0!important;
-      left:auto!important;
-      transform:none;
-      background:transparent!important;
-      border-left:0!important;
-      box-shadow:none!important;
-      backdrop-filter:none!important;
-      z-index:75000!important;
-    }
-    #v86Dock .v86tab,
-    #v86Help{
-      background:transparent!important;
-      box-shadow:none!important;
-    }
-    #v86Dock .v86tab:hover,
-    #v86Help:hover{
-      background:rgba(238,244,251,.92)!important;
-    }
-    #v86Dock .v86tab.active{
-      background:#173b78!important;
-      color:#fff!important;
-    }
-    body.v89-right-collapsed #v86Dock{
-      transform:translateX(100%)!important;
+      width:var(--v113-left-width)!important;
+      z-index:76000!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      background:rgba(255,255,255,.97)!important;
+      box-sizing:border-box!important;
     }
 
-    /* Keep right dock aligned in fullscreen too */
-    :fullscreen #v86Dock,
-    :-webkit-full-screen #v86Dock{
-      position:fixed!important;
-      right:0!important;
-      top:128px!important;
-      bottom:0!important;
-    }
-
-    /* Only ONE author signature: keep original sofiaAuthorSignature */
-    #v102Signature{display:none!important}
-    #sofiaAuthorSignature{
-      display:block!important;
-      position:fixed!important;
-      right:86px!important;
-      bottom:55px!important;
-      z-index:70000!important;
-      pointer-events:none!important;
-      background:transparent!important;
-    }
-    body.v89-right-collapsed #sofiaAuthorSignature{right:12px!important}
-
-    /* Explicit cursor button */
-    #v105CursorBtn{
+    #v113CursorBtn{
       width:100%;
       min-height:47px;
       border:0;
@@ -7268,17 +6759,17 @@ function css(){
       cursor:pointer;
       font:600 9px/1.05 Arial,sans-serif;
     }
-    #v105CursorBtn .ico{font-size:18px;line-height:1}
-    #v105CursorBtn.active{
+    #v113CursorBtn .ico{font-size:18px;line-height:1}
+    #v113CursorBtn.active{
       background:#173b78!important;
       color:#fff!important;
     }
 
-    /* Real mouse pointer appearance for the two modes */
-    body.v105-cursor-mode .upper-canvas,
-    body.v105-cursor-mode canvas{
+    body.v113-cursor-mode .upper-canvas,
+    body.v113-cursor-mode canvas{
       cursor:text!important;
     }
+
     body.v99-hand-mode .upper-canvas,
     body.v99-hand-mode canvas{
       cursor:grab!important;
@@ -7288,499 +6779,415 @@ function css(){
       cursor:grabbing!important;
     }
 
-    /* Bottom page dock: transparent but stable */
-    #v99PageDock{
-      background:transparent!important;
-      border-top:0!important;
-      box-shadow:none!important;
-      backdrop-filter:none!important;
+    /* while actually typing, property panels stay hidden */
+    body.v113-typing #v102ObjectPanel,
+    body.v113-typing #v100ObjectPanel,
+    body.v113-typing #v81ObjectPanel{
+      display:none!important;
     }
   `;
   document.head.appendChild(st);
 }
 
-function leftTools(){
+/* ---------- LEFT PANEL POSITION ---------- */
+function metadataBottom(){
+  let bottom=0;
+  [...document.querySelectorAll("select,input")].forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.top>=0 && r.top<220 && r.bottom>bottom) bottom=r.bottom;
+  });
+  return bottom || 180;
+}
+
+function fixLeftPanel(){
+  const top=Math.round(metadataBottom()+4);
+  document.documentElement.style.setProperty("--v113-left-top",top+"px");
+
+  const left=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+             document.querySelector(".side-tool[data-tool]")?.parentElement;
+  if(left){
+    left.style.setProperty("position","fixed","important");
+    left.style.setProperty("left","0","important");
+    left.style.setProperty("top",top+"px","important");
+    left.style.setProperty("bottom","0","important");
+  }
+}
+
+/* ---------- CURSOR BUTTON ---------- */
+function leftHost(){
   return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
          document.querySelector(".side-tool[data-tool]")?.parentElement;
 }
-function sideButtons(){
-  return [...document.querySelectorAll(".side-tool[data-tool]")];
+
+function removeOldCursorButtons(){
+  const host=leftHost();
+  if(!host) return;
+  [...host.querySelectorAll("button")].forEach(b=>{
+    if(b.id==="v113CursorBtn") return;
+    if((b.textContent||"").trim()==="Курсор") b.remove();
+  });
 }
-function handButton(){
-  return document.querySelector('.side-tool[data-tool="select"],.side-tool[data-tool="hand"],#handBtn');
-}
-function clearSideVisuals(){
-  sideButtons().forEach(b=>{
+
+function clearToolVisuals(){
+  document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
     b.classList.remove("active","selected","v96-hand-active","v99-hand-active");
     b.setAttribute("aria-pressed","false");
   });
 }
 
-function setCursorMode(){
-  document.body.classList.add("v105-cursor-mode","v94-insert-ready","v96-select-mode");
-  document.body.classList.remove("v96-hand-mode","v96-dragging","v99-hand-mode","v99-dragging");
-  clearSideVisuals();
-
-  const cb=$105("v105CursorBtn");
-  cb?.classList.add("active");
-  cb?.setAttribute("aria-pressed","true");
+function activateCursor(){
+  cursorMode=true;
+  document.body.classList.add("v113-cursor-mode");
+  document.body.classList.remove("v99-hand-mode","v99-dragging","v96-hand-mode","v96-dragging");
+  clearToolVisuals();
+  $113("v113CursorBtn")?.classList.add("active");
 
   try{
     if(typeof fcanvas!=="undefined"){
-      fcanvas.selection=true;
       fcanvas.isDrawingMode=false;
+      fcanvas.selection=true;
       fcanvas.defaultCursor="text";
       fcanvas.hoverCursor="text";
-      fcanvas.requestRenderAll();
+      fcanvas.requestRenderAll?.();
     }
   }catch(_){}
+}
 
-  // The blinking insertion caret appears after the user clicks the sheet.
-  $105("v94InsertCaret")?.classList.remove("show");
+function deactivateCursor(){
+  cursorMode=false;
+  document.body.classList.remove("v113-cursor-mode");
+  $113("v113CursorBtn")?.classList.remove("active");
 }
 
 function ensureCursorButton(){
-  const host=leftTools();
+  const host=leftHost();
   if(!host) return;
-  let b=$105("v105CursorBtn");
-  if(b) return;
+  removeOldCursorButtons();
 
-  b=document.createElement("button");
-  b.id="v105CursorBtn";
-  b.type="button";
-  b.title="Курсор — поставити місце вставки";
-  b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
-  b.addEventListener("click",e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    setCursorMode();
-  },true);
-  host.insertBefore(b,host.firstChild);
-}
-
-function bindModeVisuals(){
-  // When any real tool is clicked, Cursor button must turn off.
-  if(document.__v105ModesBound) return;
-  document.__v105ModesBound=true;
-
-  document.addEventListener("click",e=>{
-    const b=e.target.closest?.(".side-tool[data-tool]");
-    if(!b) return;
-
-    $105("v105CursorBtn")?.classList.remove("active");
-    document.body.classList.remove("v105-cursor-mode");
-
-    // Hand/select button gets a hand pointer through the existing V99 hand mode.
-    // Other tools keep their own original behavior.
-  },true);
-}
-
-/* Clicking anywhere on empty paper in Cursor mode must be allowed.
-   V94 already stores the exact Fabric insertion point; this listener only
-   ensures old visual tool states do not block that V94 handler. */
-function bindPaperCursor(){
-  if(document.__v105PaperCursorBound) return;
-  document.__v105PaperCursorBound=true;
-
-  document.addEventListener("pointerdown",e=>{
-    if(!document.body.classList.contains("v105-cursor-mode")) return;
-    const canvas=e.target.closest?.("canvas");
-    if(!canvas) return;
-
-    clearSideVisuals();
-    try{
-      if(typeof fcanvas!=="undefined"){
-        fcanvas.isDrawingMode=false;
-        fcanvas.defaultCursor="text";
-        fcanvas.hoverCursor="text";
-      }
-    }catch(_){}
-  },true);
-}
-
-/* Restore the native page-tab renderer.
-   Do NOT rewrite button text: page titles may legitimately be custom names. */
-function repairPages(){
-  try{
-    if(typeof renderPageTabs==="function") renderPageTabs();
-    if(typeof updatePageIndicator==="function") updatePageIndicator();
-  }catch(_){}
-}
-
-function removeDuplicateSignature(){
-  // V102 added a second signature. Hide/remove that one; keep the original V56 signature.
-  const extra=$105("v102Signature");
-  if(extra) extra.remove();
-
-  const original=$105("sofiaAuthorSignature");
-  if(original) original.textContent="Sofia Notebook © Parasochka";
-}
-
-function mark(){
-  const b=$105("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v105";
-  document.documentElement.dataset.sofiaVersion="105";
-}
-
-function init(){
-  css();
-  removeDuplicateSignature();
-  ensureCursorButton();
-  bindModeVisuals();
-  bindPaperCursor();
-  repairPages();
-  setCursorMode();
-  mark();
-
-  // Only maintain structural elements; no page-label rewriting.
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v105);
-    mo.__v105=setTimeout(()=>{
-      removeDuplicateSignature();
-      ensureCursorButton();
-    },100);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [350,900,1600].forEach(ms=>setTimeout(()=>{
-    removeDuplicateSignature();
-    ensureCursorButton();
-    repairPages();
-  },ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else
-  setTimeout(init,180);
-})();
-
-
-
-/* =========================================================
-   V106 — СТОРІНКИ / ОЧИСТИТИ СТОРІНКУ / КУРСОР БУДЬ-ДЕ
-   ========================================================= */
-(function(){
-"use strict";
-const $106=id=>document.getElementById(id);
-
-/* ---------- CSS ---------- */
-function addCss(){
-  if($106("v106Css")) return;
-  const st=document.createElement("style");
-  st.id="v106Css";
-  st.textContent=`
-    #v99PageDock{
-      background:transparent!important;
-      border-top:0!important;
-      box-shadow:none!important;
-    }
-    #v99PageDock button{
-      opacity:1!important;
-      visibility:visible!important;
-      white-space:nowrap!important;
-    }
-    #v106ClearPageBtn{
-      min-height:34px!important;
-      height:34px!important;
-      padding:3px 10px!important;
-      border:1px solid #f1b7b7!important;
-      border-radius:8px!important;
-      background:rgba(255,255,255,.94)!important;
-      color:#c62828!important;
-      cursor:pointer!important;
-      flex:0 0 auto!important;
-    }
-    body.v105-cursor-mode .upper-canvas,
-    body.v105-cursor-mode canvas{
-      cursor:text!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-/* ---------- PAGE DEFAULT TITLES ---------- */
-function getPagesArray(){
-  try{
-    if(Array.isArray(window.pages)) return window.pages;
-  }catch(_){}
-  try{
-    if(typeof pages!=="undefined" && Array.isArray(pages)) return pages;
-  }catch(_){}
-  return null;
-}
-
-function normalizePageTitles(){
-  const arr=getPagesArray();
-  if(!arr) return;
-
-  arr.forEach((pg,i)=>{
-    const defaultName=`Сторінка ${i+1}`;
-    const title=(pg.pageTitle ?? pg.title ?? "").toString().trim();
-
-    // Only repair empty/obviously broken autogenerated titles.
-    // Custom titles such as "матем" remain untouched.
-    if(!title || /^[\s✎✏×✕✖]+$/.test(title)){
-      if("pageTitle" in pg) pg.pageTitle=defaultName;
-      else if("title" in pg) pg.title=defaultName;
-      else pg.pageTitle=defaultName;
-    }
-  });
-
-  try{ if(typeof renderPageTabs==="function") renderPageTabs(); }catch(_){}
-  try{ if(typeof updatePageIndicator==="function") updatePageIndicator(); }catch(_){}
-}
-
-function patchAddPageDefault(){
-  const btn=$106("addPageBtn");
-  if(!btn || btn.__v106DefaultName) return;
-  btn.__v106DefaultName=true;
-
-  btn.addEventListener("click",()=>{
-    setTimeout(()=>{
-      const arr=getPagesArray();
-      if(arr && arr.length){
-        const pg=arr[arr.length-1];
-        const title=(pg.pageTitle ?? pg.title ?? "").toString().trim();
-        if(!title || /^[\s✎✏×✕✖]+$/.test(title)){
-          const name=`Сторінка ${arr.length}`;
-          if("pageTitle" in pg) pg.pageTitle=name;
-          else if("title" in pg) pg.title=name;
-          else pg.pageTitle=name;
-        }
-      }
-      normalizePageTitles();
-      restorePageControls();
-    },50);
-  },true);
-}
-
-/* ---------- RESTORE PAGE CONTROLS ---------- */
-function restorePageControls(){
-  const dock=$106("v99PageDock");
-  if(!dock) return;
-
-  const prev=$106("prevPageBtn");
-  const indicator=$106("pageIndicator");
-  const next=$106("nextPageBtn");
-  const add=$106("addPageBtn");
-  const tabs=$106("pageTabsWrap");
-  const del=$106("deletePageBtn");
-
-  [prev,indicator,next,add,tabs,del].forEach(el=>{
-    if(el && el.parentElement!==dock) dock.appendChild(el);
-  });
-
-  // Force the add button visible and named.
-  if(add){
-    add.hidden=false;
-    add.style.removeProperty("display");
-    add.style.removeProperty("visibility");
-    if(!/Нова сторінка/i.test((add.textContent||"").trim())){
-      add.textContent="+ Нова сторінка";
-    }
-  }
-
-  // Preserve user page names, but ensure default page tabs are correct.
-  normalizePageTitles();
-
-  // Keep order without insertBefore.
-  [prev,indicator,next,add,$106("pageTabsWrap"),del,$106("v106ClearPageBtn")].forEach(el=>{
-    if(el) dock.appendChild(el);
-  });
-}
-
-/* ---------- CLEAR CURRENT PAGE ---------- */
-function clearCurrentPage(){
-  if(typeof fcanvas==="undefined") return;
-
-  // Keep technical/background objects; remove user content only.
-  const objects=[...fcanvas.getObjects()];
-  const removable=objects.filter(o=>{
-    if(o.isBackground || o.backgroundObject || o.sofiaInstrument || o.isInstrument) return false;
-    if(o.excludeFromClearPage) return false;
-    return true;
-  });
-
-  removable.forEach(o=>fcanvas.remove(o));
-  fcanvas.discardActiveObject?.();
-  fcanvas.requestRenderAll?.();
-
-  try{pushHistory()}catch(_){}
-  try{autoSave()}catch(_){}
-}
-
-function ensureClearButton(){
-  const dock=$106("v99PageDock");
-  if(!dock) return;
-
-  let b=$106("v106ClearPageBtn");
+  let b=$113("v113CursorBtn");
   if(!b){
     b=document.createElement("button");
-    b.id="v106ClearPageBtn";
+    b.id="v113CursorBtn";
     b.type="button";
-    b.textContent="Очистити сторінку";
-    b.title="Очистити все на поточній сторінці";
+    b.title="Курсор — клацніть будь-де на аркуші та друкуйте";
+    b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
     b.onclick=e=>{
       e.preventDefault();
       e.stopPropagation();
-      clearCurrentPage();
+      activateCursor();
     };
+    host.insertBefore(b,host.firstChild);
   }
-  if(b.parentElement!==dock) dock.appendChild(b);
 }
 
-/* ---------- CURSOR ANYWHERE ---------- */
-function activeCanvasEl(){
+/* ---------- TRUE TYPING ANYWHERE ---------- */
+function canvasEl(){
   return document.querySelector(".upper-canvas") ||
          document.querySelector("canvas.upper-canvas") ||
          document.querySelector("canvas");
 }
 
-function setCaretAtScreen(clientX,clientY){
-  const caret=$106("v94InsertCaret");
-  if(!caret) return;
-  caret.style.left=(clientX-1)+"px";
-  caret.style.top=(clientY-17)+"px";
-  caret.classList.add("show");
+function pointerToFabric(e){
+  const c=canvasEl();
+  if(!c) return null;
+  const r=c.getBoundingClientRect();
+
+  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom)
+    return null;
+
+  try{
+    if(typeof fcanvas!=="undefined"){
+      const p=fcanvas.getPointer(e);
+      return {x:p.x,y:p.y};
+    }
+  }catch(_){}
+
+  return {x:e.clientX-r.left,y:e.clientY-r.top};
 }
 
-/* Capture before Fabric so any empty point on the sheet can become an insertion point.
-   Existing objects still select normally because we don't stop propagation. */
-function bindCursorAnywhere(){
-  if(document.__v106CursorAnywhere) return;
-  document.__v106CursorAnywhere=true;
+function closeExistingEmptyCursor(){
+  try{
+    if(activeTypingObject && activeTypingObject.isEditing){
+      activeTypingObject.exitEditing?.();
+    }
+    if(activeTypingObject && !(activeTypingObject.text||"").trim()){
+      fcanvas.remove(activeTypingObject);
+    }
+  }catch(_){}
+  activeTypingObject=null;
+}
 
-  document.addEventListener("pointerdown",e=>{
-    if(!document.body.classList.contains("v105-cursor-mode")) return;
-    if(e.button!==0) return;
+function createTextAt(x,y){
+  if(typeof fcanvas==="undefined" || !window.fabric) return;
 
-    const canvas=activeCanvasEl();
-    if(!canvas) return;
-    const r=canvas.getBoundingClientRect();
+  closeExistingEmptyCursor();
 
-    // Accept every pixel inside the working canvas, including lower areas.
-    if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return;
+  const t=new fabric.IText("",{
+    left:x,
+    top:y,
+    originX:"left",
+    originY:"top",
+    fontFamily:"Segoe Script",
+    fontSize:26,
+    fill:"#4a7fbd",
+    editable:true,
+    selectable:true,
+    evented:true,
+    padding:0
+  });
 
-    let x=e.clientX-r.left;
-    let y=e.clientY-r.top;
+  t.sofiaV113Text=true;
+  activeTypingObject=t;
 
-    try{
-      if(typeof fcanvas!=="undefined"){
-        // Fabric pointer gives true logical canvas coordinates regardless zoom/viewport.
-        const p=fcanvas.getPointer(e);
-        x=p.x; y=p.y;
+  fcanvas.add(t);
+  fcanvas.setActiveObject(t);
+  t.enterEditing();
 
-        fcanvas.isDrawingMode=false;
-        fcanvas.selection=true;
-        fcanvas.defaultCursor="text";
-        fcanvas.hoverCursor="text";
-      }
-    }catch(_){}
+  if("selectionStart" in t){
+    t.selectionStart=0;
+    t.selectionEnd=0;
+  }
 
-    // V97 reads window.sofiaInsertPoint when inserting objects.
-    window.sofiaInsertPoint={
-      x:x,
-      y:y,
-      active:true,
-      setAt:Date.now()
-    };
+  document.body.classList.add("v113-typing");
+  ["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"].forEach(id=>{
+    $113(id)?.classList.remove("show");
+  });
 
-    // V94 used a private insertPoint, so also expose a compatible global marker.
-    window.sofiaLastInsertPoint={x:x,y:y};
+  t.on("editing:exited",()=>{
+    document.body.classList.remove("v113-typing");
+    if(!(t.text||"").trim()){
+      try{fcanvas.remove(t)}catch(_){}
+    }
+    activeTypingObject=null;
+    try{autoSave()}catch(_){}
+    fcanvas.requestRenderAll?.();
+  });
 
-    setCaretAtScreen(e.clientX,e.clientY);
+  fcanvas.requestRenderAll?.();
+}
+
+function bindCanvasTyping(){
+  const c=canvasEl();
+  if(!c || c.__v113Bound) return;
+  c.__v113Bound=true;
+
+  c.addEventListener("pointerdown",e=>{
+    if(!cursorMode || e.button!==0) return;
+
+    const p=pointerToFabric(e);
+    if(!p) return;
+
+    /* Important:
+       do NOT stopImmediatePropagation. That was the source of UI conflicts.
+       We only create one text object and let Fabric keep keyboard focus. */
+    e.preventDefault();
+
+    window.sofiaInsertPoint={x:p.x,y:p.y,active:true,setAt:Date.now()};
+    createTextAt(p.x,p.y);
   },true);
 }
 
-/* Make sure cursor mode remains a true cursor mode after selecting it. */
-function bindCursorButton(){
-  const b=$106("v105CursorBtn");
-  if(!b || b.__v106Bound) return;
-  b.__v106Bound=true;
+/* Other side tools disable cursor mode; Cursor button re-enables it. */
+function bindToolSwitch(){
+  if(document.__v113ToolSwitch) return;
+  document.__v113ToolSwitch=true;
 
-  b.addEventListener("click",()=>{
-    setTimeout(()=>{
-      document.body.classList.add("v105-cursor-mode","v94-insert-ready");
-      document.body.classList.remove("v96-hand-mode","v99-hand-mode","v96-dragging","v99-dragging");
-      try{
-        if(typeof fcanvas!=="undefined"){
-          fcanvas.isDrawingMode=false;
-          fcanvas.selection=true;
-          fcanvas.defaultCursor="text";
-          fcanvas.hoverCursor="text";
-          fcanvas.requestRenderAll();
-        }
-      }catch(_){}
-    },20);
+  document.addEventListener("click",e=>{
+    const tool=e.target.closest?.(".side-tool[data-tool]");
+    if(!tool) return;
+    deactivateCursor();
   },true);
 }
 
+/* ---------- ERROR GUARD ----------
+   Prevent the app's generic startup dialog from opening for harmless cursor UI events.
+   Real errors are still written to console. */
+function installErrorGuard(){
+  if(window.__v113ErrorGuard) return;
+  window.__v113ErrorGuard=true;
+
+  window.addEventListener("error",e=>{
+    const msg=String(e?.message||"");
+    if(/HierarchyRequestError|insertAdjacentElement|insertBefore/i.test(msg)){
+      e.preventDefault();
+      console.warn("V113 suppressed legacy UI error:",msg);
+    }
+  });
+}
+
+/* ---------- VERSION ---------- */
 function mark(){
-  const b=$106("appVersionBadge") ||
+  const b=$113("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v106";
-  document.documentElement.dataset.sofiaVersion="106";
+  if(b)b.textContent="v113";
+  document.documentElement.dataset.sofiaVersion="113";
 }
 
-function repair(){
-  normalizePageTitles();
-  restorePageControls();
-  ensureClearButton();
-  patchAddPageDefault();
-  bindCursorButton();
-}
-
+/* ---------- INIT ----------
+   Intentionally no MutationObserver and no requestAnimationFrame loop:
+   this keeps typing responsive. */
 function init(){
   addCss();
-  repair();
-  bindCursorAnywhere();
+  installErrorGuard();
+  fixLeftPanel();
+  ensureCursorButton();
+  bindCanvasTyping();
+  bindToolSwitch();
+  activateCursor();
   mark();
 
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v106);
-    mo.__v106=setTimeout(repair,100);
+  window.addEventListener("resize",()=>{
+    fixLeftPanel();
+    bindCanvasTyping();
   });
-  mo.observe(document.body,{childList:true,subtree:true});
 
-  [300,800,1500,2400].forEach(ms=>setTimeout(repair,ms));
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(()=>{
+      fixLeftPanel();
+      bindCanvasTyping();
+    },120);
+  });
+
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(()=>{
+      fixLeftPanel();
+      bindCanvasTyping();
+    },120);
+  });
+
+  /* A few one-time retries only, because Fabric canvas can mount slightly later. */
+  [250,700,1400].forEach(ms=>setTimeout(()=>{
+    fixLeftPanel();
+    ensureCursorButton();
+    bindCanvasTyping();
+  },ms));
 }
 
 if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
 else
-  setTimeout(init,180);
+  setTimeout(init,160);
 })();
 
 
 
 /* =========================================================
-   V107 — FULLSCREEN: workspace + both sidebars directly
-   under the Class/Subject metadata row. No large empty gap.
+   V114 — REPAIR BROKEN LAYOUT AFTER V113
+   - contextual tool controls no longer create a giant top gap
+   - left/right rails fixed
+   - only one Parasochka signature
+   - bottom page dock stays fixed
    ========================================================= */
 (function(){
 "use strict";
+const $114=id=>document.getElementById(id);
 
-function addV107Css(){
-  if(document.getElementById("v107Css")) return;
+function css(){
+  if($114("v114Css")) return;
   const st=document.createElement("style");
-  st.id="v107Css";
+  st.id="v114Css";
   st.textContent=`
-    /* Fullscreen only — compact everything below metadata */
-    :fullscreen body,
-    :-webkit-full-screen body{
-      --v107-work-top: 122px;
+    :root{
+      --v114-top: 176px;
+      --v114-left: 88px;
+      --v114-right: 78px;
     }
 
-    :fullscreen #v86Dock,
-    :-webkit-full-screen #v86Dock{
-      top:var(--v107-work-top)!important;
+    /* LEFT rail */
+    .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
+      position:fixed!important;
+      left:0!important;
+      top:var(--v114-top)!important;
       bottom:0!important;
-      height:auto!important;
+      width:var(--v114-left)!important;
+      margin:0!important;
+      z-index:76000!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      background:rgba(255,255,255,.97)!important;
+      box-sizing:border-box!important;
     }
 
+    /* RIGHT rail */
+    #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      top:var(--v114-top)!important;
+      bottom:0!important;
+      left:auto!important;
+      width:var(--v114-right)!important;
+      margin:0!important;
+      z-index:76000!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      background:transparent!important;
+      border-left:0!important;
+      box-shadow:none!important;
+    }
+
+    /* Old contextual tool controls must float, never reserve document height */
+    #v68ToolPanel,
+    #v66TextPanel,
+    .tool-settings-panel,
+    .context-tool-panel,
+    .drawing-settings-panel{
+      position:fixed!important;
+      left:94px!important;
+      top:calc(var(--v114-top) + 6px)!important;
+      z-index:80500!important;
+      width:260px!important;
+      max-height:calc(100vh - var(--v114-top) - 70px)!important;
+      overflow:auto!important;
+      margin:0!important;
+      background:#fff!important;
+      border:1px solid #d7e1ed!important;
+      border-radius:10px!important;
+      box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
+    }
+
+    /* Catch legacy loose controls shown directly below metadata */
+    .v114-floating-tools{
+      position:fixed!important;
+      left:94px!important;
+      top:calc(var(--v114-top) + 6px)!important;
+      z-index:80450!important;
+      width:260px!important;
+      max-height:220px!important;
+      overflow:auto!important;
+      margin:0!important;
+      padding:6px!important;
+      background:#fff!important;
+      border:1px solid #d7e1ed!important;
+      border-radius:10px!important;
+      box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
+      box-sizing:border-box!important;
+    }
+
+    /* Page dock */
+    #v99PageDock{
+      position:fixed!important;
+      left:var(--v114-left)!important;
+      right:var(--v114-right)!important;
+      bottom:0!important;
+      top:auto!important;
+      z-index:79500!important;
+      background:transparent!important;
+      box-shadow:none!important;
+      border:0!important;
+    }
+
+    /* One signature only */
+    #sofiaAuthorSignature{
+      position:fixed!important;
+      right:92px!important;
+      bottom:56px!important;
+      z-index:70000!important;
+      background:transparent!important;
+      pointer-events:none!important;
+    }
+    #v102Signature,#v100Signature,#v109Signature{display:none!important}
+
+    /* fullscreen aligned under metadata */
     :fullscreen .side-tools,
     :fullscreen .left-toolbar,
     :fullscreen .left-tools,
@@ -7788,129 +7195,223 @@ function addV107Css(){
     :-webkit-full-screen .side-tools,
     :-webkit-full-screen .left-toolbar,
     :-webkit-full-screen .left-tools,
-    :-webkit-full-screen .tool-sidebar{
-      top:var(--v107-work-top)!important;
-      bottom:0!important;
-      height:auto!important;
-    }
-
-    /* Remove the fullscreen spacer/gap between metadata and paper */
-    :fullscreen #canvasWrap,
-    :fullscreen .canvas-wrap,
-    :fullscreen .canvas-container-wrap,
-    :fullscreen .workspace,
-    :fullscreen .board-wrap,
-    :fullscreen main,
-    :-webkit-full-screen #canvasWrap,
-    :-webkit-full-screen .canvas-wrap,
-    :-webkit-full-screen .canvas-container-wrap,
-    :-webkit-full-screen .workspace,
-    :-webkit-full-screen .board-wrap,
-    :-webkit-full-screen main{
-      margin-top:0!important;
-      padding-top:0!important;
-    }
-
-    body.v107-fullscreen-compact #v99PageDock{
-      bottom:0!important;
+    :-webkit-full-screen .tool-sidebar,
+    :fullscreen #v86Dock,
+    :-webkit-full-screen #v86Dock{
+      top:var(--v114-top)!important;
     }
   `;
   document.head.appendChild(st);
 }
 
-function visible(el){
-  if(!el) return false;
-  const cs=getComputedStyle(el), r=el.getBoundingClientRect();
-  return cs.display!=="none" && cs.visibility!=="hidden" && r.height>0;
-}
-
-function metadataBottom(){
-  /* Find the row containing Class and Subject. */
-  const candidates=[...document.querySelectorAll("div,section,header")];
-  let best=null;
-  for(const el of candidates){
-    if(!visible(el)) continue;
-    const t=(el.innerText||"").replace(/\s+/g," ");
-    if(!t.includes("Клас") || !t.includes("Предмет")) continue;
+function metaBottom(){
+  let bottom=0;
+  [...document.querySelectorAll("select,input")].forEach(el=>{
     const r=el.getBoundingClientRect();
-    if(r.top<0 || r.top>220 || r.height>100) continue;
-    if(!best || r.height<best.getBoundingClientRect().height) best=el;
-  }
-  if(best) return Math.round(best.getBoundingClientRect().bottom);
-
-  /* fallback: bottom of subject/class controls */
-  const controls=[
-    document.getElementById("classSelect"),
-    document.getElementById("subjectSelect")
-  ].filter(Boolean);
-  if(controls.length)
-    return Math.round(Math.max(...controls.map(x=>x.getBoundingClientRect().bottom)));
-
-  return 122;
+    if(r.top>=0 && r.top<230 && r.bottom>bottom) bottom=r.bottom;
+  });
+  return Math.round((bottom||170)+4);
 }
 
-function findPaperHost(){
-  const canvas=document.querySelector(".upper-canvas") || document.querySelector("canvas");
-  if(!canvas) return null;
-  let el=canvas.parentElement;
-  for(let i=0;i<5 && el;i++,el=el.parentElement){
+function alignRails(){
+  const top=metaBottom();
+  document.documentElement.style.setProperty("--v114-top",top+"px");
+}
+
+function removeDuplicateSignatures(){
+  const text="Sofia Notebook © Parasochka";
+  const matches=[...document.querySelectorAll("body *")].filter(el=>{
+    return (el.textContent||"").trim()===text;
+  });
+
+  let keep=document.getElementById("sofiaAuthorSignature") || matches[0] || null;
+  if(!keep){
+    keep=document.createElement("div");
+    keep.id="sofiaAuthorSignature";
+    keep.textContent=text;
+    document.body.appendChild(keep);
+  }
+  keep.textContent=text;
+
+  matches.forEach(el=>{
+    if(el!==keep) el.remove();
+  });
+}
+
+function detectLooseToolPanel(){
+  /* In the broken screenshot the Color/Thickness/Style controls became
+     a normal-flow block below metadata. Detect that exact kind of block
+     and convert it to a floating panel. */
+  const top=metaBottom();
+
+  [...document.querySelectorAll("div,section")].forEach(el=>{
+    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock")) return;
+    const txt=(el.innerText||"").replace(/\s+/g," ").trim();
+    if(!txt) return;
+
+    const hasToolWords =
+      /Колір/.test(txt) &&
+      (/Товщина/.test(txt) || /Суцільна|Штрихова|Крапкова/.test(txt));
+
+    if(!hasToolWords) return;
+
     const r=el.getBoundingClientRect();
-    if(r.width>600 && r.height>300) return el;
-  }
-  return canvas.parentElement;
+    if(r.top >= top-10 && r.top <= top+220 && r.width<420 && r.height<300){
+      el.classList.add("v114-floating-tools");
+    }
+  });
 }
 
-function applyFullscreenLayout(){
-  const fs=!!(document.fullscreenElement || document.webkitFullscreenElement);
-  document.body.classList.toggle("v107-fullscreen-compact",fs);
-  if(!fs) return;
+function keepWorkspaceCompact(){
+  /* Collapse only empty horizontal spacers right below metadata. */
+  const top=metaBottom();
+  [...document.querySelectorAll("div,section")].forEach(el=>{
+    if(el.closest("#v99PageDock,.side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock")) return;
+    const r=el.getBoundingClientRect();
+    const txt=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
 
-  const top=metadataBottom()+2;
-  document.documentElement.style.setProperty("--v107-work-top",top+"px");
-
-  /* Align left and right toolbars exactly with the top of the work zone. */
-  const right=document.getElementById("v86Dock");
-  if(right){
-    right.style.setProperty("top",top+"px","important");
-    right.style.setProperty("bottom","0","important");
-  }
-
-  const left=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
-             document.querySelector(".side-tool[data-tool]")?.parentElement;
-  if(left){
-    left.style.setProperty("top",top+"px","important");
-    left.style.setProperty("bottom","0","important");
-  }
-
-  /* The actual work wrapper is pulled up to the same line.
-     We do NOT move the canvas itself, avoiding Fabric coordinate errors. */
-  const paper=findPaperHost();
-  if(paper){
-    let host=paper;
-    for(let i=0;i<3 && host.parentElement;i++){
-      const pr=host.parentElement.getBoundingClientRect();
-      if(pr.width>900) host=host.parentElement;
+    if(r.width>innerWidth*.65 &&
+       r.height>=20 && r.height<=260 &&
+       r.top>=top-2 && r.top<=top+300 &&
+       !txt && controls===0){
+      el.style.setProperty("height","0","important");
+      el.style.setProperty("min-height","0","important");
+      el.style.setProperty("margin","0","important");
+      el.style.setProperty("padding","0","important");
+      el.style.setProperty("border","0","important");
+      el.style.setProperty("overflow","hidden","important");
     }
-    const r=host.getBoundingClientRect();
-    if(r.top>top+8){
-      host.style.setProperty("margin-top",(top-r.top)+"px","important");
-    }
-  }
+  });
+}
+
+function mark(){
+  const b=$114("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v114";
+  document.documentElement.dataset.sofiaVersion="114";
+}
+
+function repair(){
+  alignRails();
+  detectLooseToolPanel();
+  keepWorkspaceCompact();
+  removeDuplicateSignatures();
 }
 
 function init(){
-  addV107Css();
-  document.addEventListener("fullscreenchange",()=>setTimeout(applyFullscreenLayout,80));
-  document.addEventListener("webkitfullscreenchange",()=>setTimeout(applyFullscreenLayout,80));
-  window.addEventListener("resize",()=>setTimeout(applyFullscreenLayout,80));
-  [250,700,1400].forEach(ms=>setTimeout(applyFullscreenLayout,ms));
+  css();
+  repair();
+  mark();
 
-  const b=document.getElementById("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v107";
-  document.documentElement.dataset.sofiaVersion="107";
+  window.addEventListener("resize",()=>setTimeout(repair,80));
+  document.addEventListener("fullscreenchange",()=>setTimeout(repair,120));
+  document.addEventListener("webkitfullscreenchange",()=>setTimeout(repair,120));
+
+  [300,800,1500].forEach(ms=>setTimeout(repair,ms));
 }
+
 if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else setTimeout(init,180);
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
+
+/* =========================================================
+   V118 — STABLE WORKSPACE RESET
+   Removes the V115–V117 layout overrides that broke the Fabric canvas.
+   Keeps the working V114 core and applies only safe visual fixes.
+   ========================================================= */
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+function css(){
+  if($("v118Css")) return;
+  const st=document.createElement("style");
+  st.id="v118Css";
+  st.textContent=`
+    /* Keep canvas/Fabric in its native DOM flow — never reparent/fix its host. */
+    .canvas-container{margin-top:0!important}
+
+    /* Fixed side rails, visually light. */
+    .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
+      position:fixed!important;left:0!important;z-index:76000!important;
+      background:rgba(255,255,255,.94)!important;
+    }
+    #v86Dock{
+      position:fixed!important;right:0!important;left:auto!important;z-index:76000!important;
+      background:rgba(255,255,255,.78)!important;box-shadow:none!important;
+    }
+
+    /* Context settings float over the sheet and never create document height. */
+    #v68ToolPanel,#v66TextPanel,.tool-settings-panel,.context-tool-panel,
+    .drawing-settings-panel,.v114-floating-tools{
+      position:fixed!important;left:100px!important;z-index:81000!important;
+      width:310px!important;max-width:calc(100vw - 210px)!important;
+      max-height:260px!important;overflow:auto!important;margin:0!important;
+      background:rgba(255,255,255,.97)!important;border:1px solid #d7e1ed!important;
+      border-radius:10px!important;box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
+    }
+
+    /* Bottom pages bar. */
+    #v99PageDock{
+      position:fixed!important;left:88px!important;right:78px!important;bottom:0!important;
+      top:auto!important;z-index:79500!important;background:rgba(255,255,255,.88)!important;
+      border:0!important;box-shadow:none!important;
+    }
+    #addPageBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;
+      align-items:center!important;justify-content:center!important;min-width:170px!important;
+      white-space:nowrap!important}
+
+    /* One author signature, at footer/help level. */
+    #sofiaAuthorSignature{position:fixed!important;right:92px!important;bottom:7px!important;
+      z-index:79600!important;background:transparent!important;pointer-events:none!important;
+      white-space:nowrap!important;margin:0!important}
+    #v102Signature,#v100Signature,#v109Signature{display:none!important}
+  `;
+  document.head.appendChild(st);
+}
+function topY(){
+  let b=0;
+  document.querySelectorAll('input,select').forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.top>=0&&r.top<220) b=Math.max(b,r.bottom);
+  });
+  return Math.round((b||158)+4);
+}
+function align(){
+  const y=topY();
+  document.querySelectorAll('.side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock').forEach(el=>{
+    el.style.setProperty('top',y+'px','important');
+    el.style.setProperty('bottom','0','important');
+  });
+  document.querySelectorAll('#v68ToolPanel,#v66TextPanel,.tool-settings-panel,.context-tool-panel,.drawing-settings-panel,.v114-floating-tools').forEach(el=>{
+    el.style.setProperty('top',(y+6)+'px','important');
+  });
+}
+function labelNewPage(){
+  const b=$("addPageBtn");
+  if(b){b.textContent='+ Нова сторінка';b.title='Створити нову сторінку';}
+}
+function signature(){
+  const text='Sofia Notebook © Parasochka';
+  const matches=[...document.querySelectorAll('body *')].filter(el=>(el.textContent||'').trim()===text);
+  let keep=$("sofiaAuthorSignature")||matches[0];
+  if(!keep){keep=document.createElement('div');keep.id='sofiaAuthorSignature';document.body.appendChild(keep);}
+  keep.textContent=text;
+  matches.forEach(el=>{if(el!==keep)el.remove();});
+}
+function mark(){
+  const b=$("appVersionBadge")||[...document.querySelectorAll('span,small,b')].find(x=>/^v\d+$/i.test((x.textContent||'').trim()));
+  if(b)b.textContent='v118';
+  document.documentElement.dataset.sofiaVersion='118';
+}
+function repair(){align();labelNewPage();signature();}
+function init(){css();repair();mark();
+  window.addEventListener('resize',()=>setTimeout(repair,80));
+  document.addEventListener('fullscreenchange',()=>setTimeout(repair,100));
+  [250,700,1400].forEach(ms=>setTimeout(repair,ms));
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,120),{once:true});
+else setTimeout(init,120);
 })();
