@@ -8851,3 +8851,383 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V125 — ONE REAL TEXT CARET + RESTORE OBJECT CONTEXT PANEL
+   ========================================================= */
+(function(){
+"use strict";
+const PANEL_IDS=["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"];
+
+function fc(){
+  try{return typeof fcanvas!=="undefined" ? fcanvas : null}catch(_){return null}
+}
+function panels(){
+  return PANEL_IDS.map(id=>document.getElementById(id)).filter(Boolean);
+}
+function hidePanels(){
+  panels().forEach(p=>p.classList.remove("show"));
+}
+function activeObject(){
+  return fc()?.getActiveObject?.() || null;
+}
+function isTextEditing(o){
+  return !!(o && ["i-text","textbox","text"].includes((o.type||"").toLowerCase()) && o.isEditing);
+}
+
+/* ---------- 1. REMOVE THE SECOND/FAKE CARET ---------- */
+function removeFakeCaret(){
+  const fake=document.getElementById("v121Caret");
+  if(fake) fake.remove();
+
+  /* Prevent legacy code from visually recreating it if element appears later. */
+  if(!document.getElementById("v125CaretCss")){
+    const st=document.createElement("style");
+    st.id="v125CaretCss";
+    st.textContent=`
+      #v121Caret{display:none!important}
+    `;
+    document.head.appendChild(st);
+  }
+}
+
+/* ---------- 2. CONTEXT PANEL ONLY FOR REAL SELECTED OBJECT ---------- */
+function refreshExistingPanel(o){
+  if(!o || isTextEditing(o)){
+    hidePanels();
+    return;
+  }
+
+  /* Use whichever existing properties refresh function is available. */
+  try{
+    if(typeof refreshObjectPanel==="function"){
+      refreshObjectPanel(o);
+    }
+  }catch(_){}
+
+  /* Make the existing panel visible after refresh. */
+  panels().forEach(p=>p.classList.add("show"));
+}
+
+function bindSelection(){
+  const c=fc();
+  if(!c || c.__v125ContextBound) return;
+  c.__v125ContextBound=true;
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    setTimeout(()=>refreshExistingPanel(o),0);
+  });
+
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0] || c.getActiveObject?.();
+    setTimeout(()=>refreshExistingPanel(o),0);
+  });
+
+  c.on("selection:cleared",()=>{
+    hidePanels();
+  });
+
+  c.on("text:editing:entered",()=>{
+    /* While typing, no properties popup. */
+    hidePanels();
+  });
+
+  c.on("text:editing:exited",()=>{
+    /* Do not auto-open after typing. User must click/select the object. */
+    hidePanels();
+  });
+}
+
+/* ---------- 3. DIRECT CLICK ON AN EXISTING OBJECT SHOWS PROPERTIES ---------- */
+function bindObjectClickIntent(){
+  if(document.__v125ObjectClick) return;
+  document.__v125ObjectClick=true;
+
+  document.addEventListener("pointerdown",e=>{
+    const canvas=document.querySelector(".upper-canvas") ||
+                 document.querySelector("canvas.upper-canvas") ||
+                 document.querySelector("canvas");
+    if(!canvas) return;
+
+    const r=canvas.getBoundingClientRect();
+    if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return;
+
+    let target=null;
+    try{
+      target=fc()?.findTarget?.(e) || null;
+    }catch(_){}
+
+    if(!target){
+      hidePanels();
+      return;
+    }
+
+    /* A text currently being edited keeps the panel hidden. */
+    if(isTextEditing(target)){
+      hidePanels();
+      return;
+    }
+
+    setTimeout(()=>refreshExistingPanel(target),30);
+  },true);
+}
+
+/* ---------- 4. × MUST REALLY CLOSE PROPERTIES ---------- */
+function bindCloseButtons(){
+  ["v102ObjClose","v100ObjClose","v81ObjClose"].forEach(id=>{
+    const b=document.getElementById(id);
+    if(!b || b.__v125Close) return;
+    b.__v125Close=true;
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      hidePanels();
+    },true);
+  });
+}
+
+/* ---------- 5. UI COMMANDS NEVER OPEN PROPERTIES ---------- */
+function bindUiHide(){
+  if(document.__v125UiHide) return;
+  document.__v125UiHide=true;
+
+  document.addEventListener("pointerdown",e=>{
+    const t=e.target;
+    if(!(t instanceof Element)) return;
+
+    if(t.closest(`
+      button,input,select,textarea,label,a,[role="button"],
+      #v86Dock,.ribbon,.toolbar,.panel,.modal,.dialog,
+      .floating-panel,.context-panel,.tool-panel,.teacher-tools,
+      #v99PageDock,.page-tabs,.pages-bar,.page-bar
+    `)){
+      /* If user is interacting WITH the properties panel itself, keep it open. */
+      if(t.closest("#v102ObjectPanel,#v100ObjectPanel,#v81ObjectPanel")) return;
+      hidePanels();
+    }
+  },true);
+}
+
+/* ---------- 6. CLEAN CURSOR BEHAVIOUR ----------
+   v121 creates a real Fabric IText and that already has a native blinking caret.
+   We therefore rely only on that native caret. */
+function cleanupCursorMode(){
+  removeFakeCaret();
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v125";
+  document.documentElement.dataset.sofiaVersion="125";
+}
+
+function repair(){
+  cleanupCursorMode();
+  bindSelection();
+  bindCloseButtons();
+}
+
+function init(){
+  cleanupCursorMode();
+  bindSelection();
+  bindObjectClickIntent();
+  bindCloseButtons();
+  bindUiHide();
+  mark();
+
+  [400,1000,1800].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V126 — ТЕКСТ ЯК У ЗОШИТІ + БЕЗ РОЗТЯГУВАННЯ
+   ========================================================= */
+(function(){
+"use strict";
+
+function fc(){
+  try{return typeof fcanvas!=="undefined" ? fcanvas : null}catch(_){return null}
+}
+function paperStep(){
+  const el=document.getElementById("paperSize");
+  const n=Number(el?.value);
+  return Number.isFinite(n) && n>8 ? n : 32;
+}
+function paperType(){
+  return String(document.getElementById("paperType")?.value || "grid").toLowerCase();
+}
+function notebookFontSize(){
+  const step=paperStep();
+  /* Літера займає приблизно 70% висоти рядка/клітинки. */
+  return Math.max(14,Math.min(44,Math.round(step*0.70)));
+}
+function snapNotebookPoint(x,y,fontSize){
+  const step=paperStep();
+  const type=paperType();
+
+  /* Вертикально текст завжди стає в один "рядок зошита". */
+  const row=Math.max(0,Math.floor(y/step));
+  const approxHeight=fontSize*1.16;
+  let sy=row*step + Math.max(1,(step-approxHeight)/2);
+
+  /* У клітинці початок фіксуємо біля лівої межі клітинки.
+     На лінійці/косій лінії X залишається в точці кліку. */
+  let sx=x;
+  if(type==="grid" || type==="millimeter" || type==="coordinate"){
+    sx=Math.floor(x/step)*step + Math.max(2,Math.round(step*0.10));
+  }
+
+  return {x:sx,y:sy};
+}
+function isText(o){
+  return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase());
+}
+function isImage(o){
+  return !!o && String(o.type||"").toLowerCase()==="image";
+}
+
+/* Забороняємо "розтягувати" текст/зображення окремо по ширині або висоті:
+   залишаємо лише кутові маркери масштабування. */
+function lockProportions(o){
+  if(!o || (!isText(o) && !isImage(o))) return;
+  try{
+    o.setControlsVisibility?.({
+      ml:false,mr:false,mt:false,mb:false,
+      mtr:true,tl:true,tr:true,bl:true,br:true
+    });
+    o.lockScalingFlip=true;
+  }catch(_){}
+}
+
+/* Якщо об'єкт уже випадково розтягнули, повертаємо однаковий масштаб X/Y. */
+function normalizeScale(o){
+  if(!o || (!isText(o) && !isImage(o))) return;
+  const sx=Math.abs(Number(o.scaleX)||1);
+  const sy=Math.abs(Number(o.scaleY)||1);
+  if(Math.abs(sx-sy)<0.025) return;
+
+  const uniform=Math.sqrt(sx*sy);
+  o.set({
+    scaleX:uniform,
+    scaleY:uniform
+  });
+  o.setCoords?.();
+}
+
+/* Новий текст, створений курсором V121, одразу підлаштовуємо під папір. */
+function formatCursorText(o){
+  if(!o || !isText(o) || !o.sofiaCursorText) return;
+
+  const fs=notebookFontSize();
+  const pt=snapNotebookPoint(Number(o.left)||0,Number(o.top)||0,fs);
+
+  o.set({
+    left:pt.x,
+    top:pt.y,
+    fontSize:fs,
+    lineHeight:1,
+    scaleX:1,
+    scaleY:1
+  });
+  o.sofiaNotebookAutoText=true;
+  lockProportions(o);
+  o.setCoords?.();
+
+  /* Саме ця точка використовується і для наступної вставки об'єктів. */
+  window.sofiaInsertPoint={
+    x:pt.x,
+    y:pt.y,
+    active:true,
+    setAt:Date.now()
+  };
+
+  fc()?.requestRenderAll?.();
+}
+
+function bindFabric(){
+  const c=fc();
+  if(!c || c.__v126Bound) return;
+  c.__v126Bound=true;
+
+  /* Fabric: масштабування кутом — пропорційне. */
+  try{ c.uniformScaling=true; }catch(_){}
+
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(!o) return;
+    lockProportions(o);
+    if(o.sofiaCursorText){
+      setTimeout(()=>formatCursorText(o),0);
+    }
+  });
+
+  c.on("object:modified",e=>{
+    const o=e?.target;
+    if(!o) return;
+    normalizeScale(o);
+    lockProportions(o);
+    c.requestRenderAll?.();
+    try{autoSave?.()}catch(_){}
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0] || e?.target;
+    lockProportions(o);
+  });
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0] || e?.target;
+    lockProportions(o);
+  });
+
+  /* Уже наявні текст/зображення теж отримують пропорційні маркери. */
+  c.getObjects?.().forEach(lockProportions);
+}
+
+/* Якщо користувач змінює розмір клітинки/ліній —
+   наступний текст автоматично матиме відповідний розмір. */
+function bindPaperControls(){
+  ["paperSize","paperType"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el || el.__v126Bound) return;
+    el.__v126Bound=true;
+    el.addEventListener("input",()=>{
+      const o=fc()?.getActiveObject?.();
+      if(o?.sofiaCursorText && o.isEditing && !(o.text||"")){
+        formatCursorText(o);
+      }
+    });
+  });
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v126";
+  document.documentElement.dataset.sofiaVersion="126";
+}
+
+function init(){
+  bindFabric();
+  bindPaperControls();
+  mark();
+  [400,1000,1800].forEach(ms=>setTimeout(()=>{
+    bindFabric();
+    bindPaperControls();
+  },ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
