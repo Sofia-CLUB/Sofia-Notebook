@@ -5756,37 +5756,37 @@ else
 
 
 /* =========================================================
-   V90 — УСЯ НАВІГАЦІЯ СТОРІНОК ЛИШЕ ЗНИЗУ
+   V91 — FIX ПОМИЛКИ СТОРІНОК + FULLSCREEN МАКСИМУМ ПОЛЯ
    ========================================================= */
 (function(){
 "use strict";
-const $90=id=>document.getElementById(id);
+const $91=id=>document.getElementById(id);
 
 function findPageBar(){
-  return $90("sofiaPageTabs") ||
+  return $91("sofiaPageTabs") ||
          document.querySelector(".sofia-page-tabs,.page-tabs") ||
          [...document.querySelectorAll("div")].find(el=>{
            const t=(el.textContent||"").replace(/\s+/g," ");
-           return t.includes("Нова сторінка") && t.includes("Видалити сторінку");
+           return t.includes("Сторінка 1") && (t.includes("Нова сторінка") || t.includes("Видалити сторінку"));
          });
 }
 
 function findNewBtn(){
-  return $90("addPageBtn") ||
-         [...document.querySelectorAll("button")].find(b=>/Нова сторінка/i.test(b.textContent||""));
+  return $91("addPageBtn") ||
+    [...document.querySelectorAll("button")].find(b=>/Нова сторінка/i.test((b.textContent||"").trim()));
 }
 function findDeleteBtn(){
-  return $90("deletePageBtn") ||
-         [...document.querySelectorAll("button")].find(b=>/Видалити сторінку/i.test(b.textContent||""));
+  return $91("deletePageBtn") ||
+    [...document.querySelectorAll("button")].find(b=>/Видалити сторінку/i.test((b.textContent||"").trim()));
 }
 
 function addCss(){
-  if($90("v90Css")) return;
+  if($91("v91Css")) return;
   const st=document.createElement("style");
-  st.id="v90Css";
+  st.id="v91Css";
   st.textContent=`
-    /* ЄДИНА панель сторінок — внизу */
-    .v90-pagebar-bottom{
+    /* Єдина нижня панель сторінок */
+    .v91-pagebar{
       position:fixed!important;
       left:86px!important;
       right:78px!important;
@@ -5810,8 +5810,7 @@ function addCss(){
       overflow-y:hidden!important;
       white-space:nowrap!important;
     }
-
-    .v90-pagebar-bottom button{
+    .v91-pagebar button{
       min-height:34px!important;
       height:34px!important;
       margin:0!important;
@@ -5819,9 +5818,8 @@ function addCss(){
       flex:0 0 auto!important;
     }
 
-    /* Забороняємо старій копії/обгортці зверху займати місце */
-    .v90-hide-top-pagebar{
-      display:none!important;
+    /* Прибираємо старі верхні обгортки, які лишилися порожніми */
+    .v91-top-empty{
       height:0!important;
       min-height:0!important;
       max-height:0!important;
@@ -5831,116 +5829,174 @@ function addCss(){
       overflow:hidden!important;
     }
 
-    /* робоча область не перекривається нижньою панеллю */
-    body{
-      padding-bottom:50px!important;
+    body{padding-bottom:50px!important}
+
+    /* Fullscreen: робоче поле одразу під рядком Клас/Предмет/... */
+    :fullscreen .v91-fs-gap,
+    :-webkit-full-screen .v91-fs-gap{
+      height:0!important;
+      min-height:0!important;
+      max-height:0!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      overflow:hidden!important;
     }
 
-    :fullscreen .v90-pagebar-bottom,
-    :-webkit-full-screen .v90-pagebar-bottom{
+    :fullscreen .v91-pagebar,
+    :-webkit-full-screen .v91-pagebar{
       left:78px!important;
       right:70px!important;
       bottom:0!important;
     }
 
-    body.v89-right-collapsed .v90-pagebar-bottom{
-      right:4px!important;
-    }
+    body.v89-right-collapsed .v91-pagebar{right:4px!important}
 
     @media(max-width:900px){
-      .v90-pagebar-bottom{
-        left:68px!important;
-        right:68px!important;
-      }
+      .v91-pagebar{left:68px!important;right:68px!important}
     }
   `;
   document.head.appendChild(st);
 }
 
-function moveAllPageControlsToBottom(){
+/* Safe DOM moving: no insertBefore, therefore no NotFoundError */
+function arrangeBottomBar(){
   const bar=findPageBar();
   if(!bar) return;
 
-  // Це єдина панель сторінок.
   bar.classList.remove("v88-page-bottom");
-  bar.classList.add("v90-pagebar-bottom");
+  bar.classList.add("v91-pagebar");
 
   const newBtn=findNewBtn();
   const delBtn=findDeleteBtn();
 
-  // Якщо кнопки опинились поза панеллю — переносимо їх у неї.
-  if(newBtn && newBtn.parentElement!==bar){
-    bar.appendChild(newBtn);
-  }
-  if(delBtn && delBtn.parentElement!==bar){
-    bar.appendChild(delBtn);
-  }
+  if(newBtn && newBtn.parentElement!==bar) bar.appendChild(newBtn);
+  if(delBtn && delBtn.parentElement!==bar) bar.appendChild(delBtn);
 
-  // Порядок: навігація/лічильник -> Нова сторінка -> вкладки сторінок -> Видалити сторінку.
-  const pageTabButtons=[...bar.querySelectorAll("button")].filter(b=>{
+  /* We reorder by appending existing children safely.
+     Native page nav buttons stay first; then New page; then page tabs; then Delete. */
+  const buttons=[...bar.querySelectorAll(":scope > button")];
+  const pageTabs=buttons.filter(b=>/^Сторінка\s+\d+/i.test((b.textContent||"").trim()));
+  const nav=buttons.filter(b=>{
     const t=(b.textContent||"").trim();
-    return /^Сторінка\s+\d+/i.test(t);
+    return !/^Сторінка\s+\d+/i.test(t) &&
+           !/Нова сторінка/i.test(t) &&
+           !/Видалити сторінку/i.test(t);
   });
 
-  // Ставимо "Нова сторінка" перед першою вкладкою сторінки.
-  if(newBtn){
-    if(pageTabButtons[0]) bar.insertBefore(newBtn,pageTabButtons[0]);
-  }
+  nav.forEach(b=>bar.appendChild(b));
+  if(newBtn) bar.appendChild(newBtn);
+  pageTabs.forEach(b=>bar.appendChild(b));
+  if(delBtn) bar.appendChild(delBtn);
 
-  // "Видалити сторінку" завжди остання.
-  if(delBtn){
-    bar.appendChild(delBtn);
-  }
+  bar.style.removeProperty("top");
+  bar.style.removeProperty("margin-top");
+  bar.style.removeProperty("margin-bottom");
+}
 
-  // Прибираємо inline top/margins, які могли лишитись від старих версій.
-  ["top","marginTop","marginBottom","position"].forEach(k=>{
-    bar.style[k]="";
+function removeTopGhosts(){
+  const bar=findPageBar();
+  if(!bar) return;
+
+  /* Only collapse empty blocks in the former top page-nav zone. */
+  const br=bar.getBoundingClientRect();
+  document.querySelectorAll("div,section").forEach(el=>{
+    if(el===bar || el.contains(bar) || bar.contains(el)) return;
+    const r=el.getBoundingClientRect();
+    const txt=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+    if(r.width>innerWidth*.65 && r.height>=8 && r.height<=90 &&
+       r.top>130 && r.top<420 && !txt && controls===0){
+      el.classList.add("v91-top-empty");
+    }
   });
 }
 
-function hideAnyDuplicateTopBars(){
-  const main=findPageBar();
-  if(!main) return;
+function findMetaBottom(){
+  /* Find the row containing class/subject/date/background controls. */
+  const candidates=[...document.querySelectorAll("div,section")].filter(el=>{
+    const t=(el.textContent||"").replace(/\s+/g," ");
+    return t.includes("Клас") && t.includes("Предмет") &&
+           (t.includes("Класна робота") || t.includes("Навчальна")) &&
+           (t.includes("Лінійка") || t.includes("Розмір"));
+  });
 
-  document.querySelectorAll("div,section").forEach(el=>{
-    if(el===main || el.contains(main) || main.contains(el)) return;
+  let bottom=0;
+  candidates.forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.width>innerWidth*.7 && r.top<180 && r.bottom>bottom) bottom=r.bottom;
+  });
 
-    const t=(el.textContent||"").replace(/\s+/g," ").trim();
-    if(!t) return;
-
-    const hasNew=/Нова сторінка/i.test(t);
-    const hasDel=/Видалити сторінку/i.test(t);
-    const hasPages=/Сторінка\s+\d+/i.test(t);
-
-    // Ховаємо лише дубль навігації, який знаходиться у верхній частині.
-    if((hasNew||hasDel) && hasPages){
+  if(!bottom){
+    /* fallback by controls */
+    [...document.querySelectorAll("select,input")].forEach(el=>{
       const r=el.getBoundingClientRect();
-      if(r.top < window.innerHeight*0.55){
-        el.classList.add("v90-hide-top-pagebar");
-      }
+      if(r.top<170 && r.bottom>bottom) bottom=r.bottom;
+    });
+  }
+  return bottom || 120;
+}
+
+function fullscreenCompact(){
+  const fs=document.fullscreenElement||document.webkitFullscreenElement;
+  if(!fs) return;
+
+  const metaBottom=findMetaBottom();
+
+  /* Collapse large empty horizontal bands between meta row and actual notebook area. */
+  document.querySelectorAll("div,section,main").forEach(el=>{
+    if(["v86Dock","v86Commands","v86Store","v87Help","v86HelpBox"].includes(el.id)) return;
+    const r=el.getBoundingClientRect();
+    const txt=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+    if(r.width>innerWidth*.68 &&
+       r.height>=18 && r.height<=320 &&
+       r.top>=metaBottom-4 && r.top<=metaBottom+330 &&
+       !txt && controls===0){
+      el.classList.add("v91-fs-gap");
     }
   });
 
-  // Якщо "Нова сторінка" / "Видалити сторінку" лишилися окремими зверху,
-  // переносимо їх у нижню панель.
-  const newBtn=findNewBtn();
-  const delBtn=findDeleteBtn();
-  if(newBtn && newBtn.parentElement!==main) main.appendChild(newBtn);
-  if(delBtn && delBtn.parentElement!==main) main.appendChild(delBtn);
+  /* Pull the notebook/page wrapper itself up to just under the meta row.
+     We avoid the fixed bottom page bar. */
+  const pageCanvas =
+    document.querySelector(".canvas-wrap,.canvas-container-wrapper,.notebook-stage,.page-stage,.workspace") ||
+    document.querySelector("canvas")?.parentElement?.parentElement;
+
+  if(pageCanvas){
+    const r=pageCanvas.getBoundingClientRect();
+    const desired=metaBottom+4;
+    const gap=r.top-desired;
+    if(gap>20){
+      pageCanvas.style.setProperty("margin-top",(-Math.min(gap,320))+"px","important");
+    }
+  }
+}
+
+function resetFullscreen(){
+  if(document.fullscreenElement||document.webkitFullscreenElement) return;
+  document.querySelectorAll(".v91-fs-gap").forEach(el=>el.classList.remove("v91-fs-gap"));
+
+  const pageCanvas =
+    document.querySelector(".canvas-wrap,.canvas-container-wrapper,.notebook-stage,.page-stage,.workspace") ||
+    document.querySelector("canvas")?.parentElement?.parentElement;
+  if(pageCanvas) pageCanvas.style.removeProperty("margin-top");
 }
 
 function repair(){
-  moveAllPageControlsToBottom();
-  hideAnyDuplicateTopBars();
+  arrangeBottomBar();
+  removeTopGhosts();
 }
 
 function markVersion(){
-  let b=$90("appVersionBadge");
+  let b=$91("appVersionBadge");
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v90";
-  document.documentElement.dataset.sofiaVersion="90";
+  if(b) b.textContent="v91";
+  document.documentElement.dataset.sofiaVersion="91";
 }
 
 function init(){
@@ -5948,18 +6004,27 @@ function init(){
   repair();
   markVersion();
 
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v90);
-    mo.__v90=setTimeout(repair,70);
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(()=>{resetFullscreen();repair();fullscreenCompact()},80);
+    setTimeout(fullscreenCompact,350);
+    setTimeout(fullscreenCompact,900);
   });
-  mo.observe(document.body,{
-    childList:true,
-    subtree:true,
-    attributes:true,
-    attributeFilter:["class","style"]
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(()=>{resetFullscreen();repair();fullscreenCompact()},80);
+    setTimeout(fullscreenCompact,350);
+    setTimeout(fullscreenCompact,900);
   });
 
-  [250,700,1400,2200].forEach(ms=>setTimeout(repair,ms));
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v91);
+    mo.__v91=setTimeout(()=>{
+      repair();
+      if(document.fullscreenElement||document.webkitFullscreenElement) fullscreenCompact();
+    },90);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,900,1600].forEach(ms=>setTimeout(()=>{repair();fullscreenCompact()},ms));
 }
 
 if(document.readyState==="loading")
