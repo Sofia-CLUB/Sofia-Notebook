@@ -59,11 +59,11 @@ function makeHeadingText(text,role,top,fontSize=24,fontWeight="normal"){
     left:fcanvas.getWidth()/2,
     top,
     originX:"center",
-    fontFamily:"Times New Roman",
-    fontStyle:"italic",
+    fontFamily:"Segoe Script",
+    fontStyle:"normal",
     fontSize,
     fontWeight,
-    fill:"#17315f",
+    fill:"#4a7fbd",
     textAlign:"center",
     editable:true,
     selectable:true,
@@ -86,8 +86,8 @@ function ensureHeadingObjects(){
     return;
   }
 
-  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,22,"normal");
-  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",56,24,"normal");
+  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,48,"normal");
+  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",78,50,"normal");
 
   // При зміні селектора оновлюємо лише сам текст, але об'єкт лишається редагованим
   dateObj.set({text:headingDate()});
@@ -1188,7 +1188,7 @@ const CSS_PX_PER_CM=96/2.54;
 function insertTextIntoBoard(text){
   let obj=fcanvas.getActiveObject();
   if(!(obj&&["i-text","textbox"].includes(obj.type))){
-    obj=new fabric.IText("",{left:280,top:180,fontSize:27,fill:$("colorPicker").value});fcanvas.add(obj);fcanvas.setActiveObject(obj);obj.enterEditing();
+    obj=new fabric.IText("",{left:110,top:190,fontSize:38,fontFamily:"Segoe Script",fontStyle:"normal",fill:"#4a7fbd",erasable:false});fcanvas.add(obj);fcanvas.setActiveObject(obj);obj.enterEditing();
   }
   if(obj.enterEditing&&!obj.isEditing)obj.enterEditing();
   obj.insertChars(text,null,obj.selectionStart,obj.selectionEnd);obj.setCoords();fcanvas.requestRenderAll();pushHistory();autoSave();syncTextFormatBar();
@@ -1200,27 +1200,127 @@ $("voiceBtn").onclick=()=>{
   $("voiceBtn").textContent="🎙 Слухаю…";r.onresult=e=>insertTextIntoBoard(e.results[0][0].transcript+" ");r.onend=()=>$("voiceBtn").textContent="🎙 Голос";r.start();
 };
 
-/* ---------- Екранна клавіатура ---------- */
-const keysUA=["1","2","3","4","5","6","7","8","9","0","-","=","й","ц","у","к","е","н","г","ш","щ","з","х","ї","ф","і","в","а","п","р","о","л","д","ж","є","я","ч","с","м","и","т","ь","б","ю",",",".","?"];
-const keysEN=["1","2","3","4","5","6","7","8","9","0","-","=","q","w","e","r","t","y","u","i","o","p","[","]","a","s","d","f","g","h","j","k","l",";","'","z","x","c","v","b","n","m",",",".","?"];
+/* ---------- Екранна клавіатура V62: стандартна UA / EN ---------- */
+const keyboardLayouts={
+  UA:{
+    name:"UA",
+    rows:[
+      ["`","1","2","3","4","5","6","7","8","9","0","-","=","BACK"],
+      ["TAB","й","ц","у","к","е","н","г","ш","щ","з","х","ї","\\"],
+      ["CAPS","ф","і","в","а","п","р","о","л","д","ж","є","ENTER"],
+      ["SHIFT","я","ч","с","м","и","т","ь","б","ю",",",".","/","SHIFT"],
+      ["CTRL","ALT","LANG","SPACE","ALT","←","↓","↑","→"]
+    ]
+  },
+  EN:{
+    name:"EN",
+    rows:[
+      ["`","1","2","3","4","5","6","7","8","9","0","-","=","BACK"],
+      ["TAB","q","w","e","r","t","y","u","i","o","p","[","]","\\"],
+      ["CAPS","a","s","d","f","g","h","j","k","l",";","'","ENTER"],
+      ["SHIFT","z","x","c","v","b","n","m",",",".","/","SHIFT"],
+      ["CTRL","ALT","LANG","SPACE","ALT","←","↓","↑","→"]
+    ]
+  }
+};
+let keyboardShift=false,keyboardCaps=false;
+
+function keyboardBackspace(){
+  const o=fcanvas.getActiveObject();
+  if(o&&["i-text","textbox"].includes(o.type)){
+    const p=o.selectionStart||0;
+    if(p>0){
+      o.removeChars(p-1,p);
+      o.selectionStart=o.selectionEnd=Math.max(0,p-1);
+      fcanvas.requestRenderAll();autoSave();
+    }
+  }
+}
+function keyboardMoveCursor(delta){
+  const o=fcanvas.getActiveObject();
+  if(!o||!["i-text","textbox"].includes(o.type))return;
+  const p=Math.max(0,Math.min((o.text||"").length,(o.selectionStart||0)+delta));
+  o.selectionStart=o.selectionEnd=p;
+  fcanvas.requestRenderAll();
+}
+function keyboardKeyLabel(k){
+  const labels={
+    BACK:"⌫",TAB:"Tab",CAPS:"Caps",ENTER:"Enter",SHIFT:"Shift",
+    CTRL:"Ctrl",ALT:"Alt",LANG:keyboardLang,SPACE:"Пробіл"
+  };
+  return labels[k]||k;
+}
+function keyboardPress(k){
+  if(k==="BACK"){keyboardBackspace();return}
+  if(k==="TAB"){insertTextIntoBoard("    ");return}
+  if(k==="ENTER"){insertTextIntoBoard("\n");return}
+  if(k==="SPACE"){insertTextIntoBoard(" ");return}
+  if(k==="LANG"){
+    keyboardLang=keyboardLang==="UA"?"EN":"UA";
+    renderKeyboard();return;
+  }
+  if(k==="CAPS"){keyboardCaps=!keyboardCaps;renderKeyboard();return}
+  if(k==="SHIFT"){keyboardShift=!keyboardShift;renderKeyboard();return}
+  if(k==="CTRL"||k==="ALT")return;
+  if(k==="←"){keyboardMoveCursor(-1);return}
+  if(k==="→"){keyboardMoveCursor(1);return}
+  if(k==="↑"||k==="↓")return;
+
+  let out=k;
+  if(/^[a-zа-яіїєґ]$/i.test(out)){
+    const upper=keyboardCaps!==keyboardShift;
+    out=upper?out.toUpperCase():out.toLowerCase();
+  }else if(keyboardShift){
+    const shifted={
+      "1":"!","2":"@","3":"#","4":"$","5":"%","6":"^","7":"&","8":"*","9":"(","0":")",
+      "-":"_","=":"+","`":"~",",":"<",".":">","/":"?","[":"{","]":"}","\\":"|",";":":","'":'"'
+    };
+    out=shifted[out]||out;
+  }
+  insertTextIntoBoard(out);
+  if(keyboardShift){keyboardShift=false;renderKeyboard()}
+}
 function renderKeyboard(){
   const box=$("keyboardKeys");
   if(!box)return;
   box.innerHTML="";
-  (keyboardLang==="UA"?keysUA:keysEN).forEach(k=>{const b=document.createElement("button");b.className="key-btn";b.textContent=k;b.onclick=()=>insertTextIntoBoard(k);box.appendChild(b)});
-  [["Space"," "],["Enter","\n"],["⌫","BACK"]].forEach(([label,val])=>{
-    const b=document.createElement("button");b.className="key-btn special "+(label==="Space"?"space":"");b.textContent=label;
-    b.onclick=()=>{if(val==="BACK"){const o=fcanvas.getActiveObject();if(o&&["i-text","textbox"].includes(o.type)){const p=o.selectionStart||0;if(p>0)o.removeChars(p-1,p);fcanvas.requestRenderAll();autoSave()}}else insertTextIntoBoard(val)};box.appendChild(b);
+  box.classList.add("standard-keyboard-v62");
+
+  const layout=keyboardLayouts[keyboardLang]||keyboardLayouts.UA;
+  layout.rows.forEach((row,rowIndex)=>{
+    const rowEl=document.createElement("div");
+    rowEl.className="kb-row-v62 row-"+rowIndex;
+    row.forEach(k=>{
+      const b=document.createElement("button");
+      b.type="button";
+      b.className="key-btn-v62";
+      if(["BACK","TAB","CAPS","ENTER","SHIFT","CTRL","ALT","LANG","SPACE"].includes(k))
+        b.classList.add("special");
+      if(k==="SPACE")b.classList.add("space");
+      if(k==="ENTER")b.classList.add("enter");
+      if(k==="BACK")b.classList.add("back");
+      if((k==="SHIFT"&&keyboardShift)||(k==="CAPS"&&keyboardCaps))b.classList.add("active");
+      b.textContent=keyboardKeyLabel(k);
+      b.onclick=()=>keyboardPress(k);
+      rowEl.appendChild(b);
+    });
+    box.appendChild(rowEl);
   });
+
+  if($("keyboardLangBtn")){
+    $("keyboardLangBtn").textContent=keyboardLang;
+    $("keyboardLangBtn").title="Змінити мову клавіатури";
+  }
 }
 if($("keyboardBtn")) $("keyboardBtn").onclick=()=>{
-  const p=$("keyboardPanel"); if(!p)return;
-  p.classList.toggle("hidden");renderKeyboard()
+  const p=$("keyboardPanel");if(!p)return;
+  p.classList.toggle("hidden");
+  if(!p.classList.contains("hidden"))renderKeyboard();
 };
 if($("keyboardCloseBtn")) $("keyboardCloseBtn").onclick=()=>$("keyboardPanel")?.classList.add("hidden");
 if($("keyboardLangBtn")) $("keyboardLangBtn").onclick=()=>{
   keyboardLang=keyboardLang==="UA"?"EN":"UA";
-  $("keyboardLangBtn").textContent=keyboardLang;renderKeyboard()
+  renderKeyboard();
 };
 
 /* ---------- AI чат ---------- */
@@ -3329,8 +3429,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     const bg=$57("v57TextBg");
     const align=$57("v57TextAlign");
 
-    if(font)font.value=o.fontFamily||"Times New Roman";
-    if(size)size.value=Math.round(o.fontSize||26);
+    if(font)font.value=o.fontFamily||"Segoe Script";
+    if(size)size.value=Math.round(o.fontSize||38);
     if(color && /^#[0-9a-f]{6}$/i.test(o.fill||""))color.value=o.fill;
     if(bg && /^#[0-9a-f]{6}$/i.test(o.backgroundColor||""))bg.value=o.backgroundColor;
     if(align)align.value=o.textAlign||"left";
@@ -3345,9 +3445,9 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     if(typeof fcanvas==="undefined"||!window.fabric)return;
     const t=new fabric.IText("Текст",{
       left:300,top:200,
-      fontFamily:"Times New Roman",
-      fontSize:26,
-      fill:"#17315f",
+      fontFamily:"Segoe Script",
+      fontSize:38,
+      fill:"#4a7fbd",
       fontStyle:"normal",
       editable:true,
       erasable:false
@@ -3377,6 +3477,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       <button id="v57InsertTextBtn" type="button" title="Додати текст">T Текст</button>
 
       <select id="v57TextFont" title="Шрифт">
+        <option>Segoe Script</option>
         <option>Times New Roman</option>
         <option>Arial</option>
         <option>Calibri</option>
@@ -3388,7 +3489,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
         <option>Comic Sans MS</option>
       </select>
 
-      <input id="v57TextSize" type="number" min="8" max="120" value="26"
+      <input id="v57TextSize" type="number" min="8" max="120" value="38"
         title="Розмір шрифту" style="width:70px">
 
       <button id="v57TextSmaller" type="button" title="Зменшити шрифт">A−</button>
@@ -3399,7 +3500,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       <button id="v57Strike" type="button" title="Закреслення"><s>S</s></button>
 
       <label title="Колір тексту" style="display:flex;align-items:center;gap:4px">
-        Текст <input id="v57TextColor" type="color" value="#17315f">
+        Текст <input id="v57TextColor" type="color" value="#4a7fbd">
       </label>
 
       <label title="Фон тексту" style="display:flex;align-items:center;gap:4px">
@@ -3919,4 +4020,403 @@ function init(){
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
 else setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V62 — ВЕЛИКІ ЗАГОЛОВКИ + СТАНДАРТНА ЕКРАННА КЛАВІАТУРА
+   ========================================================= */
+(function(){
+  function addV62Css(){
+    if(document.getElementById("v62KeyboardCss"))return;
+    const st=document.createElement("style");
+    st.id="v62KeyboardCss";
+    st.textContent=`
+      #keyboardPanel{
+        width:min(980px,94vw)!important;
+        max-width:94vw!important;
+      }
+      #keyboardKeys.standard-keyboard-v62{
+        display:flex!important;
+        flex-direction:column!important;
+        gap:6px!important;
+        padding:12px!important;
+        background:#eef3f8!important;
+        border-radius:10px!important;
+      }
+      .kb-row-v62{
+        display:flex!important;
+        gap:5px!important;
+        width:100%!important;
+        align-items:stretch!important;
+      }
+      .key-btn-v62{
+        flex:1 1 0!important;
+        min-width:43px!important;
+        height:48px!important;
+        padding:4px 7px!important;
+        border:1px solid #8fa5be!important;
+        border-radius:5px!important;
+        background:#fff!important;
+        color:#10284c!important;
+        font:700 17px/1 Arial,sans-serif!important;
+        box-shadow:0 1px 2px rgba(15,23,42,.12)!important;
+        cursor:pointer!important;
+      }
+      .key-btn-v62:hover{background:#e8f1ff!important}
+      .key-btn-v62.special{background:#d9e4f1!important}
+      .key-btn-v62.active{background:#173b78!important;color:#fff!important}
+      .key-btn-v62.space{flex:7 1 0!important}
+      .key-btn-v62.enter{flex:1.7 1 0!important}
+      .key-btn-v62.back{flex:1.6 1 0!important}
+      @media(max-width:800px){
+        .key-btn-v62{min-width:30px!important;height:42px!important;font-size:14px!important;padding:3px!important}
+        .kb-row-v62{gap:3px!important}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function applyDefaultHeadingSize(){
+    if(typeof fcanvas==="undefined")return;
+    const date=fcanvas.getObjects().find(o=>o?.systemRole==="dateHeading");
+    const work=fcanvas.getObjects().find(o=>o?.systemRole==="workHeading");
+    if(date){
+      date.set({
+        fontFamily:"Segoe Script",
+        fontStyle:"normal",
+        fontWeight:"normal",
+        fill:"#4a7fbd",
+        fontSize:48
+      });
+      date.setCoords?.();
+    }
+    if(work){
+      work.set({
+        fontFamily:"Segoe Script",
+        fontStyle:"normal",
+        fontWeight:"normal",
+        fill:"#4a7fbd",
+        fontSize:50
+      });
+      work.setCoords?.();
+    }
+    fcanvas.requestRenderAll();
+  }
+
+  function init(){
+    addV62Css();
+    applyDefaultHeadingSize();
+    [250,700,1500].forEach(ms=>setTimeout(applyDefaultHeadingSize,ms));
+
+    if(typeof fcanvas!=="undefined"){
+      fcanvas.on("object:added",e=>{
+        if(e?.target?.systemRole==="dateHeading"||e?.target?.systemRole==="workHeading")
+          setTimeout(applyDefaultHeadingSize,0);
+      });
+    }
+
+    const badge=document.getElementById("appVersionBadge");
+    if(badge)badge.textContent="v62";
+    document.documentElement.dataset.sofiaVersion="62";
+  }
+
+  if(document.readyState==="loading")
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+  else
+    setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V63 — РУКОПИСНИЙ ТЕКСТ + ВИБІР МІСЦЯ + ЧЕРВОНЕ ПОЛЕ
+   ========================================================= */
+(function(){
+  "use strict";
+  const $63=id=>document.getElementById(id);
+  let textPlacementMode=false;
+
+  const DEFAULT_FONT="Segoe Script";
+  const DEFAULT_SIZE=38;
+  const DEFAULT_COLOR="#4a7fbd";
+
+  function homePanel(){
+    return document.querySelector('.v56-panel[data-v56-panel="home"]');
+  }
+
+  /* ---------- One-time migration to the new requested default ---------- */
+  function migrateDefaultHeadingFont(){
+    if(localStorage.getItem("sofiaDefaultFontMigratedV63")==="1")return;
+    localStorage.setItem("sofiaDefaultFontMigratedV63","1");
+    localStorage.setItem("sofiaHeadingFontV56",DEFAULT_FONT);
+    localStorage.setItem("sofiaHeadingItalicV56","0");
+  }
+
+  function styleHeadingDefaults(){
+    if(typeof fcanvas==="undefined")return;
+    const date=fcanvas.getObjects().find(o=>o?.systemRole==="dateHeading");
+    const work=fcanvas.getObjects().find(o=>o?.systemRole==="workHeading");
+
+    if(date){
+      date.set({
+        fontFamily:DEFAULT_FONT,
+        fontStyle:"normal",
+        fontWeight:"normal",
+        fontSize:48,
+        fill:DEFAULT_COLOR
+      });
+      date.setCoords?.();
+    }
+    if(work){
+      work.set({
+        fontFamily:DEFAULT_FONT,
+        fontStyle:"normal",
+        fontWeight:"normal",
+        fontSize:50,
+        fill:DEFAULT_COLOR
+      });
+      work.setCoords?.();
+    }
+    fcanvas.requestRenderAll();
+  }
+
+  /* ---------- Text creation ---------- */
+  function makeTextAt(x,y,initial=""){
+    if(typeof fcanvas==="undefined"||!window.fabric)return null;
+
+    const t=new fabric.IText(initial,{
+      left:x,
+      top:y,
+      fontFamily:DEFAULT_FONT,
+      fontStyle:"normal",
+      fontWeight:"normal",
+      fontSize:DEFAULT_SIZE,
+      fill:DEFAULT_COLOR,
+      editable:true,
+      erasable:false
+    });
+
+    fcanvas.add(t);
+    fcanvas.setActiveObject(t);
+    t.enterEditing?.();
+
+    if(initial){
+      t.selectionStart=t.selectionEnd=initial.length;
+    }
+
+    fcanvas.requestRenderAll();
+    try{pushHistory();autoSave();setTool("select")}catch(e){}
+    return t;
+  }
+
+  function writingStartPoint(){
+    // Звичайний початок рядка в зошиті.
+    // Якщо ввімкнене червоне поле — починаємо праворуч від нього.
+    const margin=fcanvas?.getObjects?.().find(o=>o?.systemRole==="notebookMarginLine");
+    return {
+      x: margin ? (margin.left||72)+26 : 72,
+      y: 185
+    };
+  }
+
+  function beginChooseTextPlace(){
+    textPlacementMode=true;
+    try{setTool("select")}catch(e){}
+    const b=$63("v57InsertTextBtn");
+    if(b){
+      b.textContent="✎ Клікніть місце";
+      b.title="Клікніть на аркуші, де потрібно почати писати";
+    }
+  }
+
+  function insertTextFromStart(){
+    textPlacementMode=false;
+    const p=writingStartPoint();
+    makeTextAt(p.x,p.y,"");
+    const b=$63("v57InsertTextBtn");
+    if(b){
+      b.textContent="T Текст";
+      b.title="Вибрати місце для тексту";
+    }
+  }
+
+  function bindTextPlacement(){
+    const b=$63("v57InsertTextBtn");
+    if(b && !b.dataset.v63text){
+      b.dataset.v63text="1";
+      b.textContent="T Текст";
+      b.title="Натисніть, потім виберіть місце на аркуші";
+      b.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        beginChooseTextPlace();
+      };
+    }
+
+    let startBtn=$63("v63TextFromStart");
+    if(!startBtn && b){
+      startBtn=document.createElement("button");
+      startBtn.type="button";
+      startBtn.id="v63TextFromStart";
+      startBtn.textContent="↤ З початку";
+      startBtn.title="Почати писати зі стандартного початку рядка";
+      startBtn.onclick=e=>{
+        e.preventDefault();e.stopPropagation();
+        insertTextFromStart();
+      };
+      b.insertAdjacentElement("afterend",startBtn);
+    }
+
+    if(typeof fcanvas!=="undefined" && !fcanvas.__v63TextPlacement){
+      fcanvas.__v63TextPlacement=true;
+      fcanvas.on("mouse:down",opt=>{
+        if(!textPlacementMode)return;
+
+        textPlacementMode=false;
+        const point=fcanvas.getPointer(opt.e);
+        makeTextAt(point.x,point.y,"");
+
+        const btn=$63("v57InsertTextBtn");
+        if(btn){
+          btn.textContent="T Текст";
+          btn.title="Натисніть, потім виберіть місце на аркуші";
+        }
+      });
+    }
+  }
+
+  /* ---------- Red notebook margin ---------- */
+  function marginObject(){
+    if(typeof fcanvas==="undefined")return null;
+    return fcanvas.getObjects().find(o=>o?.systemRole==="notebookMarginLine")||null;
+  }
+
+  function addRedMargin(){
+    if(typeof fcanvas==="undefined"||marginObject())return;
+    const x=72;
+    const line=new fabric.Line([x,0,x,fcanvas.getHeight()],{
+      stroke:"#ef5350",
+      strokeWidth:1.5,
+      selectable:false,
+      evented:false,
+      erasable:false,
+      systemRole:"notebookMarginLine"
+    });
+    line.isInstrument=true; // гумка не повинна її стирати
+    fcanvas.add(line);
+    fcanvas.sendToBack(line);
+    fcanvas.requestRenderAll();
+    try{pushHistory();autoSave()}catch(e){}
+  }
+
+  function removeRedMargin(){
+    const m=marginObject();
+    if(!m)return;
+    fcanvas.remove(m);
+    fcanvas.requestRenderAll();
+    try{pushHistory();autoSave()}catch(e){}
+  }
+
+  function syncMarginButton(){
+    const b=$63("v63MarginBtn");
+    if(!b)return;
+    const on=!!marginObject();
+    b.textContent=on ? "✓ Червоне поле" : "│ Червоне поле";
+    b.classList.toggle("active",on);
+    b.title=on ? "Прибрати червоне поле" : "Додати червоне поле як у звичайному зошиті";
+  }
+
+  function addMarginButton(){
+    const home=homePanel();
+    if(!home||$63("v63MarginBtn"))return;
+
+    const b=document.createElement("button");
+    b.type="button";
+    b.id="v63MarginBtn";
+    b.className="v56-command";
+    b.textContent="│ Червоне поле";
+    b.title="Додати червоне поле як у звичайному зошиті";
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      if(marginObject())removeRedMargin();
+      else addRedMargin();
+      syncMarginButton();
+    };
+    home.appendChild(b);
+    syncMarginButton();
+  }
+
+  /* ---------- Make new user text use the same handwriting default ---------- */
+  function normalizeUserText(){
+    if(typeof fcanvas==="undefined")return;
+    fcanvas.getObjects().forEach(o=>{
+      if(!o || !["i-text","textbox","text"].includes(o.type))return;
+      if(o.systemRole==="dateHeading"||o.systemRole==="workHeading")return;
+
+      // Не змінюємо текст, який користувач уже навмисно відформатував.
+      if(!o.__v63Normalized && (!o.fontFamily || o.fontFamily==="Arial" || o.fontFamily==="Times New Roman")){
+        o.set({
+          fontFamily:DEFAULT_FONT,
+          fontStyle:"normal",
+          fontSize:o.fontSize && o.fontSize>30 ? o.fontSize : DEFAULT_SIZE,
+          fill:o.fill==="#17315f" ? DEFAULT_COLOR : (o.fill||DEFAULT_COLOR)
+        });
+        o.__v63Normalized=true;
+        o.setCoords?.();
+      }
+    });
+    fcanvas.requestRenderAll();
+  }
+
+  function updateTextToolbarDefaults(){
+    const font=$63("v57TextFont");
+    const size=$63("v57TextSize");
+    const color=$63("v57TextColor");
+
+    if(font){
+      if(!Array.from(font.options).some(o=>o.value===DEFAULT_FONT)){
+        font.insertAdjacentHTML("afterbegin",`<option>${DEFAULT_FONT}</option>`);
+      }
+      if(!fcanvas?.getActiveObject?.())font.value=DEFAULT_FONT;
+    }
+    if(size && !fcanvas?.getActiveObject?.())size.value=DEFAULT_SIZE;
+    if(color && !fcanvas?.getActiveObject?.())color.value=DEFAULT_COLOR;
+  }
+
+  function init(){
+    migrateDefaultHeadingFont();
+    styleHeadingDefaults();
+    bindTextPlacement();
+    addMarginButton();
+    normalizeUserText();
+    updateTextToolbarDefaults();
+    syncMarginButton();
+
+    [300,800,1600].forEach(ms=>setTimeout(()=>{
+      styleHeadingDefaults();
+      bindTextPlacement();
+      addMarginButton();
+      updateTextToolbarDefaults();
+      syncMarginButton();
+    },ms));
+
+    if(typeof fcanvas!=="undefined"){
+      fcanvas.on("object:added",e=>{
+        if(e?.target?.systemRole==="dateHeading"||e?.target?.systemRole==="workHeading")
+          setTimeout(styleHeadingDefaults,0);
+        setTimeout(syncMarginButton,0);
+      });
+      fcanvas.on("object:removed",()=>setTimeout(syncMarginButton,0));
+    }
+
+    const badge=$63("appVersionBadge");
+    if(badge)badge.textContent="v63";
+    document.documentElement.dataset.sofiaVersion="63";
+  }
+
+  if(document.readyState==="loading")
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
+  else
+    setTimeout(init,220);
 })();
