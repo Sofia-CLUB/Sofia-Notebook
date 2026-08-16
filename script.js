@@ -7068,3 +7068,458 @@ if(document.readyState==="loading")
 else
   setTimeout(init,160);
 })();
+
+
+
+/* =========================================================
+   V114 — REPAIR BROKEN LAYOUT AFTER V113
+   - contextual tool controls no longer create a giant top gap
+   - left/right rails fixed
+   - only one Parasochka signature
+   - bottom page dock stays fixed
+   ========================================================= */
+(function(){
+"use strict";
+const $114=id=>document.getElementById(id);
+
+function css(){
+  if($114("v114Css")) return;
+  const st=document.createElement("style");
+  st.id="v114Css";
+  st.textContent=`
+    :root{
+      --v114-top: 176px;
+      --v114-left: 88px;
+      --v114-right: 78px;
+    }
+
+    /* LEFT rail */
+    .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
+      position:fixed!important;
+      left:0!important;
+      top:var(--v114-top)!important;
+      bottom:0!important;
+      width:var(--v114-left)!important;
+      margin:0!important;
+      z-index:76000!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      background:rgba(255,255,255,.97)!important;
+      box-sizing:border-box!important;
+    }
+
+    /* RIGHT rail */
+    #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      top:var(--v114-top)!important;
+      bottom:0!important;
+      left:auto!important;
+      width:var(--v114-right)!important;
+      margin:0!important;
+      z-index:76000!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      background:transparent!important;
+      border-left:0!important;
+      box-shadow:none!important;
+    }
+
+    /* Old contextual tool controls must float, never reserve document height */
+    #v68ToolPanel,
+    #v66TextPanel,
+    .tool-settings-panel,
+    .context-tool-panel,
+    .drawing-settings-panel{
+      position:fixed!important;
+      left:94px!important;
+      top:calc(var(--v114-top) + 6px)!important;
+      z-index:80500!important;
+      width:260px!important;
+      max-height:calc(100vh - var(--v114-top) - 70px)!important;
+      overflow:auto!important;
+      margin:0!important;
+      background:#fff!important;
+      border:1px solid #d7e1ed!important;
+      border-radius:10px!important;
+      box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
+    }
+
+    /* Catch legacy loose controls shown directly below metadata */
+    .v114-floating-tools{
+      position:fixed!important;
+      left:94px!important;
+      top:calc(var(--v114-top) + 6px)!important;
+      z-index:80450!important;
+      width:260px!important;
+      max-height:220px!important;
+      overflow:auto!important;
+      margin:0!important;
+      padding:6px!important;
+      background:#fff!important;
+      border:1px solid #d7e1ed!important;
+      border-radius:10px!important;
+      box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
+      box-sizing:border-box!important;
+    }
+
+    /* Page dock */
+    #v99PageDock{
+      position:fixed!important;
+      left:var(--v114-left)!important;
+      right:var(--v114-right)!important;
+      bottom:0!important;
+      top:auto!important;
+      z-index:79500!important;
+      background:transparent!important;
+      box-shadow:none!important;
+      border:0!important;
+    }
+
+    /* One signature only */
+    #sofiaAuthorSignature{
+      position:fixed!important;
+      right:92px!important;
+      bottom:56px!important;
+      z-index:70000!important;
+      background:transparent!important;
+      pointer-events:none!important;
+    }
+    #v102Signature,#v100Signature,#v109Signature{display:none!important}
+
+    /* fullscreen aligned under metadata */
+    :fullscreen .side-tools,
+    :fullscreen .left-toolbar,
+    :fullscreen .left-tools,
+    :fullscreen .tool-sidebar,
+    :-webkit-full-screen .side-tools,
+    :-webkit-full-screen .left-toolbar,
+    :-webkit-full-screen .left-tools,
+    :-webkit-full-screen .tool-sidebar,
+    :fullscreen #v86Dock,
+    :-webkit-full-screen #v86Dock{
+      top:var(--v114-top)!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function metaBottom(){
+  let bottom=0;
+  [...document.querySelectorAll("select,input")].forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.top>=0 && r.top<230 && r.bottom>bottom) bottom=r.bottom;
+  });
+  return Math.round((bottom||170)+4);
+}
+
+function alignRails(){
+  const top=metaBottom();
+  document.documentElement.style.setProperty("--v114-top",top+"px");
+}
+
+function removeDuplicateSignatures(){
+  const text="Sofia Notebook © Parasochka";
+  const matches=[...document.querySelectorAll("body *")].filter(el=>{
+    return (el.textContent||"").trim()===text;
+  });
+
+  let keep=document.getElementById("sofiaAuthorSignature") || matches[0] || null;
+  if(!keep){
+    keep=document.createElement("div");
+    keep.id="sofiaAuthorSignature";
+    keep.textContent=text;
+    document.body.appendChild(keep);
+  }
+  keep.textContent=text;
+
+  matches.forEach(el=>{
+    if(el!==keep) el.remove();
+  });
+}
+
+function detectLooseToolPanel(){
+  /* In the broken screenshot the Color/Thickness/Style controls became
+     a normal-flow block below metadata. Detect that exact kind of block
+     and convert it to a floating panel. */
+  const top=metaBottom();
+
+  [...document.querySelectorAll("div,section")].forEach(el=>{
+    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock")) return;
+    const txt=(el.innerText||"").replace(/\s+/g," ").trim();
+    if(!txt) return;
+
+    const hasToolWords =
+      /Колір/.test(txt) &&
+      (/Товщина/.test(txt) || /Суцільна|Штрихова|Крапкова/.test(txt));
+
+    if(!hasToolWords) return;
+
+    const r=el.getBoundingClientRect();
+    if(r.top >= top-10 && r.top <= top+220 && r.width<420 && r.height<300){
+      el.classList.add("v114-floating-tools");
+    }
+  });
+}
+
+function keepWorkspaceCompact(){
+  /* Collapse only empty horizontal spacers right below metadata. */
+  const top=metaBottom();
+  [...document.querySelectorAll("div,section")].forEach(el=>{
+    if(el.closest("#v99PageDock,.side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock")) return;
+    const r=el.getBoundingClientRect();
+    const txt=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+    if(r.width>innerWidth*.65 &&
+       r.height>=20 && r.height<=260 &&
+       r.top>=top-2 && r.top<=top+300 &&
+       !txt && controls===0){
+      el.style.setProperty("height","0","important");
+      el.style.setProperty("min-height","0","important");
+      el.style.setProperty("margin","0","important");
+      el.style.setProperty("padding","0","important");
+      el.style.setProperty("border","0","important");
+      el.style.setProperty("overflow","hidden","important");
+    }
+  });
+}
+
+function mark(){
+  const b=$114("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v114";
+  document.documentElement.dataset.sofiaVersion="114";
+}
+
+function repair(){
+  alignRails();
+  detectLooseToolPanel();
+  keepWorkspaceCompact();
+  removeDuplicateSignatures();
+}
+
+function init(){
+  css();
+  repair();
+  mark();
+
+  window.addEventListener("resize",()=>setTimeout(repair,80));
+  document.addEventListener("fullscreenchange",()=>setTimeout(repair,120));
+  document.addEventListener("webkitfullscreenchange",()=>setTimeout(repair,120));
+
+  [300,800,1500].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
+
+
+
+/* =========================================================
+   V115 — HARD FIX: прибираємо великий сірий проміжок
+   і виносимо старі налаштування інструмента у плаваюче вікно
+   ========================================================= */
+(function(){
+"use strict";
+const $115=id=>document.getElementById(id);
+
+function addCss(){
+  if($115("v115Css")) return;
+  const st=document.createElement("style");
+  st.id="v115Css";
+  st.textContent=`
+    :root{
+      --v115-top: 178px;
+      --v115-left: 88px;
+      --v115-right: 78px;
+    }
+
+    /* Панелі зліва/справа починаються одразу під рядком Клас/Предмет */
+    .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
+      top:var(--v115-top)!important;
+      position:fixed!important;
+      left:0!important;
+      bottom:0!important;
+    }
+    #v86Dock{
+      top:var(--v115-top)!important;
+      position:fixed!important;
+      right:0!important;
+      bottom:0!important;
+    }
+
+    /* Старий блок Колір/Товщина/Стиль не займає місце у документі */
+    .v115-tool-float{
+      position:fixed!important;
+      left:94px!important;
+      top:calc(var(--v115-top) + 6px)!important;
+      width:260px!important;
+      max-width:260px!important;
+      max-height:230px!important;
+      overflow:auto!important;
+      z-index:81000!important;
+      margin:0!important;
+      padding:6px!important;
+      background:#fff!important;
+      border:1px solid #d7e1ed!important;
+      border-radius:10px!important;
+      box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
+      box-sizing:border-box!important;
+    }
+
+    /* Робоче поле не має верхнього відступу */
+    .v115-work-host{
+      margin-top:0!important;
+      padding-top:0!important;
+    }
+
+    /* Один підпис */
+    #v102Signature,#v100Signature,#v109Signature{display:none!important}
+  `;
+  document.head.appendChild(st);
+}
+
+function metadataBottom(){
+  let bottom=0;
+  [...document.querySelectorAll("select,input")].forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.top>=0 && r.top<230 && r.bottom>bottom) bottom=r.bottom;
+  });
+  return Math.round((bottom||174)+4);
+}
+
+function findCanvas(){
+  return document.querySelector(".upper-canvas") ||
+         document.querySelector("canvas.upper-canvas") ||
+         document.querySelector("canvas");
+}
+
+function findWorkHost(){
+  const canvas=findCanvas();
+  if(!canvas) return null;
+
+  let el=canvas.parentElement;
+  let best=el;
+  for(let i=0;i<6 && el;i++,el=el.parentElement){
+    const r=el.getBoundingClientRect();
+    if(r.width>innerWidth*.65 && r.height>300){
+      best=el;
+      if(r.width>innerWidth*.85) break;
+    }
+  }
+  return best;
+}
+
+function floatLegacyToolBlock(){
+  const top=metadataBottom();
+
+  [...document.querySelectorAll("div,section")].forEach(el=>{
+    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock")) return;
+    if(el.classList.contains("v115-tool-float")) return;
+
+    const txt=(el.innerText||"").replace(/\s+/g," ").trim();
+    const r=el.getBoundingClientRect();
+
+    const looksLikeLegacy =
+      /Колір/.test(txt) &&
+      (/Товщина/.test(txt) || /Суцільна|Штрихова|Крапкова/.test(txt));
+
+    if(looksLikeLegacy && r.top>=top-20 && r.top<top+250 && r.width<450 && r.height<320){
+      el.classList.add("v115-tool-float");
+    }
+  });
+}
+
+function pullWorkspaceUp(){
+  const top=metadataBottom();
+  document.documentElement.style.setProperty("--v115-top",top+"px");
+
+  const host=findWorkHost();
+  if(!host) return;
+
+  host.classList.add("v115-work-host");
+
+  const r=host.getBoundingClientRect();
+  const desired=top+4;
+
+  if(r.top>desired+10){
+    const shift=r.top-desired;
+    host.style.setProperty("margin-top",(-shift)+"px","important");
+  }
+}
+
+function collapseEmptySpacers(){
+  const top=metadataBottom();
+  [...document.querySelectorAll("div,section,main")].forEach(el=>{
+    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock")) return;
+    if(el.classList.contains("v115-tool-float")) return;
+
+    const r=el.getBoundingClientRect();
+    const txt=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+    if(
+      r.width>innerWidth*.7 &&
+      r.height>=20 && r.height<=320 &&
+      r.top>=top-4 && r.top<=top+330 &&
+      !txt && controls===0
+    ){
+      el.style.setProperty("height","0","important");
+      el.style.setProperty("min-height","0","important");
+      el.style.setProperty("max-height","0","important");
+      el.style.setProperty("margin","0","important");
+      el.style.setProperty("padding","0","important");
+      el.style.setProperty("border","0","important");
+      el.style.setProperty("overflow","hidden","important");
+    }
+  });
+}
+
+function oneSignature(){
+  const text="Sofia Notebook © Parasochka";
+  const nodes=[...document.querySelectorAll("body *")].filter(el=>(el.textContent||"").trim()===text);
+  let keep=document.getElementById("sofiaAuthorSignature") || nodes[0];
+  if(!keep){
+    keep=document.createElement("div");
+    keep.id="sofiaAuthorSignature";
+    keep.textContent=text;
+    document.body.appendChild(keep);
+  }
+  nodes.forEach(el=>{ if(el!==keep) el.remove(); });
+}
+
+function repair(){
+  floatLegacyToolBlock();
+  collapseEmptySpacers();
+  pullWorkspaceUp();
+  oneSignature();
+}
+
+function mark(){
+  const b=$115("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v115";
+  document.documentElement.dataset.sofiaVersion="115";
+}
+
+function init(){
+  addCss();
+  repair();
+  mark();
+
+  window.addEventListener("resize",()=>setTimeout(repair,80));
+  document.addEventListener("fullscreenchange",()=>setTimeout(repair,100));
+  document.addEventListener("webkitfullscreenchange",()=>setTimeout(repair,100));
+
+  [250,700,1400].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
