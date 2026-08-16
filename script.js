@@ -4533,3 +4533,136 @@ if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
 else setTimeout(init,220);
 })();
+
+
+
+/* =========================================================
+   V65 — ПРИБРАТИ ЗАЙВИЙ ВЕРХНІЙ ПРОСТІР У ПОВНОМУ ЕКРАНІ
+   ========================================================= */
+(function(){
+  "use strict";
+
+  function fullscreenActive(){
+    return !!document.fullscreenElement ||
+           !!document.webkitFullscreenElement ||
+           document.body.classList.contains("fullscreen") ||
+           document.documentElement.classList.contains("fullscreen");
+  }
+
+  function compactFullscreen(){
+    const on=fullscreenActive();
+
+    const candidates=[
+      document.querySelector(".app-shell"),
+      document.querySelector(".workspace"),
+      document.querySelector(".main"),
+      document.querySelector("main"),
+      document.querySelector("#app"),
+      document.body
+    ].filter(Boolean);
+
+    candidates.forEach(el=>{
+      if(on){
+        el.style.setProperty("--sofia-fullscreen-gap","0px");
+      }else{
+        el.style.removeProperty("--sofia-fullscreen-gap");
+      }
+    });
+
+    // Прибираємо порожні верхні блоки/відступи, які залишаються у fullscreen.
+    document.querySelectorAll("body > div, body > section, main > div, .workspace > div").forEach(el=>{
+      if(!on) {
+        if(el.dataset.v65OldMarginTop!==undefined){
+          el.style.marginTop=el.dataset.v65OldMarginTop;
+          delete el.dataset.v65OldMarginTop;
+        }
+        if(el.dataset.v65OldPaddingTop!==undefined){
+          el.style.paddingTop=el.dataset.v65OldPaddingTop;
+          delete el.dataset.v65OldPaddingTop;
+        }
+        return;
+      }
+
+      const r=el.getBoundingClientRect();
+      const cs=getComputedStyle(el);
+
+      // Лише верхні layout-блоки, не чіпаємо саме полотно.
+      if(r.top>=0 && r.top<320 && r.height>80 &&
+         !el.querySelector("canvas") &&
+         !el.id?.includes("pageViewport") &&
+         !el.classList.contains("v56-panel") &&
+         !el.closest("#sofiaRibbonV56")) {
+
+        const mt=parseFloat(cs.marginTop)||0;
+        const pt=parseFloat(cs.paddingTop)||0;
+
+        if(mt>20){
+          el.dataset.v65OldMarginTop=el.style.marginTop||"";
+          el.style.setProperty("margin-top","0","important");
+        }
+        if(pt>40){
+          el.dataset.v65OldPaddingTop=el.style.paddingTop||"";
+          el.style.setProperty("padding-top","0","important");
+        }
+      }
+    });
+
+    // Основна стрічка та сторінки підтягуються вгору.
+    const ribbon=document.getElementById("sofiaRibbonV56");
+    if(ribbon){
+      ribbon.style.setProperty("margin-top",on?"4px":"8px","important");
+    }
+
+    const pageViewport=document.getElementById("pageViewport");
+    if(pageViewport){
+      pageViewport.style.setProperty("margin-top",on?"0":"", "important");
+    }
+
+    document.body.classList.toggle("sofia-v65-fullscreen",on);
+  }
+
+  function addCss(){
+    if(document.getElementById("v65FullscreenCss"))return;
+    const st=document.createElement("style");
+    st.id="v65FullscreenCss";
+    st.textContent=`
+      body.sofia-v65-fullscreen #sofiaRibbonV56{
+        margin-top:4px!important;
+      }
+      body.sofia-v65-fullscreen #pageViewport{
+        margin-top:0!important;
+      }
+      body.sofia-v65-fullscreen .workspace,
+      body.sofia-v65-fullscreen .main,
+      body.sofia-v65-fullscreen main{
+        padding-top:0!important;
+        margin-top:0!important;
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function init(){
+    addCss();
+    compactFullscreen();
+
+    document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,20));
+    document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,20));
+
+    const fsBtn=document.getElementById("fullscreenBtn");
+    if(fsBtn){
+      fsBtn.addEventListener("click",()=>{
+        [50,150,350].forEach(ms=>setTimeout(compactFullscreen,ms));
+      },true);
+    }
+
+    const badge=document.getElementById("appVersionBadge");
+    if(badge)badge.textContent="v65";
+    document.documentElement.dataset.sofiaVersion="65";
+  }
+
+  if(document.readyState==="loading")
+    document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+  else
+    setTimeout(init,180);
+})();
