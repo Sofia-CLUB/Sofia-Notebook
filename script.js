@@ -8562,3 +8562,292 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* V123 — object properties restored + transparent bottom page bar */
+(function(){
+"use strict";
+const PANEL_IDS=["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"];
+
+function fc(){try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}}
+function panels(){return PANEL_IDS.map(id=>document.getElementById(id)).filter(Boolean)}
+function hidePanels(){panels().forEach(p=>p.classList.remove("show"))}
+function showPanelForObject(o){
+  if(!o)return;
+  /* Let the existing Sofia handler fill the panel first. */
+  try{
+    if(typeof refreshObjectPanel==="function") refreshObjectPanel(o);
+  }catch(_){}
+  panels().forEach(p=>p.classList.add("show"));
+}
+function addCss(){
+ if(document.getElementById("v123Css"))return;
+ const st=document.createElement("style"); st.id="v123Css";
+ st.textContent=`
+ /* Properties: only the controls/card, no large opaque background */
+ #v102ObjectPanel,#v100ObjectPanel,#v81ObjectPanel{
+   background:rgba(255,255,255,.82)!important;
+   backdrop-filter:blur(7px)!important;
+   -webkit-backdrop-filter:blur(7px)!important;
+   box-shadow:0 8px 24px rgba(15,42,80,.14)!important;
+   border:1px solid rgba(20,59,110,.12)!important;
+ }
+ /* Bottom page area itself is transparent */
+ #v105PageBar,#v104PageBar,#v103PageBar,#v99PageBar,#v96PageBar,
+ .page-tabs,.pages-bar,.page-bar,.pageTabs,.pagesBar{
+   background:transparent!important;
+   box-shadow:none!important;
+   border:0!important;
+ }
+ /* Compact page controls */
+ #v105PageBar button,#v104PageBar button,#v103PageBar button,#v99PageBar button,#v96PageBar button,
+ .page-tabs button,.pages-bar button,.page-bar button,.pageTabs button,.pagesBar button{
+   font-size:14px!important;
+   min-height:36px!important;
+   padding:6px 12px!important;
+ }
+ .v39-page-tab,.page-tab{
+   font-size:14px!important;
+ }
+ #v123NewPage{
+   font-size:14px!important;
+   font-weight:700!important;
+   white-space:nowrap!important;
+ }
+ `;
+ document.head.appendChild(st);
+}
+
+/* Restore context properties on ACTUAL Fabric selection. */
+function bindFabricSelection(){
+ const c=fc(); if(!c||c.__v123Selection)return;
+ c.__v123Selection=true;
+ c.on("selection:created",e=>showPanelForObject(e.selected?.[0]||e.target||c.getActiveObject()));
+ c.on("selection:updated",e=>showPanelForObject(e.selected?.[0]||e.target||c.getActiveObject()));
+ c.on("selection:cleared",()=>hidePanels());
+}
+
+/* Add/repair the visible New page button without rebuilding page logic. */
+function findPageArea(){
+ const tab=[...document.querySelectorAll("button")].find(b=>/^Сторінка\s+\d+/i.test((b.textContent||"").trim()));
+ if(tab) return tab.parentElement;
+ const del=[...document.querySelectorAll("button")].find(b=>(b.textContent||"").includes("Видалити сторінку"));
+ return del?.parentElement||null;
+}
+function originalAddButton(){
+ return document.getElementById("addPageBtn") ||
+   [...document.querySelectorAll("button")].find(b=>/нова сторінка/i.test((b.textContent||"").trim()));
+}
+function repairNewPage(){
+ let orig=originalAddButton();
+ if(orig){
+   orig.textContent="+ Нова сторінка";
+   orig.style.fontSize="14px";
+   return;
+ }
+ if(document.getElementById("v123NewPage"))return;
+ const area=findPageArea(); if(!area)return;
+ const b=document.createElement("button");
+ b.id="v123NewPage"; b.type="button"; b.textContent="+ Нова сторінка";
+ b.className="btn";
+ b.onclick=()=>{
+   /* Use the app's existing add-page API/button if it appears later. */
+   const real=document.getElementById("addPageBtn");
+   if(real&&real!==b){real.click();return}
+   try{
+     if(typeof addPage==="function"){addPage();return}
+     if(typeof createPage==="function"){createPage();return}
+   }catch(_){}
+   /* fallback: click known hidden add-page control */
+   const candidate=[...document.querySelectorAll('button,[role="button"]')]
+     .find(x=>x!==b && /нова сторінка/i.test((x.textContent||"")));
+   candidate?.click();
+ };
+ const firstTab=[...area.children].find(x=>/^Сторінка\s+\d+/i.test((x.textContent||"").trim()));
+ area.insertBefore(b,firstTab||area.firstChild);
+}
+
+/* V122 intentionally guarded panels too aggressively.
+   Disable its guard flag by replacing panels with clean clones is unsafe,
+   so keep panel visible after real Fabric selection for a short settling window. */
+function keepLegitPanel(){
+ const c=fc(); if(!c)return;
+ const o=c.getActiveObject?.();
+ if(o && !document.body.classList.contains("v121-cursor-mode")){
+   panels().forEach(p=>p.classList.add("show"));
+ }
+}
+
+function mark(){
+ const b=document.getElementById("appVersionBadge")||
+ [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+ if(b)b.textContent="v123";
+}
+function init(){
+ addCss(); bindFabricSelection(); repairNewPage(); mark();
+ [400,900,1500].forEach(ms=>setTimeout(()=>{bindFabricSelection();repairNewPage()},ms));
+ /* only maintain when an object remains selected */
+ setInterval(keepLegitPanel,450);
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V124 — CURSOR WORKS ONLY ON THE NOTEBOOK SHEET
+   UI/menu/tab clicks never trigger cursor/text insertion.
+   ========================================================= */
+(function(){
+"use strict";
+
+function isInteractiveUiTarget(target){
+  if(!target || !(target instanceof Element)) return false;
+
+  /* Any real control is UI, even if visually over the canvas. */
+  if(target.closest(`
+    button,
+    input,
+    select,
+    textarea,
+    label,
+    a,
+    [role="button"],
+    [contenteditable="true"],
+    #v86Dock,
+    #v102ObjectPanel,
+    #v100ObjectPanel,
+    #v81ObjectPanel,
+    #v112Help,
+    #v110Help,
+    #v102Help,
+    #v100Help,
+    .ribbon,
+    .toolbar,
+    .topbar,
+    .panel,
+    .modal,
+    .dialog,
+    .floating-panel,
+    .context-panel,
+    .tool-panel,
+    .teacher-tools,
+    .page-tabs,
+    #v99PageDock
+  `)) return true;
+
+  return false;
+}
+
+function trueCanvasTarget(){
+  return document.querySelector(".upper-canvas") ||
+         document.querySelector("canvas.upper-canvas") ||
+         document.querySelector("canvas");
+}
+
+function clickIsReallyOnCanvas(e){
+  if(isInteractiveUiTarget(e.target)) return false;
+
+  const canvas=trueCanvasTarget();
+  if(!canvas) return false;
+
+  /* Must actually originate from the Fabric canvas element/stack,
+     not merely share the same screen coordinates. */
+  const stack=e.target.closest?.(".canvas-container");
+  if(stack && stack.contains(canvas)) return true;
+
+  return e.target===canvas || e.target.classList?.contains("upper-canvas");
+}
+
+/* Disable cursor mode while user is interacting with menus/toolbars.
+   Cursor becomes active again only after explicit Cursor button press. */
+function bindUiModeGuard(){
+  if(document.__v124UiGuard) return;
+  document.__v124UiGuard=true;
+
+  document.addEventListener("pointerdown",e=>{
+    if(!isInteractiveUiTarget(e.target)) return;
+
+    document.body.classList.remove(
+      "v121-cursor-mode",
+      "v113-cursor-mode",
+      "v112-cursor-mode"
+    );
+
+    ["v105CursorBtn","v104CursorBtn","v112CursorBtn","v113CursorBtn"].forEach(id=>{
+      document.getElementById(id)?.classList.remove("active");
+    });
+  },true);
+}
+
+/* Intercept the legacy cursor handler before it can treat a floating menu
+   as the sheet. We only block propagation for UI overlays, not for canvas. */
+function bindOverlayBlocker(){
+  if(document.__v124OverlayBlocker) return;
+  document.__v124OverlayBlocker=true;
+
+  document.addEventListener("pointerdown",e=>{
+    if(!isInteractiveUiTarget(e.target)) return;
+
+    /* Do NOT prevent default: controls must remain fully clickable.
+       Only stop legacy canvas cursor handlers from seeing this event. */
+    e.stopPropagation();
+  },true);
+}
+
+/* Cursor button explicitly re-enters cursor mode. */
+function bindCursorButtons(){
+  const candidates=[
+    document.getElementById("v105CursorBtn"),
+    document.getElementById("v104CursorBtn"),
+    document.getElementById("v112CursorBtn"),
+    document.getElementById("v113CursorBtn"),
+    [...document.querySelectorAll("button")].find(b=>(b.textContent||"").trim()==="Курсор")
+  ].filter(Boolean);
+
+  candidates.forEach(b=>{
+    if(b.__v124Bound) return;
+    b.__v124Bound=true;
+    b.addEventListener("click",()=>{
+      document.body.classList.add("v121-cursor-mode");
+      b.classList.add("active");
+    },false);
+  });
+}
+
+/* Extra safety: when pointerdown is not truly on canvas,
+   remove the temporary blinking caret if any. */
+function bindCaretCleanup(){
+  if(document.__v124CaretCleanup) return;
+  document.__v124CaretCleanup=true;
+
+  document.addEventListener("pointerdown",e=>{
+    if(clickIsReallyOnCanvas(e)) return;
+    document.getElementById("v121Caret")?.classList.remove("show");
+  },false);
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v124";
+  document.documentElement.dataset.sofiaVersion="124";
+}
+
+function init(){
+  bindUiModeGuard();
+  bindOverlayBlocker();
+  bindCursorButtons();
+  bindCaretCleanup();
+  mark();
+
+  [400,1000,1800].forEach(ms=>setTimeout(bindCursorButtons,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
