@@ -10438,3 +10438,247 @@ if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(initT,180),{once:true});
 else setTimeout(initT,180);
 })();
+
+
+
+/* =========================================================
+   V118 CLEAN — FIX FULLSCREEN RIGHT PANEL TOGGLE
+   Причина V117: fullscreen відкриває #pageViewport, а нова кнопка
+   була додана у document.body. У fullscreen браузер показує тільки
+   вміст #pageViewport, тому видно було стару кнопку, а не нову.
+   Рішення:
+   - єдина кнопка живе ВСЕРЕДИНІ #pageViewport;
+   - та сама кнопка працює і звичайно, і fullscreen;
+   - старі стрілки прибираються;
+   - панель реально зсувається за межі viewport.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $F=id=>document.getElementById(id);
+
+function viewportF(){
+  return $F("pageViewport") || document.body;
+}
+function dockF(){
+  return $F("v86Dock");
+}
+
+function addCssF(){
+  if($F("v118FullscreenToggleCss"))return;
+
+  const st=document.createElement("style");
+  st.id="v118FullscreenToggleCss";
+  st.textContent=`
+    /* Старі кнопки гарантовано не показуємо */
+    #v89RightToggle,#v112RightToggle,#v115RightToggle,#v117RightToggle,
+    .v86-collapse-toggle,.v89-right-toggle,.right-panel-toggle{
+      display:none!important;
+      visibility:hidden!important;
+      opacity:0!important;
+      pointer-events:none!important;
+    }
+
+    /* Єдина кнопка — нащадок #pageViewport, тому видима у fullscreen */
+    #v118RightToggle{
+      display:flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+      pointer-events:auto!important;
+      position:fixed!important;
+      top:50%!important;
+      right:74px!important;
+      transform:translateY(-50%)!important;
+      width:32px!important;
+      height:64px!important;
+      align-items:center!important;
+      justify-content:center!important;
+      border:1px solid #cbd7e6!important;
+      border-radius:10px 0 0 10px!important;
+      background:#173b78!important;
+      color:#fff!important;
+      box-shadow:0 4px 14px rgba(0,0,0,.18)!important;
+      cursor:pointer!important;
+      z-index:2147483000!important;
+      font:700 22px/1 Arial,sans-serif!important;
+    }
+
+    /* Права панель */
+    #v86Dock{
+      background:#fff!important;
+      opacity:1!important;
+      visibility:visible!important;
+      transition:transform .22s ease!important;
+      transform:translateX(0)!important;
+      will-change:transform;
+    }
+
+    /* Згортання — однаково для normal + fullscreen */
+    #pageViewport.v118-right-collapsed #v86Dock{
+      transform:translateX(105%)!important;
+      pointer-events:none!important;
+    }
+
+    #pageViewport.v118-right-collapsed #v118RightToggle{
+      right:0!important;
+    }
+
+    /* Fullscreen target — саме #pageViewport */
+    #pageViewport:fullscreen #v118RightToggle,
+    #pageViewport:-webkit-full-screen #v118RightToggle{
+      display:flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+      pointer-events:auto!important;
+    }
+
+    #pageViewport:fullscreen.v118-right-collapsed #v86Dock,
+    #pageViewport:-webkit-full-screen.v118-right-collapsed #v86Dock{
+      transform:translateX(105%)!important;
+      pointer-events:none!important;
+    }
+
+    @media(max-width:768px){
+      #v118RightToggle{right:68px!important;}
+      #pageViewport.v118-right-collapsed #v118RightToggle{right:0!important;}
+    }
+
+    @media(max-width:480px){
+      #v118RightToggle{right:64px!important;}
+      #pageViewport.v118-right-collapsed #v118RightToggle{right:0!important;}
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function removeOldButtonsF(){
+  ["v89RightToggle","v112RightToggle","v115RightToggle","v117RightToggle"].forEach(id=>{
+    const el=$F(id);
+    if(el)el.remove();
+  });
+
+  /* Прибираємо невідомі дублікати-стрілки біля правої панелі */
+  [...document.querySelectorAll("button")].forEach(b=>{
+    if(b.id==="v118RightToggle")return;
+    const t=(b.textContent||"").trim();
+    if(t!=="‹" && t!=="›")return;
+
+    const r=b.getBoundingClientRect();
+    if(r.width<=60 && r.height<=100 && r.left>window.innerWidth-220){
+      b.remove();
+    }
+  });
+}
+
+function ensureToggleF(){
+  const host=viewportF();
+  let b=$F("v118RightToggle");
+
+  if(!b){
+    b=document.createElement("button");
+    b.id="v118RightToggle";
+    b.type="button";
+    b.title="Згорнути / розгорнути праву панель";
+    b.setAttribute("aria-label","Згорнути або розгорнути праву панель");
+  }
+
+  /* КРИТИЧНО: кнопка має бути всередині fullscreen-target */
+  if(b.parentElement!==host) host.appendChild(b);
+
+  if(!b.__v118Bound){
+    b.__v118Bound=true;
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const vp=viewportF();
+      const collapsed=vp.classList.toggle("v118-right-collapsed");
+      b.textContent=collapsed?"‹":"›";
+
+      try{
+        localStorage.setItem("sofiaRightCollapsed118",collapsed?"1":"0");
+      }catch(_){}
+
+      /* Прямий style fallback — на випадок старих !important правил */
+      const dock=dockF();
+      if(dock){
+        dock.style.setProperty(
+          "transform",
+          collapsed?"translateX(105%)":"translateX(0)",
+          "important"
+        );
+        dock.style.setProperty(
+          "pointer-events",
+          collapsed?"none":"auto",
+          "important"
+        );
+      }
+    },true);
+  }
+
+  return b;
+}
+
+function restoreF(){
+  const vp=viewportF();
+  let collapsed=false;
+  try{
+    collapsed=localStorage.getItem("sofiaRightCollapsed118")==="1";
+  }catch(_){}
+
+  vp.classList.toggle("v118-right-collapsed",collapsed);
+
+  const b=ensureToggleF();
+  b.textContent=collapsed?"‹":"›";
+
+  const dock=dockF();
+  if(dock){
+    dock.style.setProperty(
+      "transform",
+      collapsed?"translateX(105%)":"translateX(0)",
+      "important"
+    );
+    dock.style.setProperty(
+      "pointer-events",
+      collapsed?"none":"auto",
+      "important"
+    );
+  }
+}
+
+function repairF(){
+  addCssF();
+  removeOldButtonsF();
+  ensureToggleF();
+}
+
+function markF(){
+  const b=$F("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v118";
+  document.documentElement.dataset.sofiaVersion="118-clean-mobile";
+}
+
+function initF(){
+  repairF();
+  restoreF();
+  markF();
+
+  /* старі кнопки можуть створюватися із затримкою */
+  [300,800,1500].forEach(ms=>setTimeout(repairF,ms));
+}
+
+document.addEventListener("fullscreenchange",()=>{
+  setTimeout(()=>{
+    repairF();
+    restoreF();
+  },100);
+});
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(initF,180),{once:true});
+}else{
+  setTimeout(initF,180);
+}
+})();
