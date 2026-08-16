@@ -7914,3 +7914,176 @@ if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
 else setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V108 — FULLSCREEN: прибираємо порожню смугу під Клас/Предмет
+   ========================================================= */
+(function(){
+"use strict";
+
+function addCss(){
+  if(document.getElementById("v108Css")) return;
+  const st=document.createElement("style");
+  st.id="v108Css";
+  st.textContent=`
+    :fullscreen .v108-empty-under-meta,
+    :-webkit-full-screen .v108-empty-under-meta{
+      display:none!important;
+      height:0!important;
+      min-height:0!important;
+      max-height:0!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      overflow:hidden!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function metaBottom(){
+  let best=0;
+  [...document.querySelectorAll("select,input")].forEach(el=>{
+    const r=el.getBoundingClientRect();
+    if(r.top<180 && r.bottom>best) best=r.bottom;
+  });
+  return best || 120;
+}
+
+function removeEmptyStrip(){
+  const fs=document.fullscreenElement || document.webkitFullscreenElement;
+  if(!fs) return;
+
+  const bottom=metaBottom();
+
+  document.querySelectorAll("div,section,main").forEach(el=>{
+    if(el.id==="v86Dock" || el.id==="v99PageDock") return;
+
+    const r=el.getBoundingClientRect();
+    const txt=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+    // конкретно шукаємо порожню горизонтальну смугу одразу під metadata-row
+    if(
+      r.width > innerWidth * .75 &&
+      r.height >= 8 && r.height <= 80 &&
+      r.top >= bottom - 2 && r.top <= bottom + 90 &&
+      !txt &&
+      controls===0
+    ){
+      el.classList.add("v108-empty-under-meta");
+    }
+  });
+}
+
+function raisePaperToMeta(){
+  const fs=document.fullscreenElement || document.webkitFullscreenElement;
+  if(!fs) return;
+
+  const top=metaBottom()+2;
+  const canvas=document.querySelector(".upper-canvas") || document.querySelector("canvas");
+  if(!canvas) return;
+
+  let host=canvas.parentElement;
+  for(let i=0;i<4 && host?.parentElement;i++){
+    const r=host.getBoundingClientRect();
+    if(r.width>800 && r.height>300) break;
+    host=host.parentElement;
+  }
+  if(!host) return;
+
+  const r=host.getBoundingClientRect();
+  if(r.top > top+6){
+    host.style.setProperty("margin-top",(top-r.top)+"px","important");
+  }
+
+  // align left/right panels to the same line
+  const left=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+             document.querySelector(".side-tool[data-tool]")?.parentElement;
+  const right=document.getElementById("v86Dock");
+  if(left) left.style.setProperty("top",top+"px","important");
+  if(right) right.style.setProperty("top",top+"px","important");
+}
+
+function apply(){
+  removeEmptyStrip();
+  raisePaperToMeta();
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b) b.textContent="v108";
+}
+
+function init(){
+  addCss();
+  mark();
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(apply,80);
+    setTimeout(apply,350);
+    setTimeout(apply,900);
+  });
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(apply,80);
+    setTimeout(apply,350);
+    setTimeout(apply,900);
+  });
+  window.addEventListener("resize",()=>setTimeout(apply,100));
+  [250,700,1400].forEach(ms=>setTimeout(apply,ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else setTimeout(init,180);
+})();
+
+
+
+/* V109 — підпис Sofia Notebook © Parasochka на рівні кнопки Довідка */
+(function(){
+"use strict";
+
+function fixSignature(){
+  const help = [...document.querySelectorAll("button,div,a")].find(el =>
+    /Довідка/i.test((el.textContent||"").trim()) &&
+    el.getBoundingClientRect().right > innerWidth - 180
+  );
+
+  const sigs = [...document.querySelectorAll("div,span,p,small")].filter(el =>
+    (el.textContent||"").trim() === "Sofia Notebook © Parasochka"
+  );
+
+  if(!sigs.length) return;
+
+  // лишаємо один підпис
+  sigs.slice(1).forEach(el=>el.remove());
+  const sig=sigs[0];
+
+  sig.style.setProperty("position","fixed","important");
+  sig.style.setProperty("z-index","9990","important");
+  sig.style.setProperty("margin","0","important");
+  sig.style.setProperty("pointer-events","none","important");
+  sig.style.setProperty("white-space","nowrap","important");
+
+  if(help){
+    const hr=help.getBoundingClientRect();
+    sig.style.setProperty("bottom", Math.max(8, innerHeight-hr.bottom+8)+"px","important");
+    sig.style.setProperty("right", Math.max(90, innerWidth-hr.left+18)+"px","important");
+  }else{
+    sig.style.setProperty("bottom","12px","important");
+    sig.style.setProperty("right","105px","important");
+  }
+}
+
+function init(){
+  fixSignature();
+  window.addEventListener("resize",fixSignature);
+  document.addEventListener("fullscreenchange",()=>setTimeout(fixSignature,150));
+  document.addEventListener("webkitfullscreenchange",()=>setTimeout(fixSignature,150));
+  new MutationObserver(()=>fixSignature()).observe(document.body,{childList:true,subtree:true});
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init,{once:true});
+else init();
+})();
