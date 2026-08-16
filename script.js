@@ -9994,3 +9994,135 @@ if(document.readyState==="loading"){
   setTimeout(init119,180);
 }
 })();
+
+
+
+/* =========================================================
+   V120 CLEAN — ЛІВА ПАНЕЛЬ НЕРУХОМА
+   - fixed у звичайному режимі;
+   - fixed у fullscreen;
+   - fixed на телефоні;
+   - не рухається разом з аркушем;
+   - Fabric canvas не переносимо.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $L=id=>document.getElementById(id);
+
+function cssL(){
+  if($L("v120LeftFixedCss"))return;
+
+  const st=document.createElement("style");
+  st.id="v120LeftFixedCss";
+  st.textContent=`
+    /* Основні можливі контейнери лівої панелі */
+    .side-tools,
+    .left-toolbar,
+    .left-tools,
+    .tool-sidebar{
+      position:fixed!important;
+      left:0!important;
+      top:0!important;
+      bottom:0!important;
+      height:100vh!important;
+      max-height:100vh!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      z-index:118000!important;
+      background:#fff!important;
+      border-right:1px solid #d8e2ef!important;
+      box-shadow:2px 0 8px rgba(15,23,42,.06)!important;
+      transform:none!important;
+    }
+
+    /* Якщо ліва панель у цій версії — батьківський блок самих side-tool */
+    .side-tool[data-tool]{
+      flex-shrink:0!important;
+    }
+
+    /* Fullscreen: панель лишається на тому самому місці */
+    #pageViewport:fullscreen .side-tools,
+    #pageViewport:fullscreen .left-toolbar,
+    #pageViewport:fullscreen .left-tools,
+    #pageViewport:fullscreen .tool-sidebar,
+    #pageViewport:-webkit-full-screen .side-tools,
+    #pageViewport:-webkit-full-screen .left-toolbar,
+    #pageViewport:-webkit-full-screen .left-tools,
+    #pageViewport:-webkit-full-screen .tool-sidebar{
+      position:fixed!important;
+      left:0!important;
+      top:0!important;
+      bottom:0!important;
+      height:100vh!important;
+      transform:none!important;
+    }
+
+    /* На телефоні теж нерухома */
+    @media(max-width:768px){
+      .side-tools,
+      .left-toolbar,
+      .left-tools,
+      .tool-sidebar{
+        position:fixed!important;
+        left:0!important;
+        top:0!important;
+        bottom:0!important;
+        height:100vh!important;
+        z-index:118000!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function findLeftHostL(){
+  return document.querySelector(
+    ".side-tools,.left-toolbar,.left-tools,.tool-sidebar"
+  ) || document.querySelector(".side-tool[data-tool]")?.parentElement || null;
+}
+
+function lockLeftL(){
+  const host=findLeftHostL();
+  if(!host)return;
+
+  host.style.setProperty("position","fixed","important");
+  host.style.setProperty("left","0","important");
+  host.style.setProperty("top","0","important");
+  host.style.setProperty("bottom","0","important");
+  host.style.setProperty("height","100vh","important");
+  host.style.setProperty("max-height","100vh","important");
+  host.style.setProperty("overflow-y","auto","important");
+  host.style.setProperty("overflow-x","hidden","important");
+  host.style.setProperty("z-index","118000","important");
+  host.style.setProperty("background","#fff","important");
+  host.style.setProperty("transform","none","important");
+}
+
+function markL(){
+  const b=$L("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v120";
+  document.documentElement.dataset.sofiaVersion="120-clean-mobile";
+}
+
+function repairL(){
+  cssL();
+  lockLeftL();
+}
+
+function initL(){
+  repairL();
+  markL();
+  [350,900,1600].forEach(ms=>setTimeout(repairL,ms));
+}
+
+document.addEventListener("fullscreenchange",()=>setTimeout(repairL,100));
+window.addEventListener("resize",()=>setTimeout(repairL,100));
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(initL,180),{once:true});
+}else{
+  setTimeout(initL,180);
+}
+})();
