@@ -8087,3 +8087,454 @@ function init(){
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init,{once:true});
 else init();
 })();
+
+
+
+/* =========================================================
+   V110 — repair fullscreen page dock + Help + true Word-like Cursor
+   ========================================================= */
+(function(){
+"use strict";
+const $110=id=>document.getElementById(id);
+
+function addCss(){
+  if($110("v110Css")) return;
+  const st=document.createElement("style");
+  st.id="v110Css";
+  st.textContent=`
+    /* Bottom page dock: always visible, readable and fixed in fullscreen */
+    #v99PageDock{
+      position:fixed!important;
+      left:86px!important;
+      right:78px!important;
+      bottom:0!important;
+      top:auto!important;
+      z-index:79500!important;
+      display:flex!important;
+      align-items:center!important;
+      gap:6px!important;
+      min-height:48px!important;
+      max-height:54px!important;
+      padding:4px 8px!important;
+      background:transparent!important;
+      border:0!important;
+      box-shadow:none!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      white-space:nowrap!important;
+    }
+    :fullscreen #v99PageDock,
+    :-webkit-full-screen #v99PageDock{
+      left:78px!important;
+      right:78px!important;
+      bottom:0!important;
+      display:flex!important;
+    }
+    #v99PageDock #addPageBtn,
+    #v99PageDock #deletePageBtn,
+    #v99PageDock #v106ClearPageBtn{
+      display:inline-flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+      flex:0 0 auto!important;
+      min-height:34px!important;
+      height:34px!important;
+      align-items:center!important;
+      justify-content:center!important;
+      background:rgba(255,255,255,.94)!important;
+    }
+    #v99PageDock #pageTabsWrap{
+      display:inline-flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+      max-width:none!important;
+      margin:0!important;
+      flex:0 0 auto!important;
+    }
+    #v99PageDock #pageTabs{
+      display:flex!important;
+      gap:6px!important;
+      overflow:visible!important;
+      max-width:none!important;
+      padding:0!important;
+    }
+    #v99PageDock .page-tab-title{
+      display:inline-flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+      min-width:88px!important;
+      justify-content:center!important;
+    }
+
+    /* Right Help button fixed at bottom of right rail */
+    #v110HelpBtn{
+      width:100%;
+      min-height:48px;
+      border:0;
+      background:transparent;
+      color:#24354e;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      cursor:pointer;
+      font:600 9px/1.05 Arial,sans-serif;
+      margin-top:auto;
+    }
+    #v110HelpBtn .ico{font-size:18px;line-height:1}
+
+    #v110Help{
+      position:fixed;
+      right:86px;
+      top:78px;
+      z-index:92000;
+      width:min(720px,calc(100vw - 180px));
+      max-height:calc(100vh - 100px);
+      display:none;
+      flex-direction:column;
+      background:#fff;
+      border:1px solid #d6e0ec;
+      border-radius:14px;
+      box-shadow:0 10px 36px rgba(15,23,42,.25);
+      overflow:hidden;
+      font:14px/1.4 Arial,sans-serif;
+    }
+    #v110Help.show{display:flex!important}
+    #v110HelpHead{
+      display:flex;align-items:center;gap:8px;
+      padding:11px 13px;background:#f8fafc;border-bottom:1px solid #e7edf4;
+    }
+    #v110HelpHead strong{font-size:17px}
+    #v110HelpClose{
+      margin-left:auto;width:30px;height:30px;border:0;border-radius:7px;background:#eef2f7;cursor:pointer;
+    }
+    #v110HelpSearchWrap{padding:10px 13px;border-bottom:1px solid #edf1f5}
+    #v110HelpSearch{
+      width:100%;height:36px;border:1px solid #bfcddd;border-radius:8px;
+      padding:5px 11px;font-size:14px;box-sizing:border-box;
+    }
+    #v110HelpResults{overflow:auto;padding:8px 13px 15px}
+    .v110HelpSection{font-weight:700;color:#173b78;margin:10px 0 4px}
+    .v110HelpItem{padding:7px 3px;border-bottom:1px solid #eef2f7}
+    .v110HelpItem b{display:block}
+
+    /* True cursor mode */
+    body.v110-cursor-mode .upper-canvas,
+    body.v110-cursor-mode canvas{cursor:text!important}
+
+    #v110CursorBtn{
+      width:100%;
+      min-height:47px;
+      border:0;
+      border-radius:8px;
+      background:transparent;
+      color:#24354e;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      padding:3px 1px;
+      cursor:pointer;
+      font:600 9px/1.05 Arial,sans-serif;
+    }
+    #v110CursorBtn .ico{font-size:18px}
+    #v110CursorBtn.active{background:#173b78!important;color:#fff!important}
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------------- Pages ---------------- */
+function repairPages(){
+  const dock=$110("v99PageDock");
+  if(!dock) return;
+
+  try{
+    if(typeof ensurePageTabsUI==="function") ensurePageTabsUI();
+    if(typeof renderPageTabs==="function") renderPageTabs();
+    if(typeof updatePageIndicator==="function") updatePageIndicator();
+  }catch(_){}
+
+  const prev=$110("prevPageBtn");
+  const ind=$110("pageIndicator");
+  const next=$110("nextPageBtn");
+  const add=$110("addPageBtn");
+  const tabs=$110("pageTabsWrap");
+  const del=$110("deletePageBtn");
+  const clear=$110("v106ClearPageBtn");
+
+  if(add){
+    add.hidden=false;
+    add.style.removeProperty("display");
+    add.textContent="+ Нова сторінка";
+  }
+  if(del){
+    del.hidden=false;
+    del.style.removeProperty("display");
+    del.textContent="Видалити сторінку";
+  }
+  if(clear){
+    clear.hidden=false;
+    clear.style.removeProperty("display");
+    clear.textContent="Очистити сторінку";
+  }
+
+  [prev,ind,next,add,tabs,del,clear].forEach(el=>{
+    if(el) dock.appendChild(el);
+  });
+
+  /* Page default labels remain native pageTitleAt(i):
+     Сторінка 1, Сторінка 2... Custom user titles remain untouched. */
+  try{
+    if(typeof renderPageTabs==="function") renderPageTabs();
+  }catch(_){}
+}
+
+/* ---------------- Help ---------------- */
+const helpRows=[
+["Вкладки","Основне","Основні команди: текст, збереження, скасування/повтор, видалення."],
+["Вкладки","Вставка","Нотатка, таблиця, зображення, відео, посилання, файли."],
+["Вкладки","Малювання","Колір, товщина, стиль лінії, фігури, групування."],
+["Вкладки","Математика","Графіки, координатна площина, числова пряма, геометричні інструменти."],
+["Вкладки","Вчитель","Колесо, картки, тести, списки, перекладач, таймер, UA-розбір."],
+["Вкладки","AI","AI-чат і AI-зображення."],
+["Ліва панель","Курсор","Клацніть у будь-якому місці аркуша. Там з'явиться текстовий курсор і можна одразу друкувати."],
+["Ліва панель","Рука","Вибір і переміщення об'єктів."],
+["Ліва панель","Ручка","Вільне малювання."],
+["Ліва панель","Маркер","Малювання маркером."],
+["Ліва панель","Стирачка","Стирання намальованих елементів."],
+["Ліва панель","Лінія","Пряма лінія."],
+["Ліва панель","Крива","Крива."],
+["Ліва панель","Ламана","Ламана лінія."],
+["Ліва панель","Хвиляста","Хвиляста лінія."],
+["Ліва панель","Стрілка","Стрілка."],
+["Ліва панель","Прямокутник","Прямокутник."],
+["Ліва панель","Коло","Коло або еліпс."],
+["Ліва панель","Трикутник","Трикутник."],
+["Ліва панель","Текст","Вставка тексту."],
+["Сторінки","+ Нова сторінка","Створює нову чисту сторінку з назвою Сторінка N."],
+["Сторінки","Сторінка 1 / 2 / …","Перемикання сторінок. Олівець — перейменування, × — видалення."],
+["Сторінки","Очистити сторінку","Очищує лише поточну сторінку."],
+["Сторінки","Видалити сторінку","Видаляє поточну сторінку."],
+["Об'єкти","Виділення об'єкта","Відкриває панель властивостей: колір, заливка, товщина, шрифт, прозорість тощо."],
+["Верхня панель","Повний екран","Розгортає робоче поле на весь екран."],
+["Верхня панель","Перекладач","Переклад тексту."],
+["Верхня панель","Перевірка","Інструменти перевірки."],
+["Верхня панель","Очистити все","Очищує весь зошит."],
+["Параметри","Клас","Вибір класу."],
+["Параметри","Предмет","Вибір предмета."],
+["Параметри","Дата","Вибір дати."],
+["Параметри","Лінійка / Клітинка","Тип фону аркуша."],
+["Параметри","Розмір","Розмір ліній або клітинок."]
+];
+
+function makeHelp(){
+  let h=$110("v110Help");
+  if(h) return h;
+  h=document.createElement("div");
+  h.id="v110Help";
+  h.innerHTML=`
+    <div id="v110HelpHead">
+      <strong>Довідка Sofia Notebook</strong>
+      <button id="v110HelpClose" type="button">×</button>
+    </div>
+    <div id="v110HelpSearchWrap">
+      <input id="v110HelpSearch" type="search" placeholder="Пошук: курсор, сторінка, математика, колір, AI…">
+    </div>
+    <div id="v110HelpResults"></div>
+  `;
+  document.body.appendChild(h);
+  $110("v110HelpClose").onclick=()=>h.classList.remove("show");
+  $110("v110HelpSearch").addEventListener("input",renderHelp);
+  renderHelp();
+  return h;
+}
+function renderHelp(){
+  const out=$110("v110HelpResults");
+  if(!out) return;
+  const q=($110("v110HelpSearch")?.value||"").trim().toLowerCase();
+  const rows=helpRows.filter(([s,n,d])=>!q || (s+" "+n+" "+d).toLowerCase().includes(q));
+  let last="";
+  out.innerHTML=rows.length ? rows.map(([sec,n,d])=>{
+    const sh=sec!==last?`<div class="v110HelpSection">${sec}</div>`:"";
+    last=sec;
+    return `${sh}<div class="v110HelpItem"><b>${n}</b><span>${d}</span></div>`;
+  }).join("") : `<div style="padding:24px;text-align:center;color:#6b7280">Нічого не знайдено</div>`;
+}
+function ensureHelpButton(){
+  const dock=$110("v86Dock");
+  if(!dock) return;
+  let b=$110("v110HelpBtn");
+  if(!b){
+    b=document.createElement("button");
+    b.id="v110HelpBtn";
+    b.type="button";
+    b.innerHTML='<span class="ico">?</span><span>Довідка</span>';
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const h=makeHelp();
+      h.classList.add("show");
+      const s=$110("v110HelpSearch");
+      if(s){s.value="";renderHelp();setTimeout(()=>s.focus(),20)}
+    };
+    dock.appendChild(b);
+  }
+}
+
+/* ---------------- True Word-like cursor ---------------- */
+function leftHost(){
+  return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+         document.querySelector(".side-tool[data-tool]")?.parentElement;
+}
+function ensureCursorButton(){
+  const host=leftHost();
+  if(!host) return;
+  let b=$110("v110CursorBtn");
+  if(!b){
+    b=document.createElement("button");
+    b.id="v110CursorBtn";
+    b.type="button";
+    b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      activateCursorMode();
+    };
+    host.insertBefore(b,host.firstChild);
+  }
+}
+function activateCursorMode(){
+  document.body.classList.add("v110-cursor-mode");
+  document.body.classList.remove("v96-hand-mode","v99-hand-mode","v96-dragging","v99-dragging");
+
+  document.querySelectorAll(".side-tool[data-tool]").forEach(b=>b.classList.remove("active","selected","v96-hand-active","v99-hand-active"));
+  $110("v110CursorBtn")?.classList.add("active");
+
+  try{
+    if(typeof fcanvas!=="undefined"){
+      fcanvas.isDrawingMode=false;
+      fcanvas.selection=false;
+      fcanvas.discardActiveObject();
+      fcanvas.defaultCursor="text";
+      fcanvas.hoverCursor="text";
+      fcanvas.forEachObject(o=>{o.selectable=false;o.evented=false});
+      fcanvas.requestRenderAll();
+    }
+  }catch(_){}
+}
+
+function canvasEl(){
+  return document.querySelector(".upper-canvas") || document.querySelector("canvas");
+}
+
+function bindCursorTyping(){
+  if(document.__v110CursorTyping) return;
+  document.__v110CursorTyping=true;
+
+  document.addEventListener("pointerdown",e=>{
+    if(!document.body.classList.contains("v110-cursor-mode")) return;
+    if(e.button!==0) return;
+
+    const c=canvasEl();
+    if(!c) return;
+    const r=c.getBoundingClientRect();
+    if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return;
+
+    let x=e.clientX-r.left, y=e.clientY-r.top;
+    try{
+      const p=fcanvas.getPointer(e);
+      x=p.x;y=p.y;
+    }catch(_){}
+
+    window.sofiaInsertPoint={x,y,active:true,setAt:Date.now()};
+
+    /* Create a real editable Fabric IText at EXACT click point.
+       This gives a genuine typing caret and immediate keyboard input. */
+    try{
+      const t=new fabric.IText("",{
+        left:x,
+        top:y,
+        originX:"left",
+        originY:"top",
+        fontFamily:"Segoe Script",
+        fontSize:26,
+        fill:"#4a7fbd",
+        editable:true,
+        selectable:true,
+        evented:true
+      });
+      t.sofiaCursorText=true;
+
+      fcanvas.add(t);
+      fcanvas.setActiveObject(t);
+      t.enterEditing();
+      t.setSelectionStart?.(0);
+      t.setSelectionEnd?.(0);
+      fcanvas.requestRenderAll();
+
+      /* Temporarily allow this one text object to receive keyboard input. */
+      t.selectable=true;t.evented=true;
+
+      t.on("editing:exited",()=>{
+        if((t.text||"")===""){
+          fcanvas.remove(t);
+          fcanvas.requestRenderAll();
+        }
+        if(document.body.classList.contains("v110-cursor-mode")){
+          fcanvas.forEachObject(o=>{
+            if(o!==t){o.selectable=false;o.evented=false}
+          });
+        }
+        try{autoSave()}catch(_){}
+      });
+    }catch(_){}
+  },true);
+}
+
+/* Other tools switch off Cursor mode */
+function bindToolExit(){
+  if(document.__v110ToolExit) return;
+  document.__v110ToolExit=true;
+  document.addEventListener("click",e=>{
+    const b=e.target.closest?.(".side-tool[data-tool]");
+    if(!b) return;
+    document.body.classList.remove("v110-cursor-mode");
+    $110("v110CursorBtn")?.classList.remove("active");
+  },true);
+}
+
+function mark(){
+  const b=$110("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v110";
+  document.documentElement.dataset.sofiaVersion="110";
+}
+
+function repair(){
+  repairPages();
+  ensureHelpButton();
+  ensureCursorButton();
+}
+
+function init(){
+  addCss();
+  makeHelp();
+  repair();
+  bindCursorTyping();
+  bindToolExit();
+  activateCursorMode();
+  mark();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v110);
+    mo.__v110=setTimeout(repair,100);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,800,1500,2400].forEach(ms=>setTimeout(repair,ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
