@@ -7183,53 +7183,117 @@ else setTimeout(init,180);
 
 
 /* =========================================================
-   V104 — КНОПКА КУРСОР + РУКА НЕ ЗАВЖДИ АКТИВНА + ПІДПИСИ КНОПОК
+   V105 — clean patch from V103
+   1) fixed transparent right dock
+   2) correct page tabs (no injected duplicate labels)
+   3) one Parasochka signature
+   4) explicit Cursor mode + Hand mode visual cursor
    ========================================================= */
 (function(){
 "use strict";
-const $104=id=>document.getElementById(id);
+const $105=id=>document.getElementById(id);
 
-function addCss(){
-  if($104("v104Css")) return;
+function css(){
+  if($105("v105Css")) return;
   const st=document.createElement("style");
-  st.id="v104Css";
+  st.id="v105Css";
   st.textContent=`
-    .side-tool[data-tool].v104-cursor-active{
+    /* RIGHT PANEL: always fixed, transparent, never travels with the sheet */
+    #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      top:128px!important;
+      bottom:0!important;
+      left:auto!important;
+      transform:none;
+      background:transparent!important;
+      border-left:0!important;
+      box-shadow:none!important;
+      backdrop-filter:none!important;
+      z-index:75000!important;
+    }
+    #v86Dock .v86tab,
+    #v86Help{
+      background:transparent!important;
+      box-shadow:none!important;
+    }
+    #v86Dock .v86tab:hover,
+    #v86Help:hover{
+      background:rgba(238,244,251,.92)!important;
+    }
+    #v86Dock .v86tab.active{
       background:#173b78!important;
       color:#fff!important;
     }
-    #v104CursorBtn{
+    body.v89-right-collapsed #v86Dock{
+      transform:translateX(100%)!important;
+    }
+
+    /* Keep right dock aligned in fullscreen too */
+    :fullscreen #v86Dock,
+    :-webkit-full-screen #v86Dock{
+      position:fixed!important;
+      right:0!important;
+      top:128px!important;
+      bottom:0!important;
+    }
+
+    /* Only ONE author signature: keep original sofiaAuthorSignature */
+    #v102Signature{display:none!important}
+    #sofiaAuthorSignature{
+      display:block!important;
+      position:fixed!important;
+      right:86px!important;
+      bottom:55px!important;
+      z-index:70000!important;
+      pointer-events:none!important;
+      background:transparent!important;
+    }
+    body.v89-right-collapsed #sofiaAuthorSignature{right:12px!important}
+
+    /* Explicit cursor button */
+    #v105CursorBtn{
       width:100%;
-      min-height:46px;
+      min-height:47px;
       border:0;
       border-radius:8px;
-      background:#fff;
+      background:transparent;
       color:#24354e;
-      padding:4px 2px;
       display:flex;
       flex-direction:column;
       align-items:center;
       justify-content:center;
       gap:2px;
+      padding:3px 1px;
       cursor:pointer;
       font:600 9px/1.05 Arial,sans-serif;
     }
-    #v104CursorBtn .ico{font-size:18px;line-height:1}
-    #v104CursorBtn.active{
+    #v105CursorBtn .ico{font-size:18px;line-height:1}
+    #v105CursorBtn.active{
       background:#173b78!important;
       color:#fff!important;
     }
 
-    /* Нижня панель: всі кнопки мають видимий текст */
-    #v99PageDock button{
-      min-width:40px!important;
-      color:#172033!important;
-      opacity:1!important;
-      visibility:visible!important;
+    /* Real mouse pointer appearance for the two modes */
+    body.v105-cursor-mode .upper-canvas,
+    body.v105-cursor-mode canvas{
+      cursor:text!important;
     }
-    #v99PageDock button.v104-page-named{
-      padding-left:10px!important;
-      padding-right:10px!important;
+    body.v99-hand-mode .upper-canvas,
+    body.v99-hand-mode canvas{
+      cursor:grab!important;
+    }
+    body.v99-hand-mode.v99-dragging .upper-canvas,
+    body.v99-hand-mode.v99-dragging canvas{
+      cursor:grabbing!important;
+    }
+
+    /* Bottom page dock: transparent but stable */
+    #v99PageDock{
+      background:transparent!important;
+      border-top:0!important;
+      box-shadow:none!important;
+      backdrop-filter:none!important;
     }
   `;
   document.head.appendChild(st);
@@ -7239,26 +7303,27 @@ function leftTools(){
   return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
          document.querySelector(".side-tool[data-tool]")?.parentElement;
 }
-
+function sideButtons(){
+  return [...document.querySelectorAll(".side-tool[data-tool]")];
+}
 function handButton(){
   return document.querySelector('.side-tool[data-tool="select"],.side-tool[data-tool="hand"],#handBtn');
 }
-
-function clearToolStates(){
-  document.querySelectorAll('.side-tool[data-tool],#v104CursorBtn').forEach(b=>{
-    b.classList.remove("active","selected","v96-hand-active","v99-hand-active","v104-cursor-active");
-    b.setAttribute?.("aria-pressed","false");
+function clearSideVisuals(){
+  sideButtons().forEach(b=>{
+    b.classList.remove("active","selected","v96-hand-active","v99-hand-active");
+    b.setAttribute("aria-pressed","false");
   });
 }
 
-function activateCursor(){
-  clearToolStates();
-  const cb=$104("v104CursorBtn");
+function setCursorMode(){
+  document.body.classList.add("v105-cursor-mode","v94-insert-ready","v96-select-mode");
+  document.body.classList.remove("v96-hand-mode","v96-dragging","v99-hand-mode","v99-dragging");
+  clearSideVisuals();
+
+  const cb=$105("v105CursorBtn");
   cb?.classList.add("active");
   cb?.setAttribute("aria-pressed","true");
-
-  document.body.classList.remove("v96-hand-mode","v96-dragging","v99-hand-mode","v99-dragging");
-  document.body.classList.add("v94-insert-ready","v96-select-mode");
 
   try{
     if(typeof fcanvas!=="undefined"){
@@ -7270,149 +7335,124 @@ function activateCursor(){
     }
   }catch(_){}
 
-  // Cursor appears only after clicking on the sheet; don't force a stale caret.
-  $104("v94InsertCaret")?.classList.remove("show");
+  // The blinking insertion caret appears after the user clicks the sheet.
+  $105("v94InsertCaret")?.classList.remove("show");
 }
 
 function ensureCursorButton(){
-  const left=leftTools();
-  if(!left) return;
+  const host=leftTools();
+  if(!host) return;
+  let b=$105("v105CursorBtn");
+  if(b) return;
 
-  let b=$104("v104CursorBtn");
-  if(!b){
-    b=document.createElement("button");
-    b.id="v104CursorBtn";
-    b.type="button";
-    b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
-    b.title="Курсор вставки";
-    b.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      activateCursor();
-    };
-
-    // Put it at the very top of the left tool panel.
-    left.insertBefore(b,left.firstChild);
-  }
+  b=document.createElement("button");
+  b.id="v105CursorBtn";
+  b.type="button";
+  b.title="Курсор — поставити місце вставки";
+  b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
+  b.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    setCursorMode();
+  },true);
+  host.insertBefore(b,host.firstChild);
 }
 
-function normalizeHandState(){
-  const hb=handButton();
-  if(!hb) return;
+function bindModeVisuals(){
+  // When any real tool is clicked, Cursor button must turn off.
+  if(document.__v105ModesBound) return;
+  document.__v105ModesBound=true;
 
-  // If hand is visually active but body isn't really in a hand mode, remove highlight.
-  const bodyHand =
-    document.body.classList.contains("v96-hand-mode") ||
-    document.body.classList.contains("v99-hand-mode");
+  document.addEventListener("click",e=>{
+    const b=e.target.closest?.(".side-tool[data-tool]");
+    if(!b) return;
 
-  if(!bodyHand){
-    hb.classList.remove("active","selected","v96-hand-active","v99-hand-active");
-    hb.setAttribute("aria-pressed","false");
-  }
-}
+    $105("v105CursorBtn")?.classList.remove("active");
+    document.body.classList.remove("v105-cursor-mode");
 
-function bindHandCleanly(){
-  const hb=handButton();
-  if(!hb || hb.__v104Bound) return;
-  hb.__v104Bound=true;
-
-  hb.addEventListener("click",()=>{
-    setTimeout(()=>{
-      const isHand =
-        document.body.classList.contains("v96-hand-mode") ||
-        document.body.classList.contains("v99-hand-mode");
-
-      if(isHand){
-        clearToolStates();
-        hb.classList.add("active");
-        hb.setAttribute("aria-pressed","true");
-      }else{
-        activateCursor();
-      }
-    },60);
+    // Hand/select button gets a hand pointer through the existing V99 hand mode.
+    // Other tools keep their own original behavior.
   },true);
 }
 
-function ensurePageLabels(){
-  const dock=$104("v99PageDock");
-  if(!dock) return;
+/* Clicking anywhere on empty paper in Cursor mode must be allowed.
+   V94 already stores the exact Fabric insertion point; this listener only
+   ensures old visual tool states do not block that V94 handler. */
+function bindPaperCursor(){
+  if(document.__v105PaperCursorBound) return;
+  document.__v105PaperCursorBound=true;
 
-  // Label add/delete explicitly.
-  [...dock.querySelectorAll("button")].forEach(b=>{
-    const t=(b.textContent||"").replace(/\s+/g," ").trim();
+  document.addEventListener("pointerdown",e=>{
+    if(!document.body.classList.contains("v105-cursor-mode")) return;
+    const canvas=e.target.closest?.("canvas");
+    if(!canvas) return;
 
-    if(b.id==="addPageBtn" && !/Нова сторінка/i.test(t)){
-      b.textContent="+ Нова сторінка";
-      b.classList.add("v104-page-named");
-    }
-    if(b.id==="deletePageBtn" && !/Видалити сторінку/i.test(t)){
-      b.textContent="Видалити сторінку";
-      b.classList.add("v104-page-named");
-    }
-  });
-
-  // Name page tabs that lost their text and show only edit/close icons.
-  const tabsWrap=$104("pageTabsWrap");
-  if(tabsWrap){
-    let num=1;
-    [...tabsWrap.querySelectorAll("button")].forEach(b=>{
-      const t=(b.textContent||"").replace(/\s+/g," ").trim();
-      const iconOnly = t && !/Сторінка/i.test(t) && (/✎|✏|×|✕|✖/.test(t));
-      if(iconOnly){
-        // prepend only once
-        if(!b.querySelector(".v104PageName")){
-          const sp=document.createElement("span");
-          sp.className="v104PageName";
-          sp.textContent="Сторінка "+num+" ";
-          b.insertBefore(sp,b.firstChild);
-        }
-        num++;
-      }else if(/^Сторінка\s+\d+/i.test(t)){
-        num++;
+    clearSideVisuals();
+    try{
+      if(typeof fcanvas!=="undefined"){
+        fcanvas.isDrawingMode=false;
+        fcanvas.defaultCursor="text";
+        fcanvas.hoverCursor="text";
       }
-    });
-  }
+    }catch(_){}
+  },true);
 }
 
-function markVersion(){
-  let b=$104("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  }
-  if(b) b.textContent="v104";
-  document.documentElement.dataset.sofiaVersion="104";
+/* Restore the native page-tab renderer.
+   Do NOT rewrite button text: page titles may legitimately be custom names. */
+function repairPages(){
+  try{
+    if(typeof renderPageTabs==="function") renderPageTabs();
+    if(typeof updatePageIndicator==="function") updatePageIndicator();
+  }catch(_){}
+}
+
+function removeDuplicateSignature(){
+  // V102 added a second signature. Hide/remove that one; keep the original V56 signature.
+  const extra=$105("v102Signature");
+  if(extra) extra.remove();
+
+  const original=$105("sofiaAuthorSignature");
+  if(original) original.textContent="Sofia Notebook © Parasochka";
+}
+
+function mark(){
+  const b=$105("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b) b.textContent="v105";
+  document.documentElement.dataset.sofiaVersion="105";
 }
 
 function init(){
-  addCss();
+  css();
+  removeDuplicateSignature();
   ensureCursorButton();
-  bindHandCleanly();
-  normalizeHandState();
-  ensurePageLabels();
-  activateCursor();
-  markVersion();
+  bindModeVisuals();
+  bindPaperCursor();
+  repairPages();
+  setCursorMode();
+  mark();
 
+  // Only maintain structural elements; no page-label rewriting.
   const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v104);
-    mo.__v104=setTimeout(()=>{
+    clearTimeout(mo.__v105);
+    mo.__v105=setTimeout(()=>{
+      removeDuplicateSignature();
       ensureCursorButton();
-      bindHandCleanly();
-      normalizeHandState();
-      ensurePageLabels();
-    },80);
+    },100);
   });
-  mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
+  mo.observe(document.body,{childList:true,subtree:true});
 
-  [300,900,1600].forEach(ms=>setTimeout(()=>{
+  [350,900,1600].forEach(ms=>setTimeout(()=>{
+    removeDuplicateSignature();
     ensureCursorButton();
-    bindHandCleanly();
-    normalizeHandState();
-    ensurePageLabels();
+    repairPages();
   },ms));
 }
 
 if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
 else
-  setTimeout(init,160);
+  setTimeout(init,180);
 })();
