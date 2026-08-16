@@ -1201,7 +1201,7 @@ const CSS_PX_PER_CM=96/2.54;
 function insertTextIntoBoard(text){
   let obj=fcanvas.getActiveObject();
   if(!(obj&&["i-text","textbox"].includes(obj.type))){
-    obj=new fabric.IText("",{left:110,top:190,fontSize:38,fontFamily:"Segoe Script",fontStyle:"normal",fill:"#4a7fbd",erasable:false});fcanvas.add(obj);fcanvas.setActiveObject(obj);obj.enterEditing();
+    obj=new fabric.IText("",{left:110,top:190,fontSize:32,fontFamily:"Segoe Script",fontStyle:"normal",fill:"#4a7fbd",erasable:false});fcanvas.add(obj);fcanvas.setActiveObject(obj);obj.enterEditing();
   }
   if(obj.enterEditing&&!obj.isEditing)obj.enterEditing();
   obj.insertChars(text,null,obj.selectionStart,obj.selectionEnd);obj.setCoords();fcanvas.requestRenderAll();pushHistory();autoSave();syncTextFormatBar();
@@ -3443,7 +3443,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     const align=$57("v57TextAlign");
 
     if(font)font.value=o.fontFamily||"Segoe Script";
-    if(size)size.value=Math.round(o.fontSize||38);
+    if(size)size.value=Math.round(o.fontSize||32);
     if(color && /^#[0-9a-f]{6}$/i.test(o.fill||""))color.value=o.fill;
     if(bg && /^#[0-9a-f]{6}$/i.test(o.backgroundColor||""))bg.value=o.backgroundColor;
     if(align)align.value=o.textAlign||"left";
@@ -3459,7 +3459,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     const t=new fabric.IText("Текст",{
       left:300,top:200,
       fontFamily:"Segoe Script",
-      fontSize:38,
+      fontSize:32,
       fill:"#4a7fbd",
       fontStyle:"normal",
       editable:true,
@@ -3502,7 +3502,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
         <option>Comic Sans MS</option>
       </select>
 
-      <input id="v57TextSize" type="number" min="8" max="120" value="38"
+      <input id="v57TextSize" type="number" min="8" max="120" value="32"
         title="Розмір шрифту" style="width:70px">
 
       <button id="v57TextSmaller" type="button" title="Зменшити шрифт">A−</button>
@@ -4152,7 +4152,7 @@ else setTimeout(init,180);
   let textPlacementMode=false;
 
   const DEFAULT_FONT="Segoe Script";
-  const DEFAULT_SIZE=38;
+  const DEFAULT_SIZE=32;
   const DEFAULT_COLOR="#4a7fbd";
 
   function homePanel(){
@@ -4481,7 +4481,7 @@ function createAt(pointer){
     left:pointer.x,
     top:pointer.y,
     fontFamily:(window.sofiaTextDefaults?.fontFamily||"Segoe Script"),
-    fontSize:(window.sofiaTextDefaults?.fontSize||38),
+    fontSize:(window.sofiaTextDefaults?.fontSize||32),
     fontStyle:(window.sofiaTextDefaults?.fontStyle||"normal"),
     fontWeight:(window.sofiaTextDefaults?.fontWeight||"normal"),
     fill:(window.sofiaTextDefaults?.fill||"#4a7fbd"),
@@ -5191,7 +5191,7 @@ window.sofiaShapeFillEnabled = window.sofiaShapeFillEnabled ?? false;
 window.sofiaShapeFillColor = window.sofiaShapeFillColor || "#dbeafe";
 window.sofiaTextDefaults = window.sofiaTextDefaults || {
   fontFamily:"Segoe Script",
-  fontSize:38,
+  fontSize:32,
   fontStyle:"normal",
   fontWeight:"normal",
   underline:false,
@@ -6175,6 +6175,182 @@ function init(){
   const badge=$73("appVersionBadge");
   if(badge)badge.textContent="v73";
   document.documentElement.dataset.sofiaVersion="73";
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200),{once:true});
+else
+  setTimeout(init,200);
+})();
+
+
+
+/* =========================================================
+   V74 — ЖОРСТКО ПРИБИРАЄМО ВЕРТИКАЛЬНІ GAP + ТЕКСТ 32 PX
+   База: v73/v70.
+   ========================================================= */
+(function(){
+"use strict";
+const $74=id=>document.getElementById(id);
+
+function ribbon(){return $74("sofiaRibbonV56")}
+
+function isFullscreen(){
+  return !!document.fullscreenElement ||
+         !!document.webkitFullscreenElement ||
+         document.body.classList.contains("fullscreen") ||
+         document.documentElement.classList.contains("fullscreen");
+}
+
+function metadataRow(){
+  const ids=["studentName","classSelect","subject","workType","dateMode","paperType"];
+  const els=ids.map(id=>$74(id)).filter(Boolean);
+  if(!els.length)return null;
+  let p=els[0].parentElement;
+  while(p && p!==document.body){
+    if(els.every(el=>p.contains(el)))return p;
+    p=p.parentElement;
+  }
+  return els[0].parentElement;
+}
+
+function compactHard(){
+  const rb=ribbon();
+  if(!rb)return;
+
+  const meta=metadataRow();
+  if(meta){
+    meta.style.setProperty("margin-bottom","0","important");
+    meta.style.setProperty("padding-bottom","0","important");
+  }
+
+  // Стрічку підтягуємо максимально близько до панелі клас/предмет/дата.
+  rb.style.setProperty("margin-top","0","important");
+  rb.style.setProperty("margin-bottom","2px","important");
+  rb.style.setProperty("padding-top","0","important");
+
+  // Якщо між metadata і ribbon є будь-які sibling-блоки без важливих контролів —
+  // стискаємо їх до нуля.
+  if(meta){
+    let n=meta.nextElementSibling;
+    while(n && n!==rb){
+      const controls=n.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+      const txt=(n.textContent||"").trim();
+      if(controls===0 && txt===""){
+        n.style.setProperty("height","0","important");
+        n.style.setProperty("min-height","0","important");
+        n.style.setProperty("margin","0","important");
+        n.style.setProperty("padding","0","important");
+        n.style.setProperty("border","0","important");
+        n.style.setProperty("overflow","hidden","important");
+      }
+      n=n.nextElementSibling;
+    }
+  }
+
+  // Стискаємо батьківські layout-контейнери навколо ribbon.
+  let par=rb.parentElement;
+  for(let i=0;i<4 && par && par!==document.body;i++,par=par.parentElement){
+    par.style.setProperty("row-gap","0","important");
+    par.style.setProperty("column-gap","0","important");
+    if((parseFloat(getComputedStyle(par).paddingTop)||0)>8)
+      par.style.setProperty("padding-top","0","important");
+    if((parseFloat(getComputedStyle(par).marginTop)||0)>8)
+      par.style.setProperty("margin-top","0","important");
+  }
+
+  // У fullscreen прибираємо великий пустий блок над ribbon за геометрією.
+  if(isFullscreen()){
+    const rr=rb.getBoundingClientRect();
+    document.querySelectorAll("div,section,main").forEach(el=>{
+      if(el===rb || el.contains(rb) || rb.contains(el))return;
+      const r=el.getBoundingClientRect();
+      const cs=getComputedStyle(el);
+      const txt=(el.textContent||"").trim();
+      const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+      if(
+        cs.position!=="fixed" &&
+        r.bottom<=rr.top &&
+        rr.top-r.bottom<260 &&
+        r.height>=20 &&
+        r.height<=260 &&
+        txt==="" &&
+        controls===0
+      ){
+        el.dataset.v74Gap="1";
+        el.style.setProperty("height","0","important");
+        el.style.setProperty("min-height","0","important");
+        el.style.setProperty("max-height","0","important");
+        el.style.setProperty("margin","0","important");
+        el.style.setProperty("padding","0","important");
+        el.style.setProperty("border","0","important");
+        el.style.setProperty("overflow","hidden","important");
+      }
+    });
+
+    // Після стискання spacer-а компенсуємо залишковий реальний gap.
+    requestAnimationFrame(()=>{
+      const m=metadataRow();
+      const r1=m?.getBoundingClientRect();
+      const r2=rb.getBoundingClientRect();
+      if(r1 && r2){
+        const gap=r2.top-r1.bottom;
+        if(gap>8){
+          rb.style.setProperty("margin-top",`-${gap-4}px`,"important");
+        }
+      }
+    });
+  }
+}
+
+function restoreFullscreenArtifacts(){
+  if(isFullscreen())return;
+  document.querySelectorAll('[data-v74-gap="1"]').forEach(el=>{
+    ["height","min-height","max-height","margin","padding","border","overflow"]
+      .forEach(k=>el.style.removeProperty(k));
+    delete el.dataset.v74Gap;
+  });
+  setTimeout(compactHard,30);
+}
+
+function enforceText32(){
+  // Панелі за замовчуванням показують 32, але активний уже відформатований текст не чіпаємо.
+  if(window.sofiaTextDefaults)window.sofiaTextDefaults.fontSize=32;
+  const size=$74("v57TextSize");
+  if(size && !(window.fcanvas?.getActiveObject?.()))size.value=32;
+}
+
+function mark(){
+  const badge=$74("appVersionBadge");
+  if(badge)badge.textContent="v74";
+  document.documentElement.dataset.sofiaVersion="74";
+}
+
+function init(){
+  enforceText32();
+  compactHard();
+  mark();
+
+  document.addEventListener("fullscreenchange",()=>{
+    restoreFullscreenArtifacts();
+    [50,150,350].forEach(ms=>setTimeout(compactHard,ms));
+  });
+  document.addEventListener("webkitfullscreenchange",()=>{
+    restoreFullscreenArtifacts();
+    [50,150,350].forEach(ms=>setTimeout(compactHard,ms));
+  });
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v74);
+    mo.__v74=setTimeout(()=>{
+      enforceText32();
+      compactHard();
+    },35);
+  });
+  mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style","hidden"]});
+
+  [250,700,1500,2500].forEach(ms=>setTimeout(compactHard,ms));
 }
 
 if(document.readyState==="loading")
