@@ -8538,3 +8538,152 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V111 — ПІД ЧАС НАБОРУ ТЕКСТУ НЕ ПОКАЗУЄМО ПАНЕЛЬ ОБ'ЄКТА
+   + КНОПКА × ДІЙСНО ЗАКРИВАЄ ЇЇ
+   ========================================================= */
+(function(){
+"use strict";
+const $111=id=>document.getElementById(id);
+
+let objectPanelManuallyClosed=false;
+
+function activeTextIsEditing(){
+  try{
+    if(typeof fcanvas==="undefined") return false;
+    const o=fcanvas.getActiveObject?.();
+    return !!(o && ["i-text","textbox","text"].includes(o.type) && o.isEditing);
+  }catch(_){
+    return false;
+  }
+}
+
+function hideObjectPanelsWhileTyping(){
+  if(!activeTextIsEditing()) return;
+
+  ["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"].forEach(id=>{
+    const p=$111(id);
+    if(p) p.classList.remove("show");
+  });
+}
+
+function bindPanelClose(){
+  const pairs=[
+    ["v102ObjClose","v102ObjectPanel"],
+    ["v100ObjClose","v100ObjectPanel"],
+    ["v81ObjClose","v81ObjectPanel"]
+  ];
+
+  pairs.forEach(([btnId,panelId])=>{
+    const b=$111(btnId);
+    const p=$111(panelId);
+    if(!b || !p || b.__v111Bound) return;
+
+    b.__v111Bound=true;
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      objectPanelManuallyClosed=true;
+      p.classList.remove("show");
+    },true);
+  });
+}
+
+function bindCanvas(){
+  if(typeof fcanvas==="undefined" || fcanvas.__v111TypingBound) return;
+  fcanvas.__v111TypingBound=true;
+
+  fcanvas.on("text:editing:entered",()=>{
+    objectPanelManuallyClosed=true;
+    hideObjectPanelsWhileTyping();
+  });
+
+  fcanvas.on("text:changed",()=>{
+    hideObjectPanelsWhileTyping();
+  });
+
+  fcanvas.on("text:editing:exited",()=>{
+    objectPanelManuallyClosed=false;
+  });
+
+  fcanvas.on("selection:cleared",()=>{
+    objectPanelManuallyClosed=false;
+  });
+
+  /* Панель властивостей показуємо тільки після звичайного виділення,
+     але НЕ під час введення тексту. */
+  ["selection:created","selection:updated","object:modified"].forEach(ev=>{
+    fcanvas.on(ev,()=>{
+      setTimeout(()=>{
+        if(activeTextIsEditing() || objectPanelManuallyClosed){
+          hideObjectPanelsWhileTyping();
+          return;
+        }
+      },0);
+    });
+  });
+}
+
+/* Перехоплюємо старі refresh-функції лише в момент набору:
+   якщо текст редагується — одразу ховаємо панель після їх спроби відкритись. */
+function watchdog(){
+  if(activeTextIsEditing()){
+    hideObjectPanelsWhileTyping();
+  }
+  bindPanelClose();
+  bindCanvas();
+}
+
+function addCss(){
+  if($111("v111Css")) return;
+  const st=document.createElement("style");
+  st.id="v111Css";
+  st.textContent=`
+    body.v111-typing #v102ObjectPanel,
+    body.v111-typing #v100ObjectPanel,
+    body.v111-typing #v81ObjectPanel{
+      display:none!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function typingStateLoop(){
+  const typing=activeTextIsEditing();
+  document.body.classList.toggle("v111-typing",typing);
+  if(typing) hideObjectPanelsWhileTyping();
+  requestAnimationFrame(typingStateLoop);
+}
+
+function mark(){
+  const b=$111("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v111";
+  document.documentElement.dataset.sofiaVersion="111";
+}
+
+function init(){
+  addCss();
+  bindCanvas();
+  bindPanelClose();
+  typingStateLoop();
+  mark();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v111);
+    mo.__v111=setTimeout(watchdog,80);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,900,1600].forEach(ms=>setTimeout(watchdog,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
