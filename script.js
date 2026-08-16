@@ -5886,3 +5886,333 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V71 — РЕАЛЬНО ПРИБИРАЄМО GAP + ВКЛАДКИ ЗАВЖДИ ВИДИМІ
+   Працює навіть якщо прокрутка йде не window, а внутрішнім контейнером.
+   ========================================================= */
+(function(){
+"use strict";
+const $71=id=>document.getElementById(id);
+
+function ribbon(){return $71("sofiaRibbonV56")}
+function ribbonHead(){return ribbon()?.querySelector(".v56-ribbon-head")}
+function ribbonBody(){return ribbon()?.querySelector(".v56-body")}
+
+/* ---------- 1. Фізично стягуємо великий проміжок над стрічкою ---------- */
+function nearestPreviousVisibleBlock(rb){
+  if(!rb)return null;
+
+  // Спочатку звичайний попередній sibling.
+  let p=rb.previousElementSibling;
+  while(p){
+    const r=p.getBoundingClientRect();
+    const cs=getComputedStyle(p);
+    if(r.height>0 && cs.display!=="none" && cs.visibility!=="hidden") return p;
+    p=p.previousElementSibling;
+  }
+
+  // Fallback: шукаємо найближчий видимий блок вище.
+  let best=null, bestBottom=-Infinity;
+  document.querySelectorAll("body *").forEach(el=>{
+    if(el===rb || el.contains(rb) || rb.contains(el))return;
+    const cs=getComputedStyle(el);
+    if(cs.position==="fixed" || cs.display==="none" || cs.visibility==="hidden")return;
+    const r=el.getBoundingClientRect();
+    if(r.width<200 || r.height<20)return;
+    if(r.bottom<=rb.getBoundingClientRect().top && r.bottom>bestBottom){
+      // лише значущі layout-блоки
+      if(el.querySelector("select,input,button") || /Колір|Товщина|Клас|Предмет|серпня|Лінійка|Клітинка/i.test(el.textContent||"")){
+        best=el;bestBottom=r.bottom;
+      }
+    }
+  });
+  return best;
+}
+
+function removeRealGap(){
+  const rb=ribbon();
+  if(!rb)return;
+
+  // Скидаємо попередню корекцію перед новим вимірюванням.
+  rb.style.removeProperty("margin-top");
+
+  requestAnimationFrame(()=>{
+    const prev=nearestPreviousVisibleBlock(rb);
+    if(!prev)return;
+
+    const a=prev.getBoundingClientRect();
+    const b=rb.getBoundingClientRect();
+    const gap=b.top-a.bottom;
+
+    // На скріншоті gap ~100–170 px. Залишаємо 6 px.
+    if(gap>14){
+      const pull=Math.max(0,gap-6);
+      rb.style.setProperty("margin-top",`-${pull}px`,"important");
+    }else{
+      rb.style.setProperty("margin-top","0","important");
+    }
+  });
+}
+
+/* ---------- 2. Фіксована копія вкладок для будь-якої прокрутки ---------- */
+function ensureFloatingTabs(){
+  if($71("v71FloatingTabs"))return;
+
+  const src=ribbonHead();
+  if(!src)return;
+
+  const bar=document.createElement("div");
+  bar.id="v71FloatingTabs";
+  bar.innerHTML=`
+    <div id="v71FloatingTabButtons"></div>
+    <button id="v71CollapseBtn" type="button" title="Згорнути команди">⌃</button>
+  `;
+  document.body.appendChild(bar);
+
+  refreshFloatingTabs();
+
+  $71("v71CollapseBtn").onclick=()=>{
+    ribbon()?.classList.add("v71-collapsed");
+    syncFloatingState();
+  };
+}
+
+function refreshFloatingTabs(){
+  const host=$71("v71FloatingTabButtons");
+  if(!host)return;
+  host.innerHTML="";
+
+  document.querySelectorAll("#sofiaRibbonV56 .v56-tab").forEach(orig=>{
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="v71-float-tab";
+    if(orig.classList.contains("active"))b.classList.add("active");
+    b.textContent=orig.textContent;
+    b.dataset.targetTab=orig.dataset.v56Tab||"";
+    b.onclick=()=>{
+      // Активуємо справжню вкладку.
+      orig.click();
+
+      // При натисканні на плаваючу вкладку показуємо її команди.
+      ribbon()?.classList.remove("v71-collapsed");
+      ribbon()?.classList.add("v71-fixed-ribbon");
+      syncFloatingState();
+      setTimeout(refreshFloatingTabs,0);
+    };
+    host.appendChild(b);
+  });
+}
+
+function syncFloatingState(){
+  refreshFloatingTabs();
+  const rb=ribbon();
+  if(!rb)return;
+  const btn=$71("v71CollapseBtn");
+  if(btn)btn.textContent=rb.classList.contains("v71-collapsed")?"⌄":"⌃";
+}
+
+/* ---------- 3. Визначаємо, коли оригінальні вкладки зникли з екрана ---------- */
+let sentinel=null;
+function ensureSentinel(){
+  const rb=ribbon();
+  if(!rb)return;
+  if(!sentinel){
+    sentinel=document.createElement("div");
+    sentinel.id="v71RibbonSentinel";
+    sentinel.style.cssText="height:1px;width:1px;pointer-events:none;";
+    rb.parentElement?.insertBefore(sentinel,rb);
+  }
+}
+
+function updateStickyByGeometry(){
+  const rb=ribbon();
+  const float=$71("v71FloatingTabs");
+  if(!rb||!float)return;
+
+  const h=ribbonHead();
+  if(!h)return;
+
+  // Якщо стрічка вже fixed — floating tabs не дублюємо.
+  const rr=sentinel?.getBoundingClientRect();
+  const shouldFloat = rr ? rr.top < 8 : h.getBoundingClientRect().bottom < 0;
+
+  float.classList.toggle("show",shouldFloat && !rb.classList.contains("v71-fixed-ribbon"));
+
+  // Якщо стрічка fixed, вона лишається компактною під верхом.
+  if(rb.classList.contains("v71-fixed-ribbon")){
+    rb.style.setProperty("position","fixed","important");
+    rb.style.setProperty("top","0","important");
+    rb.style.setProperty("left","90px","important");
+    rb.style.setProperty("right","8px","important");
+    rb.style.setProperty("z-index","20050","important");
+    rb.style.setProperty("margin","0","important");
+  }else{
+    rb.style.removeProperty("position");
+    rb.style.removeProperty("top");
+    rb.style.removeProperty("left");
+    rb.style.removeProperty("right");
+    rb.style.removeProperty("z-index");
+    removeRealGap();
+  }
+}
+
+/* ---------- 4. Клік по аркушу / прокрутка -> команди згортаються, вкладки лишаються ---------- */
+function collapseCommandsKeepTabs(){
+  const rb=ribbon();
+  if(!rb)return;
+  rb.classList.add("v71-collapsed");
+  if(rb.classList.contains("v71-fixed-ribbon")){
+    // fixed стрічка перетворюється практично тільки на ряд вкладок
+    syncFloatingState();
+  }
+}
+
+function bindOriginalTabs(){
+  document.querySelectorAll("#sofiaRibbonV56 .v56-tab").forEach(tab=>{
+    if(tab.dataset.v71bound)return;
+    tab.dataset.v71bound="1";
+    tab.addEventListener("click",()=>{
+      ribbon()?.classList.remove("v71-collapsed");
+      refreshFloatingTabs();
+    },true);
+  });
+}
+
+/* ---------- 5. CSS ---------- */
+function addCss(){
+  if($71("v71Css"))return;
+  const st=document.createElement("style");
+  st.id="v71Css";
+  st.textContent=`
+    #sofiaRibbonV56{
+      margin-bottom:2px!important;
+    }
+    #sofiaRibbonV56 .v56-ribbon-head{
+      padding:2px 6px!important;
+      min-height:34px!important;
+      margin:0!important;
+      background:#fff!important;
+    }
+    #sofiaRibbonV56 .v56-body{
+      padding:3px 6px!important;
+      margin:0!important;
+    }
+
+    #sofiaRibbonV56.v71-collapsed .v56-body{
+      display:none!important;
+    }
+
+    #v71FloatingTabs{
+      position:fixed;
+      top:0;
+      left:88px;
+      right:8px;
+      z-index:21000;
+      display:none;
+      align-items:center;
+      gap:4px;
+      background:#fff;
+      border:1px solid #dfe7f1;
+      border-radius:0 0 10px 10px;
+      padding:3px 6px;
+      box-shadow:0 2px 8px rgba(15,23,42,.12);
+    }
+    #v71FloatingTabs.show{display:flex}
+    #v71FloatingTabButtons{
+      display:flex;gap:1px;overflow-x:auto;flex:1;scrollbar-width:thin;
+    }
+    .v71-float-tab{
+      border:0;background:transparent;border-radius:7px;
+      padding:7px 10px;white-space:nowrap;font:600 15px/1 inherit;cursor:pointer;
+    }
+    .v71-float-tab.active{
+      background:#edf3ff;color:#173b78;box-shadow:inset 0 -2px 0 #2b5eaa;
+    }
+    #v71CollapseBtn{
+      border:1px solid #cbd6e5;background:#fff;border-radius:7px;
+      min-width:32px;height:32px;cursor:pointer;font-size:18px;
+    }
+
+    #sofiaRibbonV56.v71-fixed-ribbon{
+      box-shadow:0 3px 12px rgba(15,23,42,.15)!important;
+      max-height:42vh!important;
+      overflow:auto!important;
+    }
+
+    @media(max-width:800px){
+      #v71FloatingTabs{left:64px}
+      #sofiaRibbonV56.v71-fixed-ribbon{left:64px!important}
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------- 6. Слухаємо ВСІ scroll containers, не лише window ---------- */
+function onAnyScroll(){
+  updateStickyByGeometry();
+
+  // Якщо користувач реально прокручує робочий аркуш — меню команд ховаємо.
+  const rb=ribbon();
+  if(!rb)return;
+
+  const sr=sentinel?.getBoundingClientRect();
+  if(sr && sr.top<-80){
+    collapseCommandsKeepTabs();
+    // fixed full ribbon не тримаємо, поки користувач не натисне вкладку.
+    if(rb.classList.contains("v71-fixed-ribbon")){
+      rb.classList.remove("v71-fixed-ribbon");
+      updateStickyByGeometry();
+    }
+  }
+}
+
+function init(){
+  addCss();
+  ensureSentinel();
+  ensureFloatingTabs();
+  bindOriginalTabs();
+  removeRealGap();
+  updateStickyByGeometry();
+
+  // capture=true ловить scroll і внутрішніх контейнерів
+  window.addEventListener("scroll",onAnyScroll,true);
+  document.addEventListener("scroll",onAnyScroll,true);
+
+  if(typeof fcanvas!=="undefined"&&!fcanvas.__v71){
+    fcanvas.__v71=true;
+    fcanvas.on("mouse:down",()=>{
+      const sr=sentinel?.getBoundingClientRect();
+      if(sr && sr.top<-40)collapseCommandsKeepTabs();
+    });
+  }
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v71);
+    mo.__v71=setTimeout(()=>{
+      bindOriginalTabs();
+      refreshFloatingTabs();
+      removeRealGap();
+      updateStickyByGeometry();
+    },35);
+  });
+  mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
+
+  [250,700,1500,2500].forEach(ms=>setTimeout(()=>{
+    removeRealGap();
+    updateStickyByGeometry();
+    refreshFloatingTabs();
+  },ms));
+
+  const badge=$71("appVersionBadge");
+  if(badge)badge.textContent="v71";
+  document.documentElement.dataset.sofiaVersion="71";
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,200),{once:true});
+else
+  setTimeout(init,200);
+})();
