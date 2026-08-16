@@ -6749,3 +6749,533 @@ if(document.readyState==="loading")
 else
   setTimeout(init,140);
 })();
+
+
+
+/* =========================================================
+   V96 — ВІДНОВЛЕННЯ НИЖНЬОЇ ПАНЕЛІ СТОРІНОК + РУКА/КУРСОР
+   ========================================================= */
+(function(){
+"use strict";
+const $96=id=>document.getElementById(id);
+
+function addCss(){
+  if($96("v96Css")) return;
+  const st=document.createElement("style");
+  st.id="v96Css";
+  st.textContent=`
+    /* Нижня панель сторінок — видима й стабільна */
+    #v96PageDock{
+      position:fixed!important;
+      left:86px!important;
+      right:78px!important;
+      bottom:0!important;
+      z-index:79500!important;
+      display:flex!important;
+      align-items:center!important;
+      gap:6px!important;
+      min-height:48px!important;
+      max-height:54px!important;
+      padding:4px 8px!important;
+      background:rgba(247,250,253,.98)!important;
+      border-top:1px solid #d4dfec!important;
+      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      white-space:nowrap!important;
+      box-sizing:border-box!important;
+    }
+    #v96PageDock button{
+      min-height:34px!important;
+      height:34px!important;
+      padding:3px 10px!important;
+      margin:0!important;
+      flex:0 0 auto!important;
+      opacity:1!important;
+      visibility:visible!important;
+    }
+    #v96PageDock .v96-counter{
+      flex:0 0 auto!important;
+      color:#52606d;
+      font:14px/1.2 Arial,sans-serif;
+      padding:0 4px;
+    }
+
+    body{padding-bottom:54px!important;}
+
+    :fullscreen #v96PageDock,
+    :-webkit-full-screen #v96PageDock{
+      left:78px!important;
+      right:70px!important;
+      bottom:0!important;
+    }
+    body.v89-right-collapsed #v96PageDock{right:4px!important;}
+
+    /* Режим курсора / вибору */
+    body.v96-select-mode .upper-canvas,
+    body.v96-select-mode canvas{
+      cursor:default!important;
+    }
+
+    /* Режим "Рука" */
+    body.v96-hand-mode .upper-canvas,
+    body.v96-hand-mode canvas{
+      cursor:grab!important;
+    }
+    body.v96-hand-mode.v96-dragging .upper-canvas,
+    body.v96-hand-mode.v96-dragging canvas{
+      cursor:grabbing!important;
+    }
+
+    /* Кнопка Рука: активна/неактивна */
+    .side-tool[data-tool="select"].v96-hand-active,
+    .side-tool[data-tool="hand"].v96-hand-active,
+    #handBtn.v96-hand-active{
+      background:#173b78!important;
+      color:#fff!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------- PAGE DOCK ---------- */
+function pageDock(){
+  let d=$96("v96PageDock");
+  if(!d){
+    d=document.createElement("div");
+    d.id="v96PageDock";
+    document.body.appendChild(d);
+  }
+  return d;
+}
+
+function text(el){ return (el?.textContent||"").replace(/\s+/g," ").trim(); }
+
+function findPageButtons(){
+  const buttons=[...document.querySelectorAll("button")].filter(b=>!b.closest("#v96PageDock"));
+  const add=buttons.find(b=>/Нова сторінка/i.test(text(b)));
+  const del=buttons.find(b=>/Видалити сторінку/i.test(text(b)));
+  const tabs=buttons.filter(b=>/^Сторінка\s+\d+/i.test(text(b)));
+  const prev=buttons.find(b=>["‹","←"].includes(text(b)));
+  const next=buttons.find(b=>["›","→"].includes(text(b)));
+  return {add,del,tabs,prev,next};
+}
+
+function rebuildPageDock(){
+  const dock=pageDock();
+  const {add,del,tabs,prev,next}=findPageButtons();
+
+  // If existing bottom-docked controls already exist, reuse them too.
+  const existing=[...dock.children];
+  const allButtons=[...new Set([
+    ...(prev?[prev]:[]),
+    ...(next?[next]:[]),
+    ...(add?[add]:[]),
+    ...tabs,
+    ...(del?[del]:[]),
+    ...existing.filter(x=>x.tagName==="BUTTON")
+  ])];
+
+  dock.innerHTML="";
+
+  if(prev) dock.appendChild(prev);
+
+  const counter=document.createElement("span");
+  counter.className="v96-counter";
+  const pageCount=Math.max(1, allButtons.filter(b=>/^Сторінка\s+\d+/i.test(text(b))).length);
+  let activeNum=1;
+  allButtons.forEach(b=>{
+    if(/^Сторінка\s+\d+/i.test(text(b)) && (b.classList.contains("active") || b.matches(".selected"))){
+      const m=text(b).match(/\d+/); if(m) activeNum=+m[0];
+    }
+  });
+  counter.textContent=`Сторінка ${activeNum} · 1 з ${pageCount}`;
+  dock.appendChild(counter);
+
+  if(next) dock.appendChild(next);
+  if(add) dock.appendChild(add);
+
+  const pageTabs=[...new Set(allButtons.filter(b=>/^Сторінка\s+\d+/i.test(text(b))))];
+  pageTabs.sort((a,b)=>{
+    const na=+(text(a).match(/\d+/)||["999"])[0];
+    const nb=+(text(b).match(/\d+/)||["999"])[0];
+    return na-nb;
+  });
+  pageTabs.forEach(b=>dock.appendChild(b));
+
+  if(del) dock.appendChild(del);
+
+  // Hide old page navigation wrappers that are now empty / obsolete.
+  document.querySelectorAll("div,section").forEach(el=>{
+    if(el===dock || el.contains(dock) || dock.contains(el)) return;
+    const t=text(el);
+    const r=el.getBoundingClientRect();
+    if(r.top<innerHeight*.7 && (
+      /Нова сторінка/i.test(t) ||
+      /Видалити сторінку/i.test(t) ||
+      /Сторінка\s+\d+/i.test(t)
+    )){
+      const interactive=[...el.querySelectorAll("button")].filter(b=>!b.closest("#v96PageDock"));
+      if(interactive.length===0){
+        el.style.setProperty("display","none","important");
+        el.style.setProperty("height","0","important");
+        el.style.setProperty("margin","0","important");
+        el.style.setProperty("padding","0","important");
+      }
+    }
+  });
+}
+
+/* ---------- HAND / CURSOR ---------- */
+let handMode=false;
+let dragging=false;
+let dragTarget=null;
+let lastX=0,lastY=0;
+
+function fabricCanvas(){
+  return (typeof fcanvas!=="undefined") ? fcanvas : null;
+}
+
+function handButton(){
+  return document.querySelector('.side-tool[data-tool="select"],.side-tool[data-tool="hand"],#handBtn');
+}
+
+function setHandMode(on){
+  handMode=!!on;
+  document.body.classList.toggle("v96-hand-mode",handMode);
+  document.body.classList.toggle("v96-select-mode",!handMode);
+
+  const hb=handButton();
+  hb?.classList.toggle("v96-hand-active",handMode);
+
+  const fc=fabricCanvas();
+  if(fc){
+    fc.selection=!handMode;
+    fc.skipTargetFind=false;
+    fc.defaultCursor=handMode?"grab":"default";
+    fc.hoverCursor=handMode?"grab":"move";
+    fc.requestRenderAll();
+  }
+
+  // When leaving hand mode, restore the visible Word-like insertion caret.
+  if(!handMode){
+    document.body.classList.add("v94-insert-ready");
+    const c=$96("v94InsertCaret");
+    if(c && window.innerWidth>0){
+      c.classList.add("show");
+    }
+  }else{
+    $96("v94InsertCaret")?.classList.remove("show");
+  }
+}
+
+function toggleHand(){
+  setHandMode(!handMode);
+}
+
+function bindHandButton(){
+  const hb=handButton();
+  if(!hb || hb.__v96Bound) return;
+  hb.__v96Bound=true;
+
+  hb.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    toggleHand();
+  },true);
+}
+
+function bindCanvasHand(){
+  const c=document.querySelector(".upper-canvas") || document.querySelector("canvas");
+  if(!c || c.__v96HandBound) return;
+  c.__v96HandBound=true;
+
+  c.addEventListener("pointerdown",e=>{
+    if(!handMode || e.button!==0) return;
+
+    const fc=fabricCanvas();
+    if(!fc) return;
+
+    let target=null;
+    try{ target=fc.findTarget?.(e) || fc.getActiveObject?.(); }catch(_){}
+
+    if(!target) return;
+
+    dragging=true;
+    dragTarget=target;
+    lastX=e.clientX;
+    lastY=e.clientY;
+    document.body.classList.add("v96-dragging");
+
+    try{
+      fc.setActiveObject(target);
+      target.setCoords?.();
+      fc.requestRenderAll();
+    }catch(_){}
+
+    c.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+    e.stopPropagation();
+  },true);
+
+  c.addEventListener("pointermove",e=>{
+    if(!handMode || !dragging || !dragTarget) return;
+    const fc=fabricCanvas();
+    if(!fc) return;
+
+    const dx=e.clientX-lastX;
+    const dy=e.clientY-lastY;
+    lastX=e.clientX;
+    lastY=e.clientY;
+
+    const zoom=fc.getZoom?.() || 1;
+    dragTarget.set({
+      left:(dragTarget.left||0)+dx/zoom,
+      top:(dragTarget.top||0)+dy/zoom
+    });
+    dragTarget.setCoords?.();
+    fc.requestRenderAll();
+
+    e.preventDefault();
+    e.stopPropagation();
+  },true);
+
+  const stop=e=>{
+    if(!dragging) return;
+    dragging=false;
+    document.body.classList.remove("v96-dragging");
+    try{
+      dragTarget?.setCoords?.();
+      fabricCanvas()?.requestRenderAll?.();
+      autoSave?.();
+    }catch(_){}
+    dragTarget=null;
+  };
+
+  c.addEventListener("pointerup",stop,true);
+  c.addEventListener("pointercancel",stop,true);
+}
+
+function markVersion(){
+  let b=$96("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test(text(x)));
+  }
+  if(b) b.textContent="v96";
+  document.documentElement.dataset.sofiaVersion="96";
+}
+
+function init(){
+  addCss();
+  pageDock();
+  rebuildPageDock();
+  bindHandButton();
+  bindCanvasHand();
+  setHandMode(false);
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v96);
+    mo.__v96=setTimeout(()=>{
+      rebuildPageDock();
+      bindHandButton();
+      bindCanvasHand();
+    },80);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,800,1500,2300].forEach(ms=>setTimeout(()=>{
+    rebuildPageDock();
+    bindHandButton();
+    bindCanvasHand();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
+else
+  setTimeout(init,150);
+})();
+
+
+
+/* =========================================================
+   V97 — УСІ ВСТАВЛЕНІ ОБ'ЄКТИ СТАВЛЯТЬСЯ САМЕ В КУРСОР
+   ========================================================= */
+(function(){
+"use strict";
+const $97=id=>document.getElementById(id);
+
+window.sofiaInsertPoint = window.sofiaInsertPoint || {
+  x:180, y:160, active:false, setAt:0
+};
+
+let ignoreMove=false;
+
+function canvasEl(){
+  return document.querySelector(".upper-canvas") ||
+         document.querySelector("canvas.upper-canvas") ||
+         document.querySelector("canvas");
+}
+
+function currentTool(){
+  const active=document.querySelector(
+    '.side-tool.active[data-tool],.side-tool.selected[data-tool],.side-tool[data-tool].v96-hand-active'
+  );
+  return active?.dataset.tool || "";
+}
+
+function isDrawingTool(){
+  return ["pen","marker","eraser","line","curve","polyline","wave","arrow","rectangle","ellipse","triangle"].includes(currentTool());
+}
+
+function pointerOnCanvas(e){
+  const c=canvasEl();
+  if(!c) return null;
+  const r=c.getBoundingClientRect();
+  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return null;
+
+  try{
+    if(typeof fcanvas!=="undefined"){
+      const p=fcanvas.getPointer(e);
+      return {x:p.x,y:p.y};
+    }
+  }catch(_){}
+
+  return {x:e.clientX-r.left,y:e.clientY-r.top};
+}
+
+function rememberCursor(e){
+  if(isDrawingTool()) return;
+  const p=pointerOnCanvas(e);
+  if(!p) return;
+
+  // If user clicked an existing object, this is selection, not a new insertion point.
+  try{
+    if(typeof fcanvas!=="undefined" && fcanvas.findTarget?.(e)) return;
+  }catch(_){}
+
+  window.sofiaInsertPoint={
+    x:p.x,
+    y:p.y,
+    active:true,
+    setAt:Date.now()
+  };
+}
+
+function bindCursor(){
+  if(document.__v97CursorBound) return;
+  document.__v97CursorBound=true;
+  document.addEventListener("pointerdown",rememberCursor,true);
+}
+
+function shouldMoveNewObject(o){
+  if(!o || !window.sofiaInsertPoint?.active || ignoreMove) return false;
+
+  // Never relocate technical/background objects.
+  if(
+    o.isBackground ||
+    o.backgroundObject ||
+    o.sofiaInstrument ||
+    o.isInstrument ||
+    o.excludeFromInsertCursor
+  ) return false;
+
+  // When drawing with mouse, object geometry must stay where it was drawn.
+  if(isDrawingTool()) return false;
+
+  return true;
+}
+
+function moveExactlyToCursor(o){
+  if(!shouldMoveNewObject(o)) return;
+
+  const pt=window.sofiaInsertPoint;
+  ignoreMove=true;
+  try{
+    o.set({
+      left:pt.x,
+      top:pt.y,
+      originX:"left",
+      originY:"top"
+    });
+    o.setCoords?.();
+
+    if(typeof fcanvas!=="undefined"){
+      fcanvas.setActiveObject?.(o);
+      fcanvas.requestRenderAll?.();
+    }
+
+    try{ autoSave(); }catch(_){}
+  }finally{
+    setTimeout(()=>{ignoreMove=false},0);
+  }
+}
+
+function bindFabric(){
+  if(typeof fcanvas==="undefined" || fcanvas.__v97ExactInsertBound) return;
+  fcanvas.__v97ExactInsertBound=true;
+
+  fcanvas.on("object:added",e=>{
+    const o=e?.target;
+    setTimeout(()=>moveExactlyToCursor(o),0);
+  });
+}
+
+function patchCommonInsertButtons(){
+  const words=[
+    "Нотатка","Зображення","Таблиця","Фігури","Картки",
+    "Тест","Списки","AI","Вставка","Медіа","Фото","Відео"
+  ];
+
+  [...document.querySelectorAll("button")].forEach(b=>{
+    if(b.__v97InsertAware) return;
+    const t=(b.textContent||"").trim();
+    if(!words.some(w=>t.includes(w))) return;
+    b.__v97InsertAware=true;
+
+    b.addEventListener("click",()=>{
+      // Keep current cursor point as insertion anchor.
+      // If user has not placed cursor yet, use a sensible visible default.
+      if(!window.sofiaInsertPoint?.active){
+        window.sofiaInsertPoint={x:180,y:160,active:true,setAt:Date.now()};
+      }
+    },true);
+  });
+}
+
+function markVersion(){
+  let b=$97("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b) b.textContent="v97";
+  document.documentElement.dataset.sofiaVersion="97";
+}
+
+function init(){
+  bindCursor();
+  bindFabric();
+  patchCommonInsertButtons();
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v97);
+    mo.__v97=setTimeout(()=>{
+      bindFabric();
+      patchCommonInsertButtons();
+    },80);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,900,1600].forEach(ms=>setTimeout(()=>{
+    bindFabric();
+    patchCommonInsertButtons();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
+else
+  setTimeout(init,150);
+})();
