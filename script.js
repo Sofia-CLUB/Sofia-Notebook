@@ -5582,3 +5582,307 @@ if(document.readyState==="loading")
 else
   setTimeout(init,220);
 })();
+
+
+
+/* =========================================================
+   V69 — ПРИБИРАЄМО ЗАЙВИЙ ПРОСТІР У ПОВНОЕКРАННОМУ РЕЖИМІ
+   ========================================================= */
+(function(){
+  const id="v69FullscreenCompactCss";
+  if(document.getElementById(id)) return;
+
+  const st=document.createElement("style");
+  st.id=id;
+  st.textContent=`
+    /* У fullscreen прибираємо штучні spacer-и та великі верхні відступи */
+    :fullscreen body,
+    :-webkit-full-screen body{
+      padding-top:0!important;
+      margin-top:0!important;
+    }
+
+    :fullscreen .workspace,
+    :fullscreen .workspace-shell,
+    :fullscreen .main-area,
+    :fullscreen main,
+    :-webkit-full-screen .workspace,
+    :-webkit-full-screen .workspace-shell,
+    :-webkit-full-screen .main-area,
+    :-webkit-full-screen main{
+      margin-top:0!important;
+      padding-top:0!important;
+    }
+
+    /* порожні блоки між верхньою панеллю і вкладками */
+    :fullscreen .fullscreen-spacer,
+    :fullscreen .top-spacer,
+    :fullscreen .toolbar-spacer,
+    :fullscreen .sticky-spacer,
+    :fullscreen [data-fullscreen-spacer],
+    :-webkit-full-screen .fullscreen-spacer,
+    :-webkit-full-screen .top-spacer,
+    :-webkit-full-screen .toolbar-spacer,
+    :-webkit-full-screen .sticky-spacer,
+    :-webkit-full-screen [data-fullscreen-spacer]{
+      display:none!important;
+      height:0!important;
+      min-height:0!important;
+      margin:0!important;
+      padding:0!important;
+    }
+  `;
+  document.head.appendChild(st);
+
+  function compactFullscreen(){
+    const fs=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    document.documentElement.classList.toggle("sofia-v69-fullscreen",fs);
+
+    if(!fs) return;
+
+    /* Знаходимо великий порожній вертикальний проміжок без прив'язки
+       до старої назви класу та стискаємо тільки його. */
+    const els=[...document.body.querySelectorAll("div,section,main")];
+    els.forEach(el=>{
+      if(el.id==="v68ToolSettings") return;
+      const r=el.getBoundingClientRect();
+      const cs=getComputedStyle(el);
+      const txt=(el.innerText||"").trim();
+
+      if(
+        r.height>=80 && r.height<=260 &&
+        r.top>100 && r.top<380 &&
+        txt==="" &&
+        cs.position!=="fixed" &&
+        !el.querySelector("canvas,input,button,select,textarea")
+      ){
+        el.dataset.v69Collapsed="1";
+        el.style.setProperty("height","0","important");
+        el.style.setProperty("min-height","0","important");
+        el.style.setProperty("padding-top","0","important");
+        el.style.setProperty("padding-bottom","0","important");
+        el.style.setProperty("margin-top","0","important");
+        el.style.setProperty("margin-bottom","0","important");
+        el.style.setProperty("overflow","hidden","important");
+      }
+    });
+  }
+
+  function restore(){
+    document.querySelectorAll('[data-v69-collapsed="1"]').forEach(el=>{
+      ["height","min-height","padding-top","padding-bottom","margin-top","margin-bottom","overflow"]
+        .forEach(k=>el.style.removeProperty(k));
+      delete el.dataset.v69Collapsed;
+    });
+    setTimeout(compactFullscreen,30);
+  }
+
+  document.addEventListener("fullscreenchange",restore);
+  document.addEventListener("webkitfullscreenchange",restore);
+  window.addEventListener("resize",()=>setTimeout(compactFullscreen,50));
+
+  setTimeout(compactFullscreen,400);
+
+  const badge=document.getElementById("appVersionBadge");
+  if(badge) badge.textContent="v69";
+})();
+
+
+
+/* =========================================================
+   V70 — КОМПАКТНИЙ ІНТЕРФЕЙС + ВКЛАДКИ ЗАВЖДИ ВИДИМІ ПРИ ПРОКРУТЦІ
+   ========================================================= */
+(function(){
+"use strict";
+const $70=id=>document.getElementById(id);
+
+function ribbon(){return $70("sofiaRibbonV56")}
+function head(){return ribbon()?.querySelector(".v56-ribbon-head")}
+function body(){return ribbon()?.querySelector(".v56-body")}
+
+function addCss(){
+  if($70("v70CompactCss"))return;
+  const st=document.createElement("style");
+  st.id="v70CompactCss";
+  st.textContent=`
+    /* Загальна компактність */
+    #sofiaRibbonV56{
+      margin-top:0!important;
+      margin-bottom:2px!important;
+      padding-top:0!important;
+    }
+
+    #sofiaRibbonV56 .v56-ribbon-head{
+      padding:2px 6px 0!important;
+      min-height:34px!important;
+      margin:0!important;
+      position:sticky!important;
+      top:0!important;
+      z-index:19000!important;
+      background:#fff!important;
+      box-shadow:0 1px 5px rgba(15,23,42,.08)!important;
+    }
+
+    #sofiaRibbonV56 .v56-tabs{
+      gap:0!important;
+      margin:0!important;
+      padding:0!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      white-space:nowrap!important;
+      scrollbar-width:thin;
+    }
+
+    #sofiaRibbonV56 .v56-tab{
+      padding:7px 10px!important;
+      margin:0!important;
+      min-height:32px!important;
+      line-height:1!important;
+    }
+
+    #sofiaRibbonV56 .v56-body{
+      padding:4px 6px!important;
+      margin:0!important;
+    }
+
+    /* При прокрутці команди згорнуті — видно тільки вкладки */
+    #sofiaRibbonV56.v70-collapsed .v56-body{
+      display:none!important;
+    }
+
+    #sofiaRibbonV56.v70-collapsed{
+      border-bottom-left-radius:0!important;
+      border-bottom-right-radius:0!important;
+      margin-bottom:0!important;
+    }
+
+    /* Панель сторінок теж без зайвих відступів */
+    #addPageBtn{
+      margin-top:0!important;
+      margin-bottom:0!important;
+    }
+
+    /* Прибираємо вертикальні spacer-блоки навколо стрічки */
+    .v70-zero-gap{
+      height:0!important;
+      min-height:0!important;
+      max-height:0!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      overflow:hidden!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function collapseCommands(){
+  ribbon()?.classList.add("v70-collapsed");
+}
+
+function expandCommands(){
+  ribbon()?.classList.remove("v70-collapsed");
+}
+
+function bindTabs(){
+  document.querySelectorAll("#sofiaRibbonV56 .v56-tab").forEach(tab=>{
+    if(tab.dataset.v70bound)return;
+    tab.dataset.v70bound="1";
+    tab.addEventListener("click",()=>{
+      // Натиснули вкладку — одразу показуємо її команди.
+      expandCommands();
+      setTimeout(()=>head()?.scrollIntoView({block:"start",behavior:"smooth"}),0);
+    },true);
+  });
+}
+
+function removeGapBeforeRibbon(){
+  const rb=ribbon();
+  if(!rb)return;
+  const rr=rb.getBoundingClientRect();
+
+  // Шукаємо саме порожні блоки без кнопок/полів одразу перед вкладками.
+  document.querySelectorAll("div,section").forEach(el=>{
+    if(el===rb || rb.contains(el) || el.contains(rb))return;
+
+    const r=el.getBoundingClientRect();
+    if(r.bottom<=rr.top && rr.top-r.bottom<=90){
+      const text=(el.textContent||"").trim();
+      const interactive=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+
+      if(!text && interactive===0 && r.height>=8 && r.height<=80){
+        el.classList.add("v70-zero-gap");
+      }
+    }
+  });
+
+  // Якщо зайвий відступ створений батьківським контейнером.
+  let par=rb.parentElement;
+  for(let i=0;i<3 && par && par!==document.body;i++,par=par.parentElement){
+    const cs=getComputedStyle(par);
+    const pt=parseFloat(cs.paddingTop)||0;
+    const mt=parseFloat(cs.marginTop)||0;
+    const gap=parseFloat(cs.rowGap||cs.gap)||0;
+
+    if(pt>8)par.style.setProperty("padding-top","2px","important");
+    if(mt>8)par.style.setProperty("margin-top","0","important");
+    if(gap>8)par.style.setProperty("row-gap","2px","important");
+  }
+}
+
+let lastY=window.scrollY||0;
+function handleScroll(){
+  const y=window.scrollY||document.documentElement.scrollTop||0;
+  const down=y>lastY;
+  lastY=y;
+
+  // Під час роботи нижче сторінки — економимо місце.
+  if(y>120 && down) collapseCommands();
+
+  // Біля верху знову показуємо меню.
+  if(y<70) expandCommands();
+}
+
+function init(){
+  addCss();
+  removeGapBeforeRibbon();
+  bindTabs();
+
+  window.addEventListener("scroll",handleScroll,{passive:true});
+
+  if(typeof fcanvas!=="undefined"&&!fcanvas.__v70collapse){
+    fcanvas.__v70collapse=true;
+    fcanvas.on("mouse:down",()=>{
+      if((window.scrollY||0)>120)setTimeout(collapseCommands,180);
+    });
+  }
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v70);
+    mo.__v70=setTimeout(()=>{
+      removeGapBeforeRibbon();
+      bindTabs();
+    },30);
+  });
+  mo.observe(document.body,{
+    childList:true,
+    subtree:true,
+    attributes:true,
+    attributeFilter:["class","style"]
+  });
+
+  [200,600,1200,2200].forEach(ms=>setTimeout(()=>{
+    removeGapBeforeRibbon();
+    bindTabs();
+  },ms));
+
+  const badge=$70("appVersionBadge");
+  if(badge)badge.textContent="v70";
+  document.documentElement.dataset.sofiaVersion="70";
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
