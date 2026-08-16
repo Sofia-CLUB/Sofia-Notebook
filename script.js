@@ -10382,3 +10382,1283 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V132 — ACTIVE + DRAGGABLE TEXT MENU
+   ========================================================= */
+(function(){
+"use strict";
+const $132=id=>document.getElementById(id);
+
+function fc(){
+  try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}
+}
+function isText(o){
+  return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase());
+}
+function activeText(){
+  const o=fc()?.getActiveObject?.();
+  return isText(o)?o:null;
+}
+
+/* ---------- make panel truly interactive ---------- */
+function makePanelInteractive(){
+  const p=$132("v131TextPanel");
+  if(!p) return;
+
+  p.style.setProperty("pointer-events","auto","important");
+  p.style.setProperty("user-select","none","important");
+  p.style.setProperty("touch-action","none","important");
+
+  p.querySelectorAll("select,input,button").forEach(el=>{
+    el.style.setProperty("pointer-events","auto","important");
+    el.style.setProperty("touch-action","auto","important");
+  });
+
+  /* Prevent older global cursor handlers from stealing panel clicks. */
+  ["pointerdown","mousedown","click","touchstart"].forEach(ev=>{
+    if(p["__v132_"+ev]) return;
+    p["__v132_"+ev]=true;
+    p.addEventListener(ev,e=>{
+      e.stopPropagation();
+    },true);
+  });
+}
+
+/* ---------- direct text-format handlers ---------- */
+function bindControls(){
+  const p=$132("v131TextPanel");
+  if(!p || p.__v132Controls) return;
+  p.__v132Controls=true;
+
+  const font=$132("v131Font");
+  const size=$132("v131Size");
+  const color=$132("v131Color");
+  const bold=$132("v131Bold");
+  const italic=$132("v131Italic");
+  const underline=$132("v131Underline");
+  const autoFit=$132("v131AutoFit");
+
+  if(font){
+    font.onchange=e=>{
+      const o=activeText(); if(!o)return;
+      o.set({fontFamily:e.target.value,scaleX:1,scaleY:1});
+      o.dirty=true;o.setCoords?.();fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(size){
+    size.onchange=size.oninput=e=>{
+      const o=activeText(); if(!o)return;
+      const n=Math.max(10,Math.min(72,Number(e.target.value)||28));
+      o.set({fontSize:n,scaleX:1,scaleY:1});
+      o.dirty=true;o.setCoords?.();fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(color){
+    color.onchange=color.oninput=e=>{
+      const o=activeText(); if(!o)return;
+      o.set({fill:e.target.value});
+      o.dirty=true;fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(bold){
+    bold.onclick=e=>{
+      e.preventDefault();
+      const o=activeText(); if(!o)return;
+      const on=String(o.fontWeight)==="bold" || Number(o.fontWeight)>=600;
+      o.set({fontWeight:on?"normal":"bold"});
+      bold.classList.toggle("active",!on);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(italic){
+    italic.onclick=e=>{
+      e.preventDefault();
+      const o=activeText(); if(!o)return;
+      const on=o.fontStyle==="italic";
+      o.set({fontStyle:on?"normal":"italic"});
+      italic.classList.toggle("active",!on);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(underline){
+    underline.onclick=e=>{
+      e.preventDefault();
+      const o=activeText(); if(!o)return;
+      o.set({underline:!o.underline});
+      underline.classList.toggle("active",!!o.underline);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(autoFit){
+    autoFit.onclick=e=>{
+      e.preventDefault();
+      const o=activeText(); if(!o)return;
+
+      const step=(()=>{
+        const ids=["paperSize","lineSize","gridSize","spacing","lineSpacing"];
+        for(const id of ids){
+          const el=document.getElementById(id), n=Number(el?.value);
+          if(Number.isFinite(n)&&n>=16&&n<=100)return n;
+        }
+        return 36;
+      })();
+
+      o.set({
+        fontSize:Math.max(15,Math.min(38,Math.round(step*.68))),
+        scaleX:1,scaleY:1,lineHeight:1,charSpacing:0
+      });
+      o.dirty=true;o.setCoords?.();fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+}
+
+/* ---------- draggable panel ---------- */
+function makeDraggable(){
+  const p=$132("v131TextPanel");
+  if(!p || p.__v132Drag) return;
+  p.__v132Drag=true;
+
+  const head=p.querySelector(".head");
+  if(!head) return;
+
+  head.style.cursor="move";
+  head.style.userSelect="none";
+
+  let dragging=false, startX=0,startY=0,startLeft=0,startTop=0;
+
+  const move=e=>{
+    if(!dragging)return;
+    const x=e.clientX ?? e.touches?.[0]?.clientX;
+    const y=e.clientY ?? e.touches?.[0]?.clientY;
+    if(x==null||y==null)return;
+
+    let left=startLeft+(x-startX);
+    let top=startTop+(y-startY);
+
+    const r=p.getBoundingClientRect();
+    left=Math.max(4,Math.min(window.innerWidth-r.width-4,left));
+    top=Math.max(4,Math.min(window.innerHeight-r.height-4,top));
+
+    p.style.setProperty("left",left+"px","important");
+    p.style.setProperty("top",top+"px","important");
+    p.style.setProperty("right","auto","important");
+    localStorage.setItem("sofiaTextPanelPos",JSON.stringify({left,top}));
+  };
+
+  const up=()=>{
+    dragging=false;
+    document.removeEventListener("pointermove",move,true);
+    document.removeEventListener("pointerup",up,true);
+  };
+
+  head.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button,select,input")) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const r=p.getBoundingClientRect();
+    dragging=true;
+    startX=e.clientX;
+    startY=e.clientY;
+    startLeft=r.left;
+    startTop=r.top;
+
+    document.addEventListener("pointermove",move,true);
+    document.addEventListener("pointerup",up,true);
+  },true);
+
+  try{
+    const saved=JSON.parse(localStorage.getItem("sofiaTextPanelPos")||"null");
+    if(saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)){
+      p.style.setProperty("left",saved.left+"px","important");
+      p.style.setProperty("top",saved.top+"px","important");
+      p.style.setProperty("right","auto","important");
+    }
+  }catch(_){}
+}
+
+/* ---------- show panel on cursor activation and typing ---------- */
+function showPanel(){
+  const p=$132("v131TextPanel");
+  if(p)p.classList.add("show");
+}
+
+function bindFabric(){
+  const c=fc();
+  if(!c || c.__v132Bound) return;
+  c.__v132Bound=true;
+
+  c.on("text:editing:entered",()=>{
+    showPanel();
+    setTimeout(()=>{makePanelInteractive();bindControls();},0);
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) showPanel();
+  });
+
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) showPanel();
+  });
+}
+
+function bindCursorButton(){
+  const b=
+    document.getElementById("v105CursorBtn") ||
+    document.getElementById("v104CursorBtn") ||
+    document.getElementById("v112CursorBtn") ||
+    [...document.querySelectorAll("button")].find(x=>(x.textContent||"").trim()==="Курсор");
+  if(!b || b.__v132Cursor) return;
+  b.__v132Cursor=true;
+
+  b.addEventListener("click",()=>{
+    setTimeout(showPanel,20);
+  },false);
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v132";
+  document.documentElement.dataset.sofiaVersion="132";
+}
+
+function repair(){
+  makePanelInteractive();
+  bindControls();
+  makeDraggable();
+  bindFabric();
+  bindCursorButton();
+}
+
+function init(){
+  repair();
+  mark();
+  [300,900,1600].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V133 — ЗОШИТНИЙ ТЕКСТ ЯК НА ЗРАЗКУ
+   - Segoe Script, синій, чіткий
+   - автоматично вміщується МІЖ двома лініями / у клітинку
+   - курсор/новий текст прив'язуються до найближчого рядка
+   - активне та рухоме бокове меню тексту
+   ========================================================= */
+(function(){
+"use strict";
+
+const BLUE="#4f81bd";
+const FONT="Segoe Script";
+const $133=id=>document.getElementById(id);
+
+function fc(){
+  try{return typeof fcanvas!=="undefined" ? fcanvas : null}catch(_){return null}
+}
+function isText(o){
+  return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase());
+}
+
+/* ---------- PAPER SIZE / TYPE ---------- */
+function paperStep(){
+  const ids=["paperSize","lineSize","gridSize","spacing","lineSpacing"];
+  for(const id of ids){
+    const el=document.getElementById(id);
+    const n=Number(el?.value);
+    if(Number.isFinite(n) && n>=16 && n<=100) return n;
+  }
+
+  /* fallback: read visible "28 px", "35 px" etc. */
+  for(const el of document.querySelectorAll("span,b,small")){
+    const m=String(el.textContent||"").match(/(\d+(?:\.\d+)?)\s*px/i);
+    if(!m) continue;
+    const n=parseFloat(m[1]);
+    if(n>=16 && n<=100) return n;
+  }
+  return 36;
+}
+
+function paperType(){
+  const known=document.getElementById("paperType");
+  if(known) return String(known.value||known.options?.[known.selectedIndex]?.textContent||"").toLowerCase();
+
+  const sel=[...document.querySelectorAll("select")].find(el=>{
+    const txt=String(el.value||el.options?.[el.selectedIndex]?.textContent||"").toLowerCase();
+    return /ліні|кліт|коса|grid|line|millimeter/.test(txt);
+  });
+  return String(sel?.value||sel?.options?.[sel.selectedIndex]?.textContent||"").toLowerCase();
+}
+
+/* Розмір рукопису: візуально приблизно 60–64% від висоти рядка.
+   Це залишає запас для верхніх/нижніх елементів букв і не дає
+   тексту "вилазити" за сусідню лінію. */
+function notebookFontSize(){
+  const step=paperStep();
+  return Math.max(15, Math.min(40, Math.round(step*0.62)));
+}
+
+/* ---------- SNAP TO NOTEBOOK ROW/CELL ---------- */
+function snapXY(x,y,fontSize){
+  const step=paperStep();
+  const type=paperType();
+
+  /* Вибираємо найближчий проміжок між двома горизонтальними лініями. */
+  const row=Math.max(0, Math.floor(y/step));
+  const rowTop=row*step;
+  const rowBottom=rowTop+step;
+
+  /* Segoe Script має високі верхні елементи.
+     Ставимо top так, щоб фактична літера лежала всередині рядка. */
+  const visualH=fontSize*1.12;
+  const top=rowTop + Math.max(1,(step-visualH)/2);
+
+  let sx=x;
+  if(/grid|кліт|cell|millimeter|міліметр/.test(type)){
+    const col=Math.max(0,Math.floor(x/step));
+    sx=col*step + Math.max(2,Math.round(step*0.10));
+  }
+
+  return {x:sx,y:top,rowTop,rowBottom};
+}
+
+/* ---------- CRISP DEFAULT TEXT ---------- */
+function styleNotebookText(o, keepUserFormatting=false){
+  if(!isText(o)) return;
+
+  const fs=keepUserFormatting ? (Number(o.fontSize)||notebookFontSize()) : notebookFontSize();
+  const snapped=snapXY(Number(o.left)||0,Number(o.top)||0,fs);
+
+  const props={
+    left:snapped.x,
+    top:snapped.y,
+    scaleX:1,
+    scaleY:1,
+    lineHeight:1.0,
+    charSpacing:0,
+    shadow:null,
+    stroke:null,
+    strokeWidth:0,
+    paintFirst:"fill",
+    objectCaching:false,
+    noScaleCache:true,
+    lockScalingFlip:true
+  };
+
+  if(!keepUserFormatting){
+    props.fontFamily=FONT;
+    props.fontStyle="normal";
+    props.fontWeight="normal";
+    props.fill=BLUE;
+    props.fontSize=fs;
+    props.underline=false;
+  }
+
+  o.set(props);
+  o.lockUniScaling=true;
+
+  /* Текст не можна "розтягнути" окремо по ширині чи висоті. */
+  o.setControlsVisibility?.({
+    ml:false,mr:false,mt:false,mb:false,
+    tl:true,tr:true,bl:true,br:true,mtr:true
+  });
+
+  o.dirty=true;
+  o.setCoords?.();
+
+  window.sofiaInsertPoint={
+    x:snapped.x,
+    y:snapped.y,
+    active:true,
+    setAt:Date.now()
+  };
+}
+
+/* ---------- SIDE TEXT MENU ---------- */
+function panel(){
+  return $133("v131TextPanel");
+}
+function showPanel(){
+  const p=panel();
+  if(p) p.classList.add("show");
+}
+function hidePanel(){
+  panel()?.classList.remove("show");
+}
+function activeText(){
+  const o=fc()?.getActiveObject?.();
+  return isText(o)?o:null;
+}
+function syncPanel(o){
+  if(!o || !isText(o)) return;
+  const font=$133("v131Font");
+  const size=$133("v131Size");
+  const color=$133("v131Color");
+  const bold=$133("v131Bold");
+  const italic=$133("v131Italic");
+  const underline=$133("v131Underline");
+
+  if(font){
+    if(![...font.options].some(x=>x.value===o.fontFamily)){
+      const op=document.createElement("option");
+      op.value=o.fontFamily||FONT;
+      op.textContent=o.fontFamily||FONT;
+      font.appendChild(op);
+    }
+    font.value=o.fontFamily||FONT;
+  }
+  if(size) size.value=Math.round(o.fontSize||notebookFontSize());
+  if(color){
+    try{color.value=/^#[0-9a-f]{6}$/i.test(String(o.fill)) ? o.fill : BLUE}catch(_){}
+  }
+  bold?.classList.toggle("active",String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600);
+  italic?.classList.toggle("active",o.fontStyle==="italic");
+  underline?.classList.toggle("active",!!o.underline);
+  showPanel();
+}
+
+function enhancePanel(){
+  const p=panel();
+  if(!p || p.__v133Enhanced) return;
+  p.__v133Enhanced=true;
+
+  /* Зробити панель компактнішою та точно клікабельною */
+  p.style.setProperty("pointer-events","auto","important");
+  p.style.setProperty("width","245px","important");
+  p.style.setProperty("z-index","94000","important");
+
+  p.querySelectorAll("button,input,select").forEach(el=>{
+    el.style.setProperty("pointer-events","auto","important");
+  });
+
+  /* Додаємо кнопку "За замовч." — повертає вигляд як на зразку */
+  if(!$133("v133DefaultTextBtn")){
+    const row=document.createElement("div");
+    row.className="row";
+    const b=document.createElement("button");
+    b.id="v133DefaultTextBtn";
+    b.type="button";
+    b.className="fmt";
+    b.textContent="За замовч.";
+    b.style.flex="1";
+    b.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const o=activeText(); if(!o)return;
+      styleNotebookText(o,false);
+      syncPanel(o);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+    row.appendChild(b);
+    p.appendChild(row);
+  }
+
+  /* Всі кліки усередині панелі не повинні потрапляти в курсор аркуша */
+  ["pointerdown","mousedown","click"].forEach(ev=>{
+    p.addEventListener(ev,e=>e.stopPropagation(),true);
+  });
+}
+
+/* ---------- DIRECT ACTIVE CONTROLS ---------- */
+function bindPanelControls(){
+  const p=panel();
+  if(!p || p.__v133Controls) return;
+  p.__v133Controls=true;
+
+  const font=$133("v131Font");
+  const size=$133("v131Size");
+  const color=$133("v131Color");
+  const bold=$133("v131Bold");
+  const italic=$133("v131Italic");
+  const underline=$133("v131Underline");
+  const autoFit=$133("v131AutoFit");
+
+  if(font) font.onchange=e=>{
+    const o=activeText(); if(!o)return;
+    o.set({fontFamily:e.target.value,scaleX:1,scaleY:1});
+    styleNotebookText(o,true);
+    syncPanel(o);fc()?.requestRenderAll?.();
+  };
+
+  if(size) size.onchange=size.oninput=e=>{
+    const o=activeText(); if(!o)return;
+    const n=Math.max(10,Math.min(72,Number(e.target.value)||notebookFontSize()));
+    o.set({fontSize:n,scaleX:1,scaleY:1});
+    styleNotebookText(o,true);
+    syncPanel(o);fc()?.requestRenderAll?.();
+  };
+
+  if(color) color.onchange=color.oninput=e=>{
+    const o=activeText(); if(!o)return;
+    o.set({fill:e.target.value});
+    o.dirty=true;fc()?.requestRenderAll?.();
+  };
+
+  if(bold) bold.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const o=activeText(); if(!o)return;
+    const on=String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600;
+    o.set({fontWeight:on?"normal":"bold"});
+    syncPanel(o);fc()?.requestRenderAll?.();
+  };
+
+  if(italic) italic.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const o=activeText(); if(!o)return;
+    o.set({fontStyle:o.fontStyle==="italic"?"normal":"italic"});
+    syncPanel(o);fc()?.requestRenderAll?.();
+  };
+
+  if(underline) underline.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const o=activeText(); if(!o)return;
+    o.set({underline:!o.underline});
+    syncPanel(o);fc()?.requestRenderAll?.();
+  };
+
+  if(autoFit) autoFit.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const o=activeText(); if(!o)return;
+    o.set({fontSize:notebookFontSize(),scaleX:1,scaleY:1});
+    styleNotebookText(o,true);
+    syncPanel(o);fc()?.requestRenderAll?.();
+  };
+}
+
+/* ---------- FABRIC EVENTS ---------- */
+function bindFabric(){
+  const c=fc();
+  if(!c || c.__v133Bound) return;
+  c.__v133Bound=true;
+
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(!isText(o)) return;
+    setTimeout(()=>{
+      styleNotebookText(o,false);
+      c.requestRenderAll?.();
+    },0);
+  });
+
+  c.on("text:editing:entered",e=>{
+    const o=e?.target||c.getActiveObject?.();
+    if(!isText(o))return;
+    styleNotebookText(o,true);
+    setTimeout(()=>syncPanel(o),10);
+  });
+
+  c.on("text:changed",e=>{
+    const o=e?.target;
+    if(!isText(o))return;
+    /* Не переписуємо вибраний користувачем шрифт/колір,
+       лише прибираємо деформацію та тримаємо текст у рядку. */
+    styleNotebookText(o,true);
+    c.requestRenderAll?.();
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>syncPanel(o),10);
+  });
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>syncPanel(o),10);
+  });
+
+  c.on("object:modified",e=>{
+    const o=e?.target;
+    if(!isText(o))return;
+    /* після масштабування назад у нормальну пропорцію */
+    o.set({scaleX:1,scaleY:1});
+    styleNotebookText(o,true);
+    syncPanel(o);
+    c.requestRenderAll?.();
+  });
+}
+
+/* ---------- CURSOR ACTIVATION ---------- */
+function cursorButton(){
+  return document.getElementById("v105CursorBtn") ||
+         document.getElementById("v104CursorBtn") ||
+         document.getElementById("v112CursorBtn") ||
+         [...document.querySelectorAll("button")].find(b=>(b.textContent||"").trim()==="Курсор");
+}
+function bindCursor(){
+  const b=cursorButton();
+  if(!b || b.__v133Cursor) return;
+  b.__v133Cursor=true;
+  b.addEventListener("click",()=>{
+    setTimeout(()=>{
+      showPanel();
+      const o=activeText();
+      if(o) syncPanel(o);
+      else{
+        if($133("v131Font")) $133("v131Font").value=FONT;
+        if($133("v131Size")) $133("v131Size").value=notebookFontSize();
+        if($133("v131Color")) $133("v131Color").value=BLUE;
+      }
+    },20);
+  },false);
+}
+
+/* ---------- DRAGGABLE PANEL ---------- */
+function bindDrag(){
+  const p=panel();
+  if(!p || p.__v133Drag) return;
+  p.__v133Drag=true;
+
+  const head=p.querySelector(".head");
+  if(!head)return;
+  head.style.cursor="move";
+  head.style.userSelect="none";
+
+  let dragging=false,sx=0,sy=0,sl=0,st=0;
+
+  const move=e=>{
+    if(!dragging)return;
+    const r=p.getBoundingClientRect();
+    let l=sl+(e.clientX-sx);
+    let t=st+(e.clientY-sy);
+    l=Math.max(4,Math.min(innerWidth-r.width-4,l));
+    t=Math.max(4,Math.min(innerHeight-r.height-4,t));
+    p.style.setProperty("left",l+"px","important");
+    p.style.setProperty("top",t+"px","important");
+    p.style.setProperty("right","auto","important");
+    localStorage.setItem("sofiaTextPanelPos",JSON.stringify({left:l,top:t}));
+  };
+  const up=()=>{
+    dragging=false;
+    document.removeEventListener("pointermove",move,true);
+    document.removeEventListener("pointerup",up,true);
+  };
+
+  head.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button,input,select"))return;
+    e.preventDefault();e.stopPropagation();
+    const r=p.getBoundingClientRect();
+    dragging=true;sx=e.clientX;sy=e.clientY;sl=r.left;st=r.top;
+    document.addEventListener("pointermove",move,true);
+    document.addEventListener("pointerup",up,true);
+  },true);
+}
+
+/* ---------- INIT ---------- */
+function mark(){
+  const b=$133("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v133";
+  document.documentElement.dataset.sofiaVersion="133";
+}
+
+function repair(){
+  enhancePanel();
+  bindPanelControls();
+  bindDrag();
+  bindFabric();
+  bindCursor();
+}
+
+function init(){
+  repair();
+  mark();
+  [300,900,1600].forEach(ms=>setTimeout(repair,ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V134 — АКТИВНЕ ДОДАТКОВЕ МЕНЮ ТЕКСТУ
+   - відкривається при Курсорі, наборі і виділенні тексту
+   - усі кнопки реально працюють
+   - курсор аркуша НЕ перехоплює кліки меню
+   - меню можна перетягувати
+   ========================================================= */
+(function(){
+"use strict";
+
+const $134=id=>document.getElementById(id);
+const BLUE="#4f81bd";
+const DEFAULT_FONT="Segoe Script";
+
+function fc(){
+  try{return typeof fcanvas!=="undefined" ? fcanvas : null}catch(_){return null}
+}
+function isText(o){
+  return !!o && ["i-text","textbox","text"].includes(String(o.type||"").toLowerCase());
+}
+function activeText(){
+  const o=fc()?.getActiveObject?.();
+  return isText(o) ? o : null;
+}
+function panel(){
+  return $134("v131TextPanel");
+}
+
+/* ---------- PANEL VISIBILITY ---------- */
+function showPanel(){
+  const p=panel();
+  if(!p) return;
+  p.classList.add("show");
+  p.style.setProperty("display","block","important");
+  p.style.setProperty("pointer-events","auto","important");
+}
+function hidePanel(){
+  const p=panel();
+  if(!p) return;
+  p.classList.remove("show");
+  p.style.removeProperty("display");
+}
+
+/* ---------- MAKE MENU CLICKABLE ---------- */
+function activatePanelUi(){
+  const p=panel();
+  if(!p || p.__v134Activated) return;
+  p.__v134Activated=true;
+
+  p.style.setProperty("pointer-events","auto","important");
+  p.style.setProperty("z-index","98000","important");
+  p.style.setProperty("touch-action","none","important");
+
+  p.querySelectorAll("button,input,select").forEach(el=>{
+    el.disabled=false;
+    el.style.setProperty("pointer-events","auto","important");
+    el.style.setProperty("touch-action","auto","important");
+  });
+
+  /* Кліки всередині меню не повинні потрапляти в canvas/cursor handlers */
+  ["pointerdown","mousedown","mouseup","click","touchstart"].forEach(ev=>{
+    p.addEventListener(ev,e=>{
+      e.stopPropagation();
+    },true);
+  });
+}
+
+/* ---------- SYNC MENU WITH CURRENT TEXT ---------- */
+function syncPanel(o){
+  if(!o || !isText(o)) return;
+
+  const font=$134("v131Font");
+  const size=$134("v131Size");
+  const color=$134("v131Color");
+  const bold=$134("v131Bold");
+  const italic=$134("v131Italic");
+  const underline=$134("v131Underline");
+
+  if(font){
+    if(![...font.options].some(x=>x.value===o.fontFamily)){
+      const op=document.createElement("option");
+      op.value=o.fontFamily||DEFAULT_FONT;
+      op.textContent=o.fontFamily||DEFAULT_FONT;
+      font.appendChild(op);
+    }
+    font.value=o.fontFamily||DEFAULT_FONT;
+  }
+
+  if(size) size.value=Math.round(o.fontSize||28);
+
+  if(color){
+    try{
+      color.value=/^#[0-9a-f]{6}$/i.test(String(o.fill)) ? o.fill : BLUE;
+    }catch(_){}
+  }
+
+  bold?.classList.toggle("active",String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600);
+  italic?.classList.toggle("active",o.fontStyle==="italic");
+  underline?.classList.toggle("active",!!o.underline);
+
+  showPanel();
+}
+
+/* ---------- DIRECT WORKING CONTROLS ---------- */
+function bindControls(){
+  const p=panel();
+  if(!p || p.__v134Controls) return;
+  p.__v134Controls=true;
+
+  const font=$134("v131Font");
+  const size=$134("v131Size");
+  const color=$134("v131Color");
+  const bold=$134("v131Bold");
+  const italic=$134("v131Italic");
+  const underline=$134("v131Underline");
+  const autoFit=$134("v131AutoFit");
+  const close=$134("v131TextClose");
+  const defaults=$134("v133DefaultTextBtn");
+
+  if(font){
+    font.onchange=e=>{
+      const o=activeText(); if(!o) return;
+      o.set({fontFamily:e.target.value,scaleX:1,scaleY:1});
+      o.dirty=true;o.setCoords?.();
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+      showPanel();
+    };
+  }
+
+  if(size){
+    const applySize=e=>{
+      const o=activeText(); if(!o) return;
+      const n=Math.max(10,Math.min(72,Number(e.target.value)||28));
+      o.set({fontSize:n,scaleX:1,scaleY:1});
+      o.dirty=true;o.setCoords?.();
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+      showPanel();
+    };
+    size.oninput=applySize;
+    size.onchange=applySize;
+  }
+
+  if(color){
+    const applyColor=e=>{
+      const o=activeText(); if(!o) return;
+      o.set({fill:e.target.value});
+      o.dirty=true;
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+      showPanel();
+    };
+    color.oninput=applyColor;
+    color.onchange=applyColor;
+  }
+
+  if(bold){
+    bold.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const o=activeText(); if(!o) return;
+      const on=String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600;
+      o.set({fontWeight:on?"normal":"bold"});
+      syncPanel(o);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(italic){
+    italic.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const o=activeText(); if(!o) return;
+      o.set({fontStyle:o.fontStyle==="italic"?"normal":"italic"});
+      syncPanel(o);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(underline){
+    underline.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const o=activeText(); if(!o) return;
+      o.set({underline:!o.underline});
+      syncPanel(o);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(autoFit){
+    autoFit.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const o=activeText(); if(!o) return;
+
+      /* Використовуємо вже наявну логіку V133, якщо доступна */
+      try{
+        if(typeof styleNotebookText==="function"){
+          styleNotebookText(o,true);
+        }else{
+          o.set({scaleX:1,scaleY:1,lineHeight:1,charSpacing:0});
+        }
+      }catch(_){
+        o.set({scaleX:1,scaleY:1,lineHeight:1,charSpacing:0});
+      }
+
+      o.dirty=true;o.setCoords?.();
+      syncPanel(o);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(defaults){
+    defaults.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const o=activeText(); if(!o) return;
+
+      o.set({
+        fontFamily:DEFAULT_FONT,
+        fontStyle:"normal",
+        fontWeight:"normal",
+        fill:BLUE,
+        scaleX:1,
+        scaleY:1,
+        lineHeight:1,
+        charSpacing:0,
+        shadow:null,
+        stroke:null,
+        strokeWidth:0
+      });
+
+      try{
+        if(typeof styleNotebookText==="function") styleNotebookText(o,false);
+      }catch(_){}
+
+      o.dirty=true;o.setCoords?.();
+      syncPanel(o);
+      fc()?.requestRenderAll?.();
+      try{autoSave?.()}catch(_){}
+    };
+  }
+
+  if(close){
+    close.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      hidePanel();
+    };
+  }
+}
+
+/* ---------- DRAGGABLE ---------- */
+function makeDraggable(){
+  const p=panel();
+  if(!p || p.__v134Drag) return;
+  p.__v134Drag=true;
+
+  const head=p.querySelector(".head");
+  if(!head) return;
+
+  head.style.cursor="move";
+  head.style.userSelect="none";
+
+  let dragging=false,sx=0,sy=0,sl=0,st=0;
+
+  const move=e=>{
+    if(!dragging) return;
+    const r=p.getBoundingClientRect();
+
+    let left=sl+(e.clientX-sx);
+    let top=st+(e.clientY-sy);
+
+    left=Math.max(4,Math.min(innerWidth-r.width-4,left));
+    top=Math.max(4,Math.min(innerHeight-r.height-4,top));
+
+    p.style.setProperty("left",left+"px","important");
+    p.style.setProperty("top",top+"px","important");
+    p.style.setProperty("right","auto","important");
+
+    localStorage.setItem("sofiaTextPanelPos",JSON.stringify({left,top}));
+  };
+
+  const up=()=>{
+    dragging=false;
+    document.removeEventListener("pointermove",move,true);
+    document.removeEventListener("pointerup",up,true);
+  };
+
+  head.addEventListener("pointerdown",e=>{
+    if(e.target.closest("button,input,select")) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const r=p.getBoundingClientRect();
+    dragging=true;
+    sx=e.clientX; sy=e.clientY;
+    sl=r.left; st=r.top;
+
+    document.addEventListener("pointermove",move,true);
+    document.addEventListener("pointerup",up,true);
+  },true);
+
+  try{
+    const saved=JSON.parse(localStorage.getItem("sofiaTextPanelPos")||"null");
+    if(saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)){
+      p.style.setProperty("left",saved.left+"px","important");
+      p.style.setProperty("top",saved.top+"px","important");
+      p.style.setProperty("right","auto","important");
+    }
+  }catch(_){}
+}
+
+/* ---------- OPEN ON CURSOR / TEXT EDITING ---------- */
+function cursorBtn(){
+  return document.getElementById("v105CursorBtn") ||
+         document.getElementById("v104CursorBtn") ||
+         document.getElementById("v112CursorBtn") ||
+         [...document.querySelectorAll("button")].find(b=>(b.textContent||"").trim()==="Курсор");
+}
+
+function bindCursor(){
+  const b=cursorBtn();
+  if(!b || b.__v134Cursor) return;
+  b.__v134Cursor=true;
+
+  b.addEventListener("click",()=>{
+    setTimeout(()=>{
+      showPanel();
+      const o=activeText();
+      if(o) syncPanel(o);
+      else{
+        if($134("v131Font")) $134("v131Font").value=DEFAULT_FONT;
+        if($134("v131Size")) $134("v131Size").value=28;
+        if($134("v131Color")) $134("v131Color").value=BLUE;
+      }
+    },20);
+  },false);
+}
+
+function bindFabric(){
+  const c=fc();
+  if(!c || c.__v134Bound) return;
+  c.__v134Bound=true;
+
+  c.on("text:editing:entered",e=>{
+    const o=e?.target||c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>syncPanel(o),10);
+  });
+
+  c.on("selection:created",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>syncPanel(o),10);
+  });
+
+  c.on("selection:updated",e=>{
+    const o=e?.selected?.[0]||c.getActiveObject?.();
+    if(isText(o)) setTimeout(()=>syncPanel(o),10);
+  });
+}
+
+/* ---------- VERSION ---------- */
+function mark(){
+  const b=$134("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v134";
+  document.documentElement.dataset.sofiaVersion="134";
+}
+
+function repair(){
+  activatePanelUi();
+  bindControls();
+  makeDraggable();
+  bindCursor();
+  bindFabric();
+}
+
+function init(){
+  repair();
+  mark();
+  [300,900,1600].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V135 — ЧИСТИЙ СТАРТ І ЧИСТА НОВА СТОРІНКА
+   За замовчуванням на сторінці ТІЛЬКИ:
+   1) дата прописом;
+   2) "Класна робота".
+   Жодних інших об'єктів.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $135=id=>document.getElementById(id);
+
+function canvas(){
+  try{return (typeof fcanvas!=="undefined") ? fcanvas : null}catch(_){return null}
+}
+
+/* Залишити на полотні тільки системні заголовки дати і виду роботи. */
+function keepOnlyDefaultHeadings(){
+  const c=canvas();
+  if(!c) return;
+
+  const allowed=new Set(["dateHeading","workHeading"]);
+
+  c.getObjects().slice().forEach(o=>{
+    if(!allowed.has(o.systemRole)){
+      c.remove(o);
+    }
+  });
+
+  /* Якщо заголовків ще немає — штатна функція їх створить. */
+  try{
+    if(typeof ensureHeadingObjects==="function") ensureHeadingObjects();
+  }catch(_){}
+
+  /* Після створення ще раз прибираємо все зайве — на випадок старих патчів. */
+  c.getObjects().slice().forEach(o=>{
+    if(!allowed.has(o.systemRole)){
+      c.remove(o);
+    }
+  });
+
+  c.discardActiveObject?.();
+  c.requestRenderAll?.();
+}
+
+/* Основні параметри нової чистої сторінки. */
+function setDefaultLessonMeta(){
+  if($135("workType")) $135("workType").value="Класна робота";
+  if($135("pageMode")) $135("pageMode").value="lesson";
+  if($135("dateMode")) $135("dateMode").value="words";
+  if($135("customDate")) $135("customDate").value="";
+  if($135("manualDate")) $135("manualDate").value="";
+
+  try{
+    if(typeof refreshDateOptions==="function") refreshDateOptions();
+    if(typeof updateDateControls==="function") updateDateControls();
+    if(typeof updateHeading==="function") updateHeading();
+  }catch(_){}
+}
+
+/* Створює сторінку без контенту, але з поточним видом паперу. */
+function cleanBlankPage(title){
+  const current=(()=>{
+    try{return pages?.[currentPage]||{}}catch(_){return {}}
+  })();
+
+  return {
+    json:null,
+    paper:$135("paperType")?.value || current.paper || "lines",
+    paperSize:Number($135("paperSize")?.value || current.paperSize || 28),
+    paperColor:$135("paperLineColor")?.value || current.paperColor || "#9fd5ff",
+    pageTitle:title || ""
+  };
+}
+
+/* ---------- НОВА СТОРІНКА ---------- */
+function bindNewPage(){
+  const b=$135("addPageBtn");
+  if(!b || b.__v135Bound) return;
+  b.__v135Bound=true;
+
+  /* Перезаписуємо стару дію кнопки, щоб нова сторінка була гарантовано чистою. */
+  b.onclick=()=>{
+    try{ if(typeof savePage==="function") savePage(); }catch(_){}
+
+    setDefaultLessonMeta();
+
+    const nextNumber=(pages?.length||0)+1;
+    pages.push(cleanBlankPage(`Сторінка ${nextNumber}`));
+
+    try{
+      loadPage(pages.length-1);
+      keepOnlyDefaultHeadings();
+
+      /* Назви сторінок за замовчуванням: Сторінка 1, Сторінка 2... */
+      if(pages[currentPage] && !pages[currentPage].pageTitle){
+        pages[currentPage].pageTitle=`Сторінка ${currentPage+1}`;
+      }
+
+      if(typeof savePage==="function") savePage();
+      if(typeof updatePageIndicator==="function") updatePageIndicator();
+      if(typeof autoSave==="function") autoSave();
+    }catch(e){
+      console.error("V135 new page:",e);
+    }
+  };
+
+  b.textContent="+ Нова сторінка";
+  b.title="Створити чисту сторінку";
+}
+
+/* ---------- ВІДКРИТТЯ ПРОГРАМИ ----------
+   Після штатного loadAll() створюємо один чистий стартовий аркуш.
+   Тип паперу/розмір/колір ліній лишаємо такими, які вже вибрані. */
+function resetProgramToCleanPage(){
+  const c=canvas();
+  if(!c) return;
+
+  setDefaultLessonMeta();
+
+  const paper=$135("paperType")?.value || "lines";
+  const size=Number($135("paperSize")?.value || 28);
+  const color=$135("paperLineColor")?.value || "#9fd5ff";
+
+  pages=[{
+    json:null,
+    paper,
+    paperSize:size,
+    paperColor:color,
+    pageTitle:"Сторінка 1"
+  }];
+  currentPage=0;
+
+  try{
+    loadPage(0);
+    keepOnlyDefaultHeadings();
+    if(typeof savePage==="function") savePage();
+    if(typeof updatePageIndicator==="function") updatePageIndicator();
+    if(typeof autoSave==="function") autoSave();
+  }catch(e){
+    console.error("V135 startup reset:",e);
+  }
+}
+
+/* Щоб дата при кожній новій сторінці відповідала поточній даті. */
+function refreshDefaultsBeforePageChange(){
+  setDefaultLessonMeta();
+}
+
+function mark(){
+  const b=$135("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v135";
+  document.documentElement.dataset.sofiaVersion="135";
+}
+
+function init(){
+  bindNewPage();
+  mark();
+
+  /* core loadAll запускається приблизно через 150 ms;
+     тут чекаємо, доки він повністю завершить відновлення. */
+  setTimeout(()=>{
+    resetProgramToCleanPage();
+    bindNewPage();
+  },420);
+
+  [900,1600].forEach(ms=>setTimeout(bindNewPage,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,120),{once:true});
+else
+  setTimeout(init,120);
+})();
