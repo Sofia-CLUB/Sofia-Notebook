@@ -9980,3 +9980,461 @@ if(document.readyState==="loading"){
   setTimeout(initR,180);
 }
 })();
+
+
+
+/* =========================================================
+   V116 CLEAN — МОБІЛЬНА АДАПТАЦІЯ
+   База: V115 CLEAN.
+   На комп'ютері вигляд не змінюємо.
+   На телефонах:
+   - аркуш займає доступну ширину;
+   - права панель згортається;
+   - великі кнопки та відступи для пальця;
+   - великі додаткові панелі займають майже весь екран;
+   - верхня панель переноситься у кілька рядків;
+   - горизонтальні переповнення зменшені.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $M=id=>document.getElementById(id);
+
+function addMobileCss(){
+  if($M("v116MobileCss"))return;
+
+  const st=document.createElement("style");
+  st.id="v116MobileCss";
+  st.textContent=`
+  @media (max-width: 768px){
+
+    html,body{
+      max-width:100vw!important;
+      overflow-x:hidden!important;
+    }
+
+    body{
+      touch-action:manipulation;
+    }
+
+    /* Верхні панелі переносяться на кілька рядків */
+    header,
+    .topbar,
+    .lessonbar,
+    .toolbar,
+    .top-tools,
+    .header-actions{
+      max-width:100vw!important;
+      flex-wrap:wrap!important;
+    }
+
+    .lessonbar{
+      gap:6px!important;
+      padding:6px!important;
+    }
+
+    .lessonbar input,
+    .lessonbar select,
+    .lessonbar button{
+      min-height:42px!important;
+      font-size:15px!important;
+    }
+
+    /* Робочий аркуш */
+    #notebook{
+      margin:0!important;
+      width:100%!important;
+      max-width:none!important;
+      border-radius:0!important;
+    }
+
+    #notebookWrap,
+    .notebook-wrap,
+    .workspace,
+    main{
+      padding:0!important;
+      margin:0!important;
+      max-width:100vw!important;
+      overflow-x:hidden!important;
+    }
+
+    /* Ліва панель компактніша */
+    .side-tools,
+    .left-toolbar,
+    .left-tools,
+    .tool-sidebar{
+      width:58px!important;
+      min-width:58px!important;
+      max-width:58px!important;
+    }
+
+    .side-tool{
+      min-height:50px!important;
+      padding:4px 2px!important;
+      font-size:9px!important;
+    }
+
+    .side-tool .icon,
+    .side-tool svg{
+      transform:scale(.95);
+    }
+
+    /* Права панель */
+    #v86Dock{
+      width:68px!important;
+      min-width:68px!important;
+      max-width:68px!important;
+      background:#fff!important;
+      border-left:1px solid #d8e2ef!important;
+      box-shadow:-4px 0 14px rgba(15,23,42,.10)!important;
+    }
+
+    body:not(.v115-right-collapsed) #v115RightToggle{
+      right:68px!important;
+    }
+
+    #v115RightToggle{
+      width:32px!important;
+      height:58px!important;
+    }
+
+    /* Кнопки на правій панелі більші для пальця */
+    #v86Dock button{
+      min-height:54px!important;
+      padding:5px 2px!important;
+      font-size:9px!important;
+    }
+
+    /* Нижня панель сторінок */
+    #v99PageDock{
+      left:58px!important;
+      right:0!important;
+      width:auto!important;
+      max-width:calc(100vw - 58px)!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      white-space:nowrap!important;
+      padding:4px!important;
+      gap:4px!important;
+    }
+
+    #v99PageDock button{
+      min-height:42px!important;
+      font-size:13px!important;
+    }
+
+    /* Великі додаткові вікна */
+    #v86Commands,
+    #graphBuilderPanel,
+    #graphEditorPanel,
+    #numberRayPanel,
+    #geometryPanel,
+    #anglePanel,
+    #mediaPanel,
+    #elementsPanel,
+    #calculatorPanel,
+    #timerPanel,
+    #ukrainianPanel,
+    #keyboardPanel,
+    #aiPanel,
+    #shapeLibraryPanel,
+    #v56FiguresPanel,
+    #v56CompassPanel,
+    #teacherToolsPanel,
+    #v102ObjectPanel,
+    #textFormatBar,
+    #v68ToolSettings,
+    #v87Help,
+    #v102Help,
+    #v86HelpBox{
+      max-width:calc(100vw - 16px)!important;
+      width:calc(100vw - 16px)!important;
+      left:8px!important;
+      right:auto!important;
+      top:70px!important;
+      max-height:calc(100vh - 88px)!important;
+      overflow:auto!important;
+      box-sizing:border-box!important;
+      z-index:160000!important;
+    }
+
+    /* Поля та кнопки у великих панелях */
+    #v86Commands input,
+    #v86Commands select,
+    #v86Commands button,
+    #graphBuilderPanel input,
+    #graphBuilderPanel select,
+    #graphBuilderPanel button,
+    #calculatorPanel button,
+    #teacherToolsPanel button{
+      min-height:42px!important;
+      font-size:14px!important;
+      max-width:100%!important;
+      box-sizing:border-box!important;
+    }
+
+    /* Контекст властивостей */
+    #v102ObjectPanel,
+    #textFormatBar,
+    #v68ToolSettings{
+      width:calc(100vw - 24px)!important;
+      left:12px!important;
+      right:auto!important;
+    }
+
+    /* Підпис нижче і компактніше */
+    #sofiaAuthorSignature{
+      right:8px!important;
+      bottom:4px!important;
+      font-size:11px!important;
+      max-width:70vw!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+    }
+  }
+
+  @media (max-width: 480px){
+    .lessonbar input,
+    .lessonbar select{
+      flex:1 1 calc(50% - 8px)!important;
+      min-width:130px!important;
+    }
+
+    #v86Dock{
+      width:64px!important;
+      min-width:64px!important;
+      max-width:64px!important;
+    }
+
+    body:not(.v115-right-collapsed) #v115RightToggle{
+      right:64px!important;
+    }
+
+    .side-tools,
+    .left-toolbar,
+    .left-tools,
+    .tool-sidebar{
+      width:54px!important;
+      min-width:54px!important;
+      max-width:54px!important;
+    }
+
+    #v99PageDock{
+      left:54px!important;
+      max-width:calc(100vw - 54px)!important;
+    }
+  }
+  `;
+  document.head.appendChild(st);
+}
+
+function resizeMobileCanvas(){
+  if(window.innerWidth>768)return;
+
+  let c=null;
+  try{c=typeof fcanvas!=="undefined"?fcanvas:null}catch(_){}
+  const nb=$M("notebook");
+  if(!c || !nb)return;
+
+  const rect=nb.getBoundingClientRect();
+  const leftRail =
+    document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar")?.getBoundingClientRect().width || 0;
+  const rightCollapsed=document.body.classList.contains("v115-right-collapsed");
+  const rightRail=rightCollapsed?0:($M("v86Dock")?.getBoundingClientRect().width||0);
+
+  const available=Math.max(320,window.innerWidth-leftRail-rightRail);
+
+  try{
+    nb.style.setProperty("width",available+"px","important");
+    nb.style.setProperty("max-width","none","important");
+    c.setWidth(available);
+    c.calcOffset?.();
+    c.requestRenderAll?.();
+  }catch(_){}
+}
+
+function markMobile(){
+  const b=$M("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v116";
+  document.documentElement.dataset.sofiaVersion="116-clean-mobile";
+}
+
+function initMobile(){
+  addMobileCss();
+  resizeMobileCanvas();
+  markMobile();
+
+  [300,800,1500].forEach(ms=>setTimeout(resizeMobileCanvas,ms));
+}
+
+window.addEventListener("resize",()=>setTimeout(resizeMobileCanvas,100));
+document.addEventListener("fullscreenchange",()=>setTimeout(resizeMobileCanvas,120));
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(initMobile,180),{once:true});
+}else{
+  setTimeout(initMobile,180);
+}
+})();
+
+
+
+/* =========================================================
+   V117 CLEAN — ОДНА КНОПКА ЗГОРТАННЯ ПРАВОЇ ПАНЕЛІ
+   - прибирає старі дублікати;
+   - працює у звичайному і fullscreen;
+   - працює на телефоні;
+   - без MutationObserver / циклів.
+   ========================================================= */
+(function(){
+"use strict";
+const $T=id=>document.getElementById(id);
+
+function cssT(){
+  if($T("v117ToggleCss"))return;
+  const st=document.createElement("style");
+  st.id="v117ToggleCss";
+  st.textContent=`
+    /* Усі попередні кнопки згортання приховуємо */
+    #v89RightToggle,#v112RightToggle,#v115RightToggle,
+    .v86-collapse-toggle,.v89-right-toggle,.right-panel-toggle{
+      display:none!important;
+      visibility:hidden!important;
+      pointer-events:none!important;
+    }
+
+    /* Єдина нова кнопка */
+    #v117RightToggle{
+      display:flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+      pointer-events:auto!important;
+      position:fixed!important;
+      top:50%!important;
+      transform:translateY(-50%)!important;
+      right:74px!important;
+      width:32px!important;
+      height:64px!important;
+      align-items:center!important;
+      justify-content:center!important;
+      border:1px solid #cbd7e6!important;
+      border-radius:10px 0 0 10px!important;
+      background:#173b78!important;
+      color:#fff!important;
+      box-shadow:0 4px 14px rgba(0,0,0,.16)!important;
+      cursor:pointer!important;
+      z-index:190000!important;
+      font:700 22px/1 Arial,sans-serif!important;
+    }
+
+    body.v117-right-collapsed #v117RightToggle{
+      right:0!important;
+    }
+
+    body.v117-right-collapsed #v86Dock,
+    body.v117-right-collapsed.v86-fullscreen #v86Dock,
+    body.v117-right-collapsed.v56-fullscreen #v86Dock,
+    body.v117-right-collapsed.fullscreen-mode #v86Dock,
+    :fullscreen body.v117-right-collapsed #v86Dock{
+      transform:translateX(100%)!important;
+      pointer-events:none!important;
+    }
+
+    body:not(.v117-right-collapsed) #v86Dock{
+      transform:translateX(0)!important;
+      pointer-events:auto!important;
+    }
+
+    :fullscreen #v117RightToggle{
+      display:flex!important;
+      visibility:visible!important;
+      opacity:1!important;
+    }
+
+    @media(max-width:768px){
+      #v117RightToggle{right:68px!important;}
+      body.v117-right-collapsed #v117RightToggle{right:0!important;}
+    }
+    @media(max-width:480px){
+      #v117RightToggle{right:64px!important;}
+      body.v117-right-collapsed #v117RightToggle{right:0!important;}
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function removeDuplicatesT(){
+  ["v89RightToggle","v112RightToggle","v115RightToggle"].forEach(id=>{
+    const x=$T(id); if(x)x.remove();
+  });
+
+  /* На скріншоті друга біла кнопка може не мати відомого id.
+     Видаляємо лише вузькі fixed-кнопки зі стрілкою ‹/› біля правого краю. */
+  [...document.querySelectorAll("button")].forEach(b=>{
+    if(b.id==="v117RightToggle")return;
+    const txt=(b.textContent||"").trim();
+    if(txt!=="‹" && txt!=="›")return;
+    const r=b.getBoundingClientRect();
+    const cs=getComputedStyle(b);
+    if(cs.position==="fixed" && r.width<=55 && r.height<=90 &&
+       r.left>window.innerWidth-180){
+      b.remove();
+    }
+  });
+}
+
+function ensureToggleT(){
+  let b=$T("v117RightToggle");
+  if(b)return b;
+  b=document.createElement("button");
+  b.id="v117RightToggle";
+  b.type="button";
+  b.title="Згорнути / розгорнути праву панель";
+  document.body.appendChild(b);
+
+  b.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    const collapsed=document.body.classList.toggle("v117-right-collapsed");
+    b.textContent=collapsed?"‹":"›";
+    try{localStorage.setItem("sofiaRightCollapsed117",collapsed?"1":"0")}catch(_){}
+  };
+  return b;
+}
+
+function restoreT(){
+  let collapsed=false;
+  try{collapsed=localStorage.getItem("sofiaRightCollapsed117")==="1"}catch(_){}
+  document.body.classList.toggle("v117-right-collapsed",collapsed);
+  const b=ensureToggleT();
+  b.textContent=collapsed?"‹":"›";
+}
+
+function repairT(){
+  cssT();
+  removeDuplicatesT();
+  ensureToggleT();
+}
+
+function markT(){
+  const b=$T("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v117";
+  document.documentElement.dataset.sofiaVersion="117-clean-mobile";
+}
+
+function initT(){
+  repairT();
+  restoreT();
+  markT();
+  /* Лише кілька одноразових перевірок, бо старі елементи створюються пізніше */
+  [350,900,1600].forEach(ms=>setTimeout(repairT,ms));
+}
+
+document.addEventListener("fullscreenchange",()=>setTimeout(repairT,100));
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(initT,180),{once:true});
+else setTimeout(initT,180);
+})();
