@@ -6716,3 +6716,305 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V82 — ПРАВА ЗАКРІПЛЕНА ПАНЕЛЬ ВКЛАДОК + КОМАНДИ
+   ========================================================= */
+(function(){
+"use strict";
+const $82=id=>document.getElementById(id);
+
+function ribbon(){ return $82("sofiaRibbonV56"); }
+
+function addCss(){
+  if($82("v82Css")) return;
+  const st=document.createElement("style");
+  st.id="v82Css";
+  st.textContent=`
+    #v82RightDock{
+      position:fixed;
+      right:0;
+      top:150px;
+      bottom:12px;
+      z-index:70000;
+      width:58px;
+      display:none;
+      flex-direction:column;
+      align-items:stretch;
+      gap:4px;
+      padding:6px 5px;
+      background:#fff;
+      border-left:1px solid #d8e2ef;
+      box-shadow:-4px 0 14px rgba(15,23,42,.10);
+      overflow-y:auto;
+      overflow-x:hidden;
+    }
+    #v82RightDock.show{display:flex}
+
+    .v82-tab{
+      width:46px;
+      min-height:46px;
+      border:0;
+      border-radius:9px;
+      background:#fff;
+      color:#203047;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      font:600 10px/1.05 Arial,sans-serif;
+      padding:4px 2px;
+    }
+    .v82-tab:hover{background:#f1f5fb}
+    .v82-tab.active{
+      background:#173b78;
+      color:#fff;
+    }
+    .v82-ico{
+      font-size:17px;
+      line-height:1;
+    }
+
+    #v82Commands{
+      position:fixed;
+      right:62px;
+      top:150px;
+      z-index:69990;
+      display:none;
+      width:min(760px,calc(100vw - 160px));
+      max-height:220px;
+      overflow:auto;
+      background:#fff;
+      border:1px solid #d8e2ef;
+      border-radius:10px;
+      box-shadow:0 6px 22px rgba(15,23,42,.20);
+      padding:7px;
+    }
+    #v82Commands.show{display:block}
+
+    #v82Commands .v82-panel{
+      display:flex!important;
+      flex-wrap:wrap!important;
+      gap:4px!important;
+      align-items:center!important;
+      margin:0!important;
+      padding:0!important;
+    }
+
+    #v82Commands button,
+    #v82Commands select,
+    #v82Commands input:not([type="range"]):not([type="color"]){
+      min-height:29px!important;
+      height:29px!important;
+      padding:2px 7px!important;
+      margin:0!important;
+      font-size:13px!important;
+      border-radius:6px!important;
+    }
+    #v82Commands input[type="color"]{
+      width:34px!important;
+      height:28px!important;
+      padding:2px!important;
+    }
+    #v82Commands input[type="range"]{
+      height:22px!important;
+      margin:0 3px!important;
+    }
+
+    /* приховуємо стару праву панель v80, щоб не дублювалась */
+    #v80RightTabs,#v80QuickCommands{
+      display:none!important;
+    }
+
+    @media(max-width:900px){
+      #v82RightDock{top:128px;width:54px}
+      #v82Commands{right:58px;top:128px;width:calc(100vw - 145px)}
+      .v82-tab{width:42px;min-height:43px;font-size:9px}
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+const icons = {
+  "Основне":"⌂",
+  "Вставка":"+",
+  "Малювання":"✎",
+  "Математика":"∑",
+  "Вчитель":"🎓",
+  "AI":"✨"
+};
+
+function ensureDock(){
+  let dock=$82("v82RightDock");
+  if(!dock){
+    dock=document.createElement("div");
+    dock.id="v82RightDock";
+    document.body.appendChild(dock);
+  }
+
+  let cmds=$82("v82Commands");
+  if(!cmds){
+    cmds=document.createElement("div");
+    cmds.id="v82Commands";
+    document.body.appendChild(cmds);
+  }
+}
+
+function tabList(){
+  return [...document.querySelectorAll("#sofiaRibbonV56 .v56-tab")];
+}
+
+function currentPanel(){
+  const rb=ribbon();
+  if(!rb) return null;
+
+  const panels=[...rb.querySelectorAll(".v56-panel")];
+  return panels.find(p=>{
+    const cs=getComputedStyle(p);
+    return !p.hidden && cs.display!=="none" && cs.visibility!=="hidden";
+  }) || rb.querySelector(".v56-panel.active");
+}
+
+function buildDock(){
+  ensureDock();
+  const dock=$82("v82RightDock");
+  dock.innerHTML="";
+
+  tabList().forEach(orig=>{
+    const name=(orig.textContent||"").trim();
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="v82-tab"+(orig.classList.contains("active")?" active":"");
+    b.innerHTML=`<span class="v82-ico">${icons[name]||"•"}</span><span>${name}</span>`;
+    b.onclick=()=>{
+      orig.click();
+      setTimeout(()=>{
+        buildDock();
+        openCommands();
+      },30);
+    };
+    dock.appendChild(b);
+  });
+}
+
+function openCommands(){
+  const src=currentPanel();
+  const box=$82("v82Commands");
+  if(!src || !box) return;
+
+  box.innerHTML="";
+  const clone=src.cloneNode(true);
+  clone.classList.add("v82-panel");
+  clone.removeAttribute("id");
+  clone.querySelectorAll("[id]").forEach(el=>el.removeAttribute("id"));
+  box.appendChild(clone);
+
+  const real=[...src.querySelectorAll("button,select,input,textarea")];
+  const fake=[...clone.querySelectorAll("button,select,input,textarea")];
+
+  fake.forEach((c,i)=>{
+    const r=real[i];
+    if(!r) return;
+
+    if("value" in r) c.value=r.value;
+    if("checked" in r) c.checked=r.checked;
+    c.disabled=r.disabled;
+
+    if(c.tagName==="BUTTON"){
+      c.onclick=e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        r.click();
+        setTimeout(()=>{
+          buildDock();
+          openCommands();
+        },40);
+      };
+    }else{
+      const sync=()=>{
+        if("value" in r) r.value=c.value;
+        if("checked" in r) r.checked=c.checked;
+        r.dispatchEvent(new Event("input",{bubbles:true}));
+        r.dispatchEvent(new Event("change",{bubbles:true}));
+      };
+      c.addEventListener("input",sync);
+      c.addEventListener("change",sync);
+    }
+  });
+
+  box.classList.add("show");
+}
+
+function ribbonOffscreen(){
+  const rb=ribbon();
+  if(!rb) return false;
+  const r=rb.getBoundingClientRect();
+  return r.bottom < 20;
+}
+
+function updateDock(){
+  ensureDock();
+  const dock=$82("v82RightDock");
+  const box=$82("v82Commands");
+
+  const show=ribbonOffscreen();
+  dock.classList.toggle("show",show);
+  if(!show) box.classList.remove("show");
+
+  if(show) buildDock();
+}
+
+function outsideClose(){
+  document.addEventListener("pointerdown",e=>{
+    const d=$82("v82RightDock");
+    const c=$82("v82Commands");
+    if(!c?.classList.contains("show")) return;
+    if(d?.contains(e.target) || c.contains(e.target)) return;
+    c.classList.remove("show");
+  },true);
+}
+
+function markVersion(){
+  let b=$82("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b) b.textContent="v82";
+  document.documentElement.dataset.sofiaVersion="82";
+}
+
+function init(){
+  addCss();
+  ensureDock();
+  buildDock();
+  outsideClose();
+  markVersion();
+  updateDock();
+
+  window.addEventListener("scroll",updateDock,true);
+  document.addEventListener("scroll",updateDock,true);
+  window.addEventListener("resize",updateDock);
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v82);
+    mo.__v82=setTimeout(updateDock,60);
+  });
+  mo.observe(document.body,{
+    childList:true,
+    subtree:true,
+    attributes:true,
+    attributeFilter:["class","style","hidden"]
+  });
+
+  [300,800,1600].forEach(ms=>setTimeout(updateDock,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
