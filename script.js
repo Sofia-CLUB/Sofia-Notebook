@@ -8412,3 +8412,153 @@ if(document.readyState==="loading")
 else
   setTimeout(init,180);
 })();
+
+
+
+/* =========================================================
+   V122 — CONTEXT PROPERTIES PANEL ONLY ON REAL OBJECT SELECTION
+   ========================================================= */
+(function(){
+"use strict";
+
+const PANEL_IDS=["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"];
+let allowPanelUntil=0;
+
+function panels(){
+  return PANEL_IDS.map(id=>document.getElementById(id)).filter(Boolean);
+}
+function hidePanels(){
+  panels().forEach(p=>p.classList.remove("show"));
+}
+function canvasEl(){
+  return document.querySelector(".upper-canvas") ||
+         document.querySelector("canvas.upper-canvas") ||
+         document.querySelector("canvas");
+}
+function isInsideCanvasEvent(e){
+  const c=canvasEl();
+  if(!c) return false;
+  const r=c.getBoundingClientRect();
+  return e.clientX>=r.left && e.clientX<=r.right &&
+         e.clientY>=r.top && e.clientY<=r.bottom;
+}
+function fc(){
+  try{return typeof fcanvas!=="undefined" ? fcanvas : null}catch(_){return null}
+}
+
+/* Any click on UI (right tabs, collapse arrow, math commands, toolbar buttons,
+   page controls, top controls...) must close/suppress the properties panel. */
+function bindUiSuppression(){
+  if(document.__v122UiSuppression) return;
+  document.__v122UiSuppression=true;
+
+  document.addEventListener("pointerdown",e=>{
+    if(isInsideCanvasEvent(e)) return;
+
+    allowPanelUntil=0;
+    hidePanels();
+
+    /* Also discard stale active text/object only if user is clicking UI,
+       so toolbar commands do not resurrect the text properties panel. */
+    try{
+      const c=fc();
+      const o=c?.getActiveObject?.();
+      if(o && o.isEditing) o.exitEditing?.();
+    }catch(_){}
+  },true);
+
+  document.addEventListener("click",e=>{
+    if(isInsideCanvasEvent(e)) return;
+    setTimeout(hidePanels,0);
+    setTimeout(hidePanels,80);
+  },true);
+}
+
+/* A properties panel is allowed only after the user directly clicks
+   an EXISTING object on the canvas. Empty-canvas cursor clicks do not count. */
+function bindCanvasIntent(){
+  if(document.__v122CanvasIntent) return;
+  document.__v122CanvasIntent=true;
+
+  document.addEventListener("pointerdown",e=>{
+    if(!isInsideCanvasEvent(e)) return;
+
+    let target=null;
+    try{
+      target=fc()?.findTarget?.(e) || null;
+    }catch(_){}
+
+    /* In cursor mode, clicking the sheet is for typing/placing cursor,
+       not for opening object properties. */
+    const cursorMode =
+      document.body.classList.contains("v121-cursor-mode") ||
+      document.body.classList.contains("v113-cursor-mode") ||
+      document.body.classList.contains("v112-cursor-mode");
+
+    if(target && !cursorMode){
+      allowPanelUntil=Date.now()+700;
+    }else{
+      allowPanelUntil=0;
+      hidePanels();
+    }
+  },true);
+}
+
+/* Legacy selection handlers may still call refreshObjectPanel().
+   Watch only class changes on the known panels and immediately hide
+   any panel opened without a direct object-selection intent. */
+function guardPanels(){
+  panels().forEach(p=>{
+    if(p.__v122Guarded) return;
+    p.__v122Guarded=true;
+
+    const mo=new MutationObserver(()=>{
+      if(!p.classList.contains("show")) return;
+      if(Date.now()<=allowPanelUntil) return;
+      p.classList.remove("show");
+    });
+    mo.observe(p,{attributes:true,attributeFilter:["class"]});
+  });
+}
+
+/* Once a panel is legitimately open, its own controls remain usable.
+   Clicking × always closes it and clears permission. */
+function bindPanelClose(){
+  const closeIds=["v102ObjClose","v100ObjClose","v81ObjClose"];
+  closeIds.forEach(id=>{
+    const b=document.getElementById(id);
+    if(!b || b.__v122CloseBound) return;
+    b.__v122CloseBound=true;
+    b.addEventListener("click",e=>{
+      allowPanelUntil=0;
+      hidePanels();
+    },true);
+  });
+}
+
+function mark(){
+  const b=document.getElementById("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v122";
+  document.documentElement.dataset.sofiaVersion="122";
+}
+
+function repair(){
+  guardPanels();
+  bindPanelClose();
+}
+
+function init(){
+  hidePanels();
+  bindUiSuppression();
+  bindCanvasIntent();
+  repair();
+  mark();
+
+  [400,1000,1800].forEach(ms=>setTimeout(repair,ms));
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
