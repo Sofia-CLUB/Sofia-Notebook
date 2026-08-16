@@ -114,7 +114,7 @@ function renderCoordinatePlane(){
   const box=$("coordinatePaperOverlay");
   if(!box)return;
   const W=1180,H=820;
-  const step=Math.max(20,Number($("paperSize").value)||32);
+  const step=Math.max(20,Number($("paperSize").value)||26);
   const gridColor=$("paperLineColor").value||"#9fd5ff";
   const ox=Math.round(W/2), oy=Math.round(H/2);
   let svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">`;
@@ -3443,7 +3443,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     const align=$57("v57TextAlign");
 
     if(font)font.value=o.fontFamily||"Segoe Script";
-    if(size)size.value=Math.round(o.fontSize||32);
+    if(size)size.value=Math.round(o.fontSize||26);
     if(color && /^#[0-9a-f]{6}$/i.test(o.fill||""))color.value=o.fill;
     if(bg && /^#[0-9a-f]{6}$/i.test(o.backgroundColor||""))bg.value=o.backgroundColor;
     if(align)align.value=o.textAlign||"left";
@@ -4152,7 +4152,7 @@ else setTimeout(init,180);
   let textPlacementMode=false;
 
   const DEFAULT_FONT="Segoe Script";
-  const DEFAULT_SIZE=32;
+  const DEFAULT_SIZE=26;
   const DEFAULT_COLOR="#4a7fbd";
 
   function homePanel(){
@@ -4481,7 +4481,7 @@ function createAt(pointer){
     left:pointer.x,
     top:pointer.y,
     fontFamily:(window.sofiaTextDefaults?.fontFamily||"Segoe Script"),
-    fontSize:(window.sofiaTextDefaults?.fontSize||32),
+    fontSize:(window.sofiaTextDefaults?.fontSize||26),
     fontStyle:(window.sofiaTextDefaults?.fontStyle||"normal"),
     fontWeight:(window.sofiaTextDefaults?.fontWeight||"normal"),
     fill:(window.sofiaTextDefaults?.fill||"#4a7fbd"),
@@ -5191,7 +5191,7 @@ window.sofiaShapeFillEnabled = window.sofiaShapeFillEnabled ?? false;
 window.sofiaShapeFillColor = window.sofiaShapeFillColor || "#dbeafe";
 window.sofiaTextDefaults = window.sofiaTextDefaults || {
   fontFamily:"Segoe Script",
-  fontSize:32,
+  fontSize:26,
   fontStyle:"normal",
   fontWeight:"normal",
   underline:false,
@@ -6010,7 +6010,7 @@ function css(){
 function handwriting(){
  window.sofiaTextDefaults=window.sofiaTextDefaults||{};
  window.sofiaTextDefaults.fontFamily="Segoe Script";
- window.sofiaTextDefaults.fontSize=32;
+ window.sofiaTextDefaults.fontSize=26;
  window.sofiaTextDefaults.fill="#4a7fbd";
 
  // Known ribbon/text controls
@@ -6025,7 +6025,7 @@ function handwriting(){
    }
  });
  ["fontSize","textFontSize","v57TextSize"].forEach(id=>{
-   const el=$78(id); if(el) el.value="32";
+   const el=$78(id); if(el) el.value="26";
  });
 }
 
@@ -6089,162 +6089,626 @@ else setTimeout(init,180);
 
 
 /* =========================================================
-   V79 — STICKY ВКЛАДКИ + ПОВНИЙ ЕКРАН БЕЗ ПУСТОГО МІСЦЯ
+   V80 — ВКЛАДКИ СПРАВА ПРИ ПРОКРУЧУВАННІ
+   БАЗА: v78 (компактна)
    ========================================================= */
 (function(){
 "use strict";
-const $79=id=>document.getElementById(id);
+const $80=id=>document.getElementById(id);
+
+function ribbon(){ return $80("sofiaRibbonV56"); }
+function ribbonHead(){ return ribbon()?.querySelector(".v56-ribbon-head"); }
 
 function addCss(){
-  if($79("v79Css")) return;
+  if($80("v80Css")) return;
   const st=document.createElement("style");
-  st.id="v79Css";
+  st.id="v80Css";
   st.textContent=`
-    /* Закріплюємо саме рядок вкладок стрічки */
-    #sofiaRibbonV56 .v56-ribbon-head{
-      position:sticky!important;
-      top:0!important;
-      z-index:45000!important;
-      background:#fff!important;
-      box-shadow:0 1px 0 rgba(15,23,42,.08)!important;
+    /* Праві вкладки показуються ТІЛЬКИ коли основна стрічка вже прокручена вгору */
+    #v80RightTabs{
+      position:fixed;
+      right:8px;
+      top:88px;
+      z-index:60000;
+      display:none;
+      flex-direction:column;
+      gap:4px;
+      padding:6px;
+      background:rgba(255,255,255,.97);
+      border:1px solid #d8e2ef;
+      border-radius:12px;
+      box-shadow:0 6px 22px rgba(15,23,42,.18);
+      max-height:calc(100vh - 110px);
+      overflow:auto;
+    }
+    #v80RightTabs.show{display:flex}
+    .v80-side-tab{
+      min-width:116px;
+      min-height:34px;
+      border:0;
+      border-radius:8px;
+      padding:6px 9px;
+      background:#fff;
+      color:#172033;
+      font:600 14px/1.2 Arial,sans-serif;
+      text-align:left;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .v80-side-tab:hover{background:#f0f5ff}
+    .v80-side-tab.active{
+      background:#e8f0ff;
+      color:#173b78;
+      box-shadow:inset 3px 0 0 #2b5eaa;
     }
 
-    /* У повному екрані прибираємо зайву висоту зверху */
-    :fullscreen #sofiaRibbonV56,
-    :-webkit-full-screen #sofiaRibbonV56{
-      margin-top:0!important;
+    /* Компактне меню команд, яке відкривається ліворуч від правих вкладок */
+    #v80QuickCommands{
+      position:fixed;
+      right:138px;
+      top:88px;
+      z-index:59990;
+      display:none;
+      width:min(720px,calc(100vw - 250px));
+      max-height:190px;
+      overflow:auto;
+      padding:6px;
+      background:#fff;
+      border:1px solid #d8e2ef;
+      border-radius:10px;
+      box-shadow:0 6px 22px rgba(15,23,42,.18);
     }
-
-    :fullscreen #sofiaRibbonV56 .v56-ribbon-head,
-    :-webkit-full-screen #sofiaRibbonV56 .v56-ribbon-head{
-      top:0!important;
-    }
-
-    /* Не дозволяємо великим порожнім блокам залишатися перед стрічкою */
-    :fullscreen .v79-fullscreen-gap,
-    :-webkit-full-screen .v79-fullscreen-gap{
-      height:0!important;
-      min-height:0!important;
-      max-height:0!important;
+    #v80QuickCommands.show{display:block}
+    #v80QuickCommands .v80-clone-panel{
+      display:flex!important;
+      flex-wrap:wrap!important;
+      gap:3px!important;
+      align-items:center!important;
       margin:0!important;
       padding:0!important;
-      border:0!important;
-      overflow:hidden!important;
+    }
+    #v80QuickCommands button,
+    #v80QuickCommands select,
+    #v80QuickCommands input:not([type="color"]):not([type="range"]){
+      min-height:28px!important;
+      height:28px!important;
+      padding:2px 7px!important;
+      margin:0!important;
+      font-size:14px!important;
+      border-radius:6px!important;
+    }
+    #v80QuickCommands input[type="color"]{
+      width:34px!important;height:27px!important;padding:2px!important;
+    }
+
+    @media(max-width:900px){
+      #v80RightTabs{right:4px;top:74px;padding:4px}
+      .v80-side-tab{min-width:100px;font-size:13px}
+      #v80QuickCommands{right:114px;top:74px;width:calc(100vw - 190px)}
     }
   `;
   document.head.appendChild(st);
 }
 
-function ribbon(){
-  return $79("sofiaRibbonV56");
+function ensureUI(){
+  if(!$80("v80RightTabs")){
+    const side=document.createElement("div");
+    side.id="v80RightTabs";
+    document.body.appendChild(side);
+  }
+  if(!$80("v80QuickCommands")){
+    const q=document.createElement("div");
+    q.id="v80QuickCommands";
+    document.body.appendChild(q);
+  }
 }
 
-function collapseFullscreenGaps(){
-  if(!document.fullscreenElement && !document.webkitFullscreenElement) return;
+function tabList(){
+  return [...document.querySelectorAll("#sofiaRibbonV56 .v56-tab")];
+}
 
+function activePanel(){
   const rb=ribbon();
-  if(!rb) return;
+  if(!rb) return null;
+  return [...rb.querySelectorAll(".v56-panel")].find(p=>{
+    const cs=getComputedStyle(p);
+    return cs.display!=="none" && !p.hidden;
+  }) || rb.querySelector(".v56-panel.active");
+}
 
-  // Не чіпаємо саму стрічку та її батьків.
-  const rr=rb.getBoundingClientRect();
+function cloneCommands(){
+  const src=activePanel();
+  const box=$80("v80QuickCommands");
+  if(!src || !box) return;
 
-  document.querySelectorAll("div,section,main").forEach(el=>{
-    if(el===rb || el.contains(rb) || rb.contains(el)) return;
+  box.innerHTML="";
+  const clone=src.cloneNode(true);
+  clone.classList.add("v80-clone-panel");
+  clone.removeAttribute("id");
+  clone.querySelectorAll("[id]").forEach(el=>el.removeAttribute("id"));
+  box.appendChild(clone);
 
-    const r=el.getBoundingClientRect();
-    const cs=getComputedStyle(el);
-    const text=(el.textContent||"").trim();
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+  const realControls=[...src.querySelectorAll("button,select,input,textarea")];
+  const cloneControls=[...clone.querySelectorAll("button,select,input,textarea")];
 
-    // Шукаємо тільки реально порожні великі горизонтальні блоки
-    // безпосередньо над стрічкою у fullscreen.
-    if(
-      r.width > window.innerWidth*0.55 &&
-      r.height >= 25 && r.height <= 260 &&
-      rr.top - r.bottom >= -3 &&
-      rr.top - r.bottom <= 40 &&
-      !text &&
-      controls===0 &&
-      cs.position!=="fixed"
-    ){
-      el.classList.add("v79-fullscreen-gap");
+  cloneControls.forEach((c,i)=>{
+    const real=realControls[i];
+    if(!real) return;
+
+    // copy current state
+    if("value" in real) c.value=real.value;
+    if("checked" in real) c.checked=real.checked;
+    c.disabled=real.disabled;
+
+    if(c.tagName==="BUTTON"){
+      c.onclick=e=>{
+        e.preventDefault(); e.stopPropagation();
+        real.click();
+        setTimeout(refreshTabs,20);
+      };
+    } else {
+      const sync=()=>{
+        if("value" in real) real.value=c.value;
+        if("checked" in real) real.checked=c.checked;
+        real.dispatchEvent(new Event("input",{bubbles:true}));
+        real.dispatchEvent(new Event("change",{bubbles:true}));
+      };
+      c.addEventListener("input",sync);
+      c.addEventListener("change",sync);
     }
   });
 
-  // Якщо зайва висота сидить на контейнері стрічки.
-  let parent=rb.parentElement;
-  for(let i=0;i<4 && parent && parent!==document.body;i++,parent=parent.parentElement){
-    const pr=parent.getBoundingClientRect();
-    const rbRect=rb.getBoundingClientRect();
-    const topSpace=rbRect.top-pr.top;
-
-    if(topSpace>40){
-      parent.style.setProperty("padding-top","0","important");
-      parent.style.setProperty("margin-top","0","important");
-      parent.style.setProperty("row-gap","2px","important");
-      parent.style.setProperty("gap","2px","important");
-    }
-  }
-
-  rb.style.setProperty("margin-top","0","important");
+  box.classList.add("show");
 }
 
-function forceSticky(){
-  const h=rbHead();
-  if(!h) return;
-  h.style.setProperty("position","sticky","important");
-  h.style.setProperty("top","0","important");
-  h.style.setProperty("z-index","45000","important");
-  h.style.setProperty("background","#fff","important");
+function refreshTabs(){
+  ensureUI();
+  const side=$80("v80RightTabs");
+  side.innerHTML="";
+
+  tabList().forEach(orig=>{
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="v80-side-tab"+(orig.classList.contains("active")?" active":"");
+    b.textContent=(orig.textContent||"").trim();
+    b.onclick=()=>{
+      orig.click();
+      setTimeout(()=>{
+        refreshTabs();
+        cloneCommands();
+      },20);
+    };
+    side.appendChild(b);
+  });
 }
 
-function rbHead(){
-  return ribbon()?.querySelector(".v56-ribbon-head");
+function shouldShowSideTabs(){
+  const h=ribbonHead();
+  if(!h) return false;
+  const r=h.getBoundingClientRect();
+  // Show the right rail when the original tab row has scrolled above the viewport.
+  return r.bottom < 8;
 }
 
-function refresh(){
-  forceSticky();
-  collapseFullscreenGaps();
+function updateVisibility(){
+  ensureUI();
+  const side=$80("v80RightTabs");
+  const box=$80("v80QuickCommands");
+  const show=shouldShowSideTabs();
+
+  side.classList.toggle("show",show);
+  if(!show) box.classList.remove("show");
+  if(show) refreshTabs();
+}
+
+function closeQuickOnOutside(){
+  document.addEventListener("pointerdown",e=>{
+    const side=$80("v80RightTabs");
+    const box=$80("v80QuickCommands");
+    if(!box?.classList.contains("show")) return;
+    if(side?.contains(e.target) || box.contains(e.target)) return;
+    box.classList.remove("show");
+  },true);
 }
 
 function markVersion(){
-  const b=$79("appVersionBadge");
-  if(b) b.textContent="v79";
-  document.documentElement.dataset.sofiaVersion="79";
+  let b=$80("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(el=>/^v\d+$/i.test((el.textContent||"").trim()));
+  }
+  if(b)b.textContent="v80";
+  document.documentElement.dataset.sofiaVersion="80";
 }
 
 function init(){
   addCss();
+  ensureUI();
+  refreshTabs();
+  updateVisibility();
+  closeQuickOnOutside();
   markVersion();
-  refresh();
 
-  window.addEventListener("scroll",forceSticky,true);
-  document.addEventListener("scroll",forceSticky,true);
-  window.addEventListener("resize",refresh);
-
-  document.addEventListener("fullscreenchange",()=>{
-    setTimeout(refresh,80);
-    setTimeout(refresh,300);
-    setTimeout(refresh,900);
-  });
-  document.addEventListener("webkitfullscreenchange",()=>{
-    setTimeout(refresh,80);
-    setTimeout(refresh,300);
-    setTimeout(refresh,900);
-  });
+  window.addEventListener("scroll",updateVisibility,true);
+  document.addEventListener("scroll",updateVisibility,true);
+  window.addEventListener("resize",updateVisibility);
 
   const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v79);
-    mo.__v79=setTimeout(refresh,80);
+    clearTimeout(mo.__v80);
+    mo.__v80=setTimeout(updateVisibility,60);
   });
   mo.observe(document.body,{
-    subtree:true,
-    childList:true,
-    attributes:true,
+    childList:true,subtree:true,attributes:true,
     attributeFilter:["class","style","hidden"]
   });
 
-  [300,900,1600].forEach(ms=>setTimeout(refresh,ms));
+  [300,800,1600].forEach(ms=>setTimeout(updateVisibility,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+else
+  setTimeout(init,180);
+})();
+
+
+
+/* =========================================================
+   V81 — FULLSCREEN COMPACT + OBJECT FORMAT PANEL
+   ========================================================= */
+(function(){
+"use strict";
+const $81=id=>document.getElementById(id);
+
+function ribbon(){ return $81("sofiaRibbonV56"); }
+
+function addCss(){
+  if($81("v81Css")) return;
+  const st=document.createElement("style");
+  st.id="v81Css";
+  st.textContent=`
+    /* Контекстна панель вибраного об'єкта */
+    #v81ObjectPanel{
+      position:fixed;
+      right:8px;
+      top:90px;
+      z-index:65000;
+      display:none;
+      width:255px;
+      max-height:calc(100vh - 110px);
+      overflow:auto;
+      background:#fff;
+      border:1px solid #d8e2ef;
+      border-radius:12px;
+      box-shadow:0 8px 26px rgba(15,23,42,.22);
+      padding:8px;
+      font:14px/1.25 Arial,sans-serif;
+    }
+    #v81ObjectPanel.show{display:block}
+    .v81-head{
+      display:flex;align-items:center;gap:6px;
+      font-weight:700;margin-bottom:6px
+    }
+    .v81-head button{
+      margin-left:auto;border:0;background:#f1f4f8;
+      width:27px;height:27px;border-radius:7px;cursor:pointer
+    }
+    .v81-row{
+      display:flex;align-items:center;gap:5px;
+      margin:4px 0;flex-wrap:wrap
+    }
+    .v81-row label{font-size:12px;color:#52606d}
+    #v81ObjectPanel select,
+    #v81ObjectPanel input:not([type="color"]):not([type="range"]),
+    #v81ObjectPanel button.v81-b{
+      height:29px;border:1px solid #ccd7e6;border-radius:6px;
+      background:#fff;padding:2px 6px;font-size:13px
+    }
+    #v81ObjectPanel input[type="color"]{
+      width:36px;height:29px;padding:1px;border:1px solid #ccd7e6;border-radius:6px
+    }
+    #v81ObjectPanel input[type="range"]{width:110px}
+    #v81ObjectPanel .v81-b.active{background:#e8f0ff;color:#173b78}
+    #v81ObjectPanel .danger{color:#c62828}
+    #v81ObjectPanel .wide{flex:1;min-width:0}
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------- fullscreen: pull ribbon + everything below it upward ---------- */
+let fullShift=0;
+function clearFullscreenShift(){
+  const rb=ribbon();
+  if(!rb) return;
+  rb.style.removeProperty("margin-top");
+  fullShift=0;
+}
+
+function fixFullscreenGap(){
+  const fs=document.fullscreenElement || document.webkitFullscreenElement;
+  const rb=ribbon();
+  if(!fs || !rb) { clearFullscreenShift(); return; }
+
+  // First reset so the measurement is real.
+  rb.style.setProperty("margin-top","0px","important");
+
+  requestAnimationFrame(()=>{
+    const rr=rb.getBoundingClientRect();
+
+    // Find the bottom edge of the real top controls row above the ribbon.
+    let anchorBottom=0;
+    const candidates=[...document.querySelectorAll("header, .app-header, .topbar, .brandbar, input, select, button")];
+    candidates.forEach(el=>{
+      if(rb.contains(el)) return;
+      const r=el.getBoundingClientRect();
+      if(r.width<=0 || r.height<=0) return;
+      if(r.bottom <= rr.top && r.bottom > anchorBottom && r.top < 180){
+        anchorBottom=r.bottom;
+      }
+    });
+
+    // Fallback: top controls in screenshot end around first 160 px.
+    if(anchorBottom<40) anchorBottom=140;
+
+    const gap=rr.top-anchorBottom;
+    if(gap>18){
+      fullShift=Math.min(gap-6,260);
+      rb.style.setProperty("margin-top",(-fullShift)+"px","important");
+    }
+  });
+}
+
+/* ---------- selected object formatting ---------- */
+function panel(){
+  let p=$81("v81ObjectPanel");
+  if(p) return p;
+  p=document.createElement("div");
+  p.id="v81ObjectPanel";
+  p.innerHTML=`
+    <div class="v81-head">
+      <span id="v81ObjTitle">Об'єкт</span>
+      <button type="button" id="v81ObjClose">×</button>
+    </div>
+
+    <div id="v81TextControls">
+      <div class="v81-row">
+        <label>Шрифт</label>
+        <select id="v81Font" class="wide">
+          <option>Segoe Script</option>
+          <option>Segoe Print</option>
+          <option>Arial</option>
+          <option>Calibri</option>
+          <option>Times New Roman</option>
+          <option>Georgia</option>
+          <option>Comic Sans MS</option>
+        </select>
+      </div>
+      <div class="v81-row">
+        <label>Розмір</label>
+        <input id="v81FontSize" type="number" min="8" max="140" step="1" value="26" style="width:64px">
+        <button class="v81-b" id="v81Bold"><b>B</b></button>
+        <button class="v81-b" id="v81Italic"><i>I</i></button>
+        <button class="v81-b" id="v81Underline"><u>U</u></button>
+      </div>
+      <div class="v81-row">
+        <label>Текст</label><input id="v81TextColor" type="color">
+        <label>Фон</label><input id="v81TextBg" type="color">
+      </div>
+      <div class="v81-row">
+        <label>Вирівнювання</label>
+        <select id="v81Align" class="wide">
+          <option value="left">Ліворуч</option>
+          <option value="center">По центру</option>
+          <option value="right">Праворуч</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="v81ShapeControls">
+      <div class="v81-row">
+        <label>Контур</label><input id="v81Stroke" type="color">
+        <label>Заливка</label><input id="v81Fill" type="color">
+      </div>
+      <div class="v81-row">
+        <label>Товщина</label>
+        <input id="v81StrokeWidth" type="number" min="0" max="30" step="1" value="2" style="width:64px">
+        <select id="v81Dash" class="wide">
+          <option value="solid">Суцільна</option>
+          <option value="dash">Штрих</option>
+          <option value="dot">Крапки</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="v81-row">
+      <label>Прозорість</label>
+      <input id="v81Opacity" type="range" min="10" max="100" value="100">
+      <span id="v81OpacityVal">100%</span>
+    </div>
+
+    <div class="v81-row">
+      <button class="v81-b" id="v81Front">На передній план</button>
+      <button class="v81-b" id="v81Back">Назад</button>
+    </div>
+    <div class="v81-row">
+      <button class="v81-b" id="v81Duplicate">Копія</button>
+      <button class="v81-b danger" id="v81Delete">Видалити</button>
+    </div>
+  `;
+  document.body.appendChild(p);
+  bindPanel();
+  return p;
+}
+
+function obj(){ return (typeof fcanvas!=="undefined") ? fcanvas.getActiveObject() : null; }
+function isText(o){ return !!o && ["i-text","textbox","text"].includes(o.type); }
+function isImage(o){ return !!o && o.type==="image"; }
+
+function hex(c, fallback="#000000"){
+  if(!c || c==="transparent" || c==="rgba(0,0,0,0)") return fallback;
+  if(/^#[0-9a-f]{6}$/i.test(c)) return c;
+  const m=String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if(m) return "#"+[m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,"0")).join("");
+  return fallback;
+}
+
+function apply(changes){
+  const o=obj(); if(!o) return;
+  o.set(changes);
+  o.setCoords?.();
+  fcanvas.requestRenderAll();
+  try{autoSave()}catch(_){}
+}
+
+function dashValue(v){
+  if(v==="dash") return [10,6];
+  if(v==="dot") return [2,5];
+  return null;
+}
+function dashName(a){
+  if(!a || !a.length) return "solid";
+  return a[0]<=3 ? "dot" : "dash";
+}
+
+function refreshPanel(){
+  const p=panel(), o=obj();
+  if(!o){ p.classList.remove("show"); return; }
+
+  p.classList.add("show");
+  const txt=isText(o);
+  const img=isImage(o);
+
+  $81("v81ObjTitle").textContent = txt ? "Текст" : img ? "Зображення" : "Об'єкт";
+  $81("v81TextControls").style.display=txt?"block":"none";
+  $81("v81ShapeControls").style.display=(!txt&&!img)?"block":"none";
+
+  if(txt){
+    $81("v81Font").value=o.fontFamily||"Segoe Script";
+    $81("v81FontSize").value=Math.round(o.fontSize||26);
+    $81("v81TextColor").value=hex(o.fill,"#4a7fbd");
+    $81("v81TextBg").value=hex(o.backgroundColor,"#ffffff");
+    $81("v81Align").value=o.textAlign||"left";
+    $81("v81Bold").classList.toggle("active",String(o.fontWeight)==="bold" || Number(o.fontWeight)>=600);
+    $81("v81Italic").classList.toggle("active",o.fontStyle==="italic");
+    $81("v81Underline").classList.toggle("active",!!o.underline);
+  }else if(!img){
+    $81("v81Stroke").value=hex(o.stroke,"#000000");
+    $81("v81Fill").value=hex(o.fill,"#ffffff");
+    $81("v81StrokeWidth").value=Math.round(o.strokeWidth||0);
+    $81("v81Dash").value=dashName(o.strokeDashArray);
+  }
+
+  const op=Math.round((o.opacity==null?1:o.opacity)*100);
+  $81("v81Opacity").value=op;
+  $81("v81OpacityVal").textContent=op+"%";
+}
+
+function bindPanel(){
+  $81("v81ObjClose").onclick=()=>panel().classList.remove("show");
+
+  $81("v81Font").onchange=e=>apply({fontFamily:e.target.value});
+  $81("v81FontSize").oninput=e=>apply({fontSize:+e.target.value||26});
+  $81("v81TextColor").oninput=e=>apply({fill:e.target.value});
+  $81("v81TextBg").oninput=e=>apply({backgroundColor:e.target.value});
+  $81("v81Align").onchange=e=>apply({textAlign:e.target.value});
+
+  $81("v81Bold").onclick=()=>{
+    const o=obj(); if(!o)return;
+    apply({fontWeight:(String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600)?"normal":"bold"});
+    refreshPanel();
+  };
+  $81("v81Italic").onclick=()=>{
+    const o=obj(); if(!o)return;
+    apply({fontStyle:o.fontStyle==="italic"?"normal":"italic"}); refreshPanel();
+  };
+  $81("v81Underline").onclick=()=>{
+    const o=obj(); if(!o)return;
+    apply({underline:!o.underline}); refreshPanel();
+  };
+
+  $81("v81Stroke").oninput=e=>apply({stroke:e.target.value});
+  $81("v81Fill").oninput=e=>apply({fill:e.target.value});
+  $81("v81StrokeWidth").oninput=e=>apply({strokeWidth:+e.target.value||0});
+  $81("v81Dash").onchange=e=>apply({strokeDashArray:dashValue(e.target.value)});
+
+  $81("v81Opacity").oninput=e=>{
+    const v=(+e.target.value||100)/100;
+    $81("v81OpacityVal").textContent=Math.round(v*100)+"%";
+    apply({opacity:v});
+  };
+
+  $81("v81Front").onclick=()=>{
+    const o=obj(); if(!o)return;
+    fcanvas.bringToFront(o); fcanvas.requestRenderAll(); try{autoSave()}catch(_){}
+  };
+  $81("v81Back").onclick=()=>{
+    const o=obj(); if(!o)return;
+    fcanvas.sendToBack(o); fcanvas.requestRenderAll(); try{autoSave()}catch(_){}
+  };
+  $81("v81Duplicate").onclick=()=>{
+    const o=obj(); if(!o)return;
+    o.clone(cl=>{
+      cl.set({left:(o.left||0)+25,top:(o.top||0)+25});
+      fcanvas.add(cl); fcanvas.setActiveObject(cl); fcanvas.requestRenderAll();
+      try{pushHistory();autoSave()}catch(_){}
+      refreshPanel();
+    });
+  };
+  $81("v81Delete").onclick=()=>{
+    const o=obj(); if(!o)return;
+    fcanvas.remove(o); fcanvas.discardActiveObject(); fcanvas.requestRenderAll();
+    try{pushHistory();autoSave()}catch(_){}
+    refreshPanel();
+  };
+}
+
+function bindCanvas(){
+  if(typeof fcanvas==="undefined" || fcanvas.__v81Bound) return;
+  fcanvas.__v81Bound=true;
+  fcanvas.on("selection:created",refreshPanel);
+  fcanvas.on("selection:updated",refreshPanel);
+  fcanvas.on("selection:cleared",refreshPanel);
+  fcanvas.on("object:modified",refreshPanel);
+}
+
+function smallerTextDefault(){
+  window.sofiaTextDefaults=window.sofiaTextDefaults||{};
+  window.sofiaTextDefaults.fontFamily="Segoe Script";
+  window.sofiaTextDefaults.fontSize=26;
+  window.sofiaTextDefaults.fill="#4a7fbd";
+  ["v57TextSize","fontSize","textFontSize"].forEach(id=>{
+    const e=$81(id);
+    if(e && !obj()) e.value="26";
+  });
+}
+
+function markVersion(){
+  let b=$81("appVersionBadge");
+  if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v81";
+  document.documentElement.dataset.sofiaVersion="81";
+}
+
+function init(){
+  addCss();
+  panel();
+  bindCanvas();
+  smallerTextDefault();
+  markVersion();
+  fixFullscreenGap();
+
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(fixFullscreenGap,80);
+    setTimeout(fixFullscreenGap,350);
+  });
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(fixFullscreenGap,80);
+    setTimeout(fixFullscreenGap,350);
+  });
+  window.addEventListener("resize",()=>setTimeout(fixFullscreenGap,60));
+
+  [300,900,1600].forEach(ms=>setTimeout(()=>{
+    bindCanvas(); smallerTextDefault(); fixFullscreenGap();
+  },ms));
 }
 
 if(document.readyState==="loading")
