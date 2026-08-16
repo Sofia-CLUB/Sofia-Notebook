@@ -9998,162 +9998,153 @@ if(document.readyState==="loading"){
 
 
 /* =========================================================
-   V120 CLEAN — БАЗА V119
-   ЛІВА ПАНЕЛЬ:
-   - НЕ рухається;
-   - симетрична правій;
-   - починається ПІД рядком "Ім’я та прізвище";
-   - не накриває логотип/верхню панель;
-   - працює у fullscreen;
-   - Fabric canvas не переноситься.
+   V120 CLEAN — ТІЛЬКИ ОДНА ЗМІНА ВІД ЗАВАНТАЖЕНОЇ V119:
+   ЗАКРІПИТИ САМЕ ВУЗЬКУ ЛІВУ ПАНЕЛЬ ІНСТРУМЕНТІВ.
+   Не змінюємо:
+   - notebook;
+   - Fabric canvas;
+   - ширину/висоту робочого поля;
+   - праву панель;
+   - верхні/нижні панелі;
+   - блок налаштувань товщини/кольору/типу лінії.
    ========================================================= */
 (function(){
 "use strict";
 
-const $L=id=>document.getElementById(id);
+const $LF=id=>document.getElementById(id);
+let fixedRail=null;
+let placeholder=null;
+let originalParent=null;
+let originalNextSibling=null;
 
-function findLeftRail(){
-  return document.querySelector(
-    ".side-tools,.left-toolbar,.left-tools,.tool-sidebar"
-  ) || document.querySelector(".side-tool[data-tool]")?.parentElement || null;
-}
+function findNarrowLeftRail(){
+  const buttons=[...document.querySelectorAll(".side-tool[data-tool]")];
+  if(!buttons.length)return null;
 
-function lessonBarBottom(){
-  /* Нижня межа рядка, де знаходиться "Ім’я та прізвище" */
-  const nameField=$L("studentName") ||
-                  $L("studentNameInput") ||
-                  document.querySelector('input[placeholder*="прізвище" i]') ||
-                  document.querySelector('input[placeholder*="ім’я" i]');
+  const first=buttons[0];
+  const total=buttons.length;
+  let el=first.parentElement;
+  let best=null;
 
-  const lessonBar=nameField?.closest(".lessonbar") || document.querySelector(".lessonbar");
+  /* Шукаємо ТІЛЬКИ вузький контейнер, який містить майже всі кнопки.
+     Це не дає випадково закріпити широкий блок налаштувань. */
+  while(el && el!==document.body && el!==document.documentElement){
+    const rect=el.getBoundingClientRect();
+    const count=el.querySelectorAll(".side-tool[data-tool]").length;
 
-  if(lessonBar){
-    const r=lessonBar.getBoundingClientRect();
-    return Math.max(0,Math.round(r.bottom));
+    if(
+      count>=Math.max(5,Math.floor(total*0.75)) &&
+      rect.width>=40 &&
+      rect.width<=115 &&
+      rect.height>=180
+    ){
+      best=el;
+      break;
+    }
+    el=el.parentElement;
   }
 
-  /* Резервне значення, якщо DOM ще не готовий */
-  return 165;
+  return best;
 }
 
-function cssLeft(){
-  if($L("v120LeftSymCss"))return;
+function createPlaceholder(rail,rect){
+  if(placeholder?.isConnected)return;
 
-  const st=document.createElement("style");
-  st.id="v120LeftSymCss";
-  st.textContent=`
-    /* Ліва панель такої самої ширини, як права */
-    .side-tools,
-    .left-toolbar,
-    .left-tools,
-    .tool-sidebar{
-      width:74px!important;
-      min-width:74px!important;
-      max-width:74px!important;
+  placeholder=document.createElement("div");
+  placeholder.id="v120LeftRailPlaceholder";
+  placeholder.setAttribute("aria-hidden","true");
 
-      position:fixed!important;
-      left:0!important;
+  const cs=getComputedStyle(rail);
+  placeholder.style.width=rect.width+"px";
+  placeholder.style.minWidth=rect.width+"px";
+  placeholder.style.maxWidth=rect.width+"px";
+  placeholder.style.height=rect.height+"px";
+  placeholder.style.flex="0 0 "+rect.width+"px";
+  placeholder.style.visibility="hidden";
+  placeholder.style.pointerEvents="none";
+  placeholder.style.boxSizing="border-box";
 
-      /* top виставляється JS точно по нижній межі lessonbar */
-      bottom:0!important;
-
-      overflow-y:auto!important;
-      overflow-x:hidden!important;
-
-      background:#fff!important;
-      opacity:1!important;
-      border-right:1px solid #d8e2ef!important;
-      box-shadow:4px 0 14px rgba(15,23,42,.08)!important;
-
-      z-index:115000!important;
-      transform:none!important;
-    }
-
-    /* Кнопки всередині панелі не розтягують її */
-    .side-tools .side-tool,
-    .left-toolbar .side-tool,
-    .left-tools .side-tool,
-    .tool-sidebar .side-tool{
-      width:100%!important;
-      box-sizing:border-box!important;
-      flex-shrink:0!important;
-    }
-
-    /* Fullscreen — той самий принцип */
-    #pageViewport:fullscreen .side-tools,
-    #pageViewport:fullscreen .left-toolbar,
-    #pageViewport:fullscreen .left-tools,
-    #pageViewport:fullscreen .tool-sidebar,
-    #pageViewport:-webkit-full-screen .side-tools,
-    #pageViewport:-webkit-full-screen .left-toolbar,
-    #pageViewport:-webkit-full-screen .left-tools,
-    #pageViewport:-webkit-full-screen .tool-sidebar{
-      position:fixed!important;
-      left:0!important;
-      bottom:0!important;
-      width:74px!important;
-      min-width:74px!important;
-      max-width:74px!important;
-      transform:none!important;
-    }
-
-    @media(max-width:768px){
-      .side-tools,
-      .left-toolbar,
-      .left-tools,
-      .tool-sidebar{
-        width:64px!important;
-        min-width:64px!important;
-        max-width:64px!important;
-      }
-    }
-  `;
-  document.head.appendChild(st);
+  originalParent=rail.parentNode;
+  originalNextSibling=rail.nextSibling;
+  originalParent?.insertBefore(placeholder,rail);
 }
 
-function positionLeft(){
-  const rail=findLeftRail();
+function lockOnlyLeftRail(){
+  const rail=fixedRail || findNarrowLeftRail();
   if(!rail)return;
 
-  const top=lessonBarBottom();
+  if(!fixedRail){
+    const rect=rail.getBoundingClientRect();
 
+    /* Якщо алгоритм бачить широкий блок — нічого не робимо.
+       Краще не закріпити, ніж зламати робочий аркуш. */
+    if(rect.width>115 || rect.width<40)return;
+
+    fixedRail=rail;
+    createPlaceholder(rail,rect);
+
+    rail.dataset.v120OriginalTop=String(rect.top);
+    rail.dataset.v120OriginalLeft=String(rect.left);
+    rail.dataset.v120OriginalWidth=String(rect.width);
+  }
+
+  const top=Number(rail.dataset.v120OriginalTop)||0;
+  const left=Number(rail.dataset.v120OriginalLeft)||0;
+  const width=Number(rail.dataset.v120OriginalWidth)||rail.getBoundingClientRect().width;
+
+  /* Лише позиція вузької панелі. Ніяких змін сусідніх блоків. */
   rail.style.setProperty("position","fixed","important");
-  rail.style.setProperty("left","0","important");
+  rail.style.setProperty("left",left+"px","important");
   rail.style.setProperty("top",top+"px","important");
-  rail.style.setProperty("bottom","0","important");
-  rail.style.setProperty("height","auto","important");
-  rail.style.setProperty("max-height","calc(100vh - "+top+"px)","important");
+  rail.style.setProperty("width",width+"px","important");
+  rail.style.setProperty("min-width",width+"px","important");
+  rail.style.setProperty("max-width",width+"px","important");
+  rail.style.setProperty("z-index","117000","important");
+  rail.style.setProperty("margin","0","important");
   rail.style.setProperty("transform","none","important");
-  rail.style.setProperty("background","#fff","important");
-  rail.style.setProperty("z-index","115000","important");
+
+  /* Висоту не розтягуємо на весь екран — зберігаємо природну.
+     Якщо кнопок більше за екран, даємо прокрутку тільки самій панелі. */
+  const available=Math.max(180,window.innerHeight-top-6);
+  rail.style.setProperty("max-height",available+"px","important");
+  rail.style.setProperty("overflow-y","auto","important");
+  rail.style.setProperty("overflow-x","hidden","important");
 }
 
 function mark(){
-  const b=$L("appVersionBadge") ||
+  const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   if(b)b.textContent="v120";
-  document.documentElement.dataset.sofiaVersion="120-from119-left-symmetric";
-}
-
-function repair(){
-  cssLeft();
-  positionLeft();
+  document.documentElement.dataset.sofiaVersion="120-exact119-left-only";
 }
 
 function init(){
-  repair();
+  lockOnlyLeftRail();
   mark();
 
-  /* Тільки одноразове позиціонування після остаточного layout */
-  [250,700,1400].forEach(ms=>setTimeout(positionLeft,ms));
+  /* Три одноразові перевірки після фінального layout.
+     Без MutationObserver і без циклів. */
+  [300,800,1500].forEach(ms=>setTimeout(lockOnlyLeftRail,ms));
 }
 
-window.addEventListener("resize",()=>setTimeout(positionLeft,80));
-document.addEventListener("fullscreenchange",()=>setTimeout(positionLeft,100));
+window.addEventListener("resize",()=>{
+  if(!fixedRail)return;
+  const top=Number(fixedRail.dataset.v120OriginalTop)||0;
+  fixedRail.style.setProperty(
+    "max-height",
+    Math.max(180,window.innerHeight-top-6)+"px",
+    "important"
+  );
+});
+
+document.addEventListener("fullscreenchange",()=>{
+  /* Не чіпаємо layout fullscreen. Лише повторно фіксуємо ту саму вузьку панель. */
+  setTimeout(lockOnlyLeftRail,120);
+});
 
 if(document.readyState==="loading"){
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
 }else{
-  setTimeout(init,160);
+  setTimeout(init,180);
 }
 })();
