@@ -9998,50 +9998,88 @@ if(document.readyState==="loading"){
 
 
 /* =========================================================
-   V120 CLEAN — ЛІВА ПАНЕЛЬ НЕРУХОМА
-   - fixed у звичайному режимі;
-   - fixed у fullscreen;
-   - fixed на телефоні;
-   - не рухається разом з аркушем;
-   - Fabric canvas не переносимо.
+   V120 CLEAN — БАЗА V119
+   ЛІВА ПАНЕЛЬ:
+   - НЕ рухається;
+   - симетрична правій;
+   - починається ПІД рядком "Ім’я та прізвище";
+   - не накриває логотип/верхню панель;
+   - працює у fullscreen;
+   - Fabric canvas не переноситься.
    ========================================================= */
 (function(){
 "use strict";
 
 const $L=id=>document.getElementById(id);
 
-function cssL(){
-  if($L("v120LeftFixedCss"))return;
+function findLeftRail(){
+  return document.querySelector(
+    ".side-tools,.left-toolbar,.left-tools,.tool-sidebar"
+  ) || document.querySelector(".side-tool[data-tool]")?.parentElement || null;
+}
+
+function lessonBarBottom(){
+  /* Нижня межа рядка, де знаходиться "Ім’я та прізвище" */
+  const nameField=$L("studentName") ||
+                  $L("studentNameInput") ||
+                  document.querySelector('input[placeholder*="прізвище" i]') ||
+                  document.querySelector('input[placeholder*="ім’я" i]');
+
+  const lessonBar=nameField?.closest(".lessonbar") || document.querySelector(".lessonbar");
+
+  if(lessonBar){
+    const r=lessonBar.getBoundingClientRect();
+    return Math.max(0,Math.round(r.bottom));
+  }
+
+  /* Резервне значення, якщо DOM ще не готовий */
+  return 165;
+}
+
+function cssLeft(){
+  if($L("v120LeftSymCss"))return;
 
   const st=document.createElement("style");
-  st.id="v120LeftFixedCss";
+  st.id="v120LeftSymCss";
   st.textContent=`
-    /* Основні можливі контейнери лівої панелі */
+    /* Ліва панель такої самої ширини, як права */
     .side-tools,
     .left-toolbar,
     .left-tools,
     .tool-sidebar{
+      width:74px!important;
+      min-width:74px!important;
+      max-width:74px!important;
+
       position:fixed!important;
       left:0!important;
-      top:0!important;
+
+      /* top виставляється JS точно по нижній межі lessonbar */
       bottom:0!important;
-      height:100vh!important;
-      max-height:100vh!important;
+
       overflow-y:auto!important;
       overflow-x:hidden!important;
-      z-index:118000!important;
+
       background:#fff!important;
+      opacity:1!important;
       border-right:1px solid #d8e2ef!important;
-      box-shadow:2px 0 8px rgba(15,23,42,.06)!important;
+      box-shadow:4px 0 14px rgba(15,23,42,.08)!important;
+
+      z-index:115000!important;
       transform:none!important;
     }
 
-    /* Якщо ліва панель у цій версії — батьківський блок самих side-tool */
-    .side-tool[data-tool]{
+    /* Кнопки всередині панелі не розтягують її */
+    .side-tools .side-tool,
+    .left-toolbar .side-tool,
+    .left-tools .side-tool,
+    .tool-sidebar .side-tool{
+      width:100%!important;
+      box-sizing:border-box!important;
       flex-shrink:0!important;
     }
 
-    /* Fullscreen: панель лишається на тому самому місці */
+    /* Fullscreen — той самий принцип */
     #pageViewport:fullscreen .side-tools,
     #pageViewport:fullscreen .left-toolbar,
     #pageViewport:fullscreen .left-tools,
@@ -10052,77 +10090,70 @@ function cssL(){
     #pageViewport:-webkit-full-screen .tool-sidebar{
       position:fixed!important;
       left:0!important;
-      top:0!important;
       bottom:0!important;
-      height:100vh!important;
+      width:74px!important;
+      min-width:74px!important;
+      max-width:74px!important;
       transform:none!important;
     }
 
-    /* На телефоні теж нерухома */
     @media(max-width:768px){
       .side-tools,
       .left-toolbar,
       .left-tools,
       .tool-sidebar{
-        position:fixed!important;
-        left:0!important;
-        top:0!important;
-        bottom:0!important;
-        height:100vh!important;
-        z-index:118000!important;
+        width:64px!important;
+        min-width:64px!important;
+        max-width:64px!important;
       }
     }
   `;
   document.head.appendChild(st);
 }
 
-function findLeftHostL(){
-  return document.querySelector(
-    ".side-tools,.left-toolbar,.left-tools,.tool-sidebar"
-  ) || document.querySelector(".side-tool[data-tool]")?.parentElement || null;
+function positionLeft(){
+  const rail=findLeftRail();
+  if(!rail)return;
+
+  const top=lessonBarBottom();
+
+  rail.style.setProperty("position","fixed","important");
+  rail.style.setProperty("left","0","important");
+  rail.style.setProperty("top",top+"px","important");
+  rail.style.setProperty("bottom","0","important");
+  rail.style.setProperty("height","auto","important");
+  rail.style.setProperty("max-height","calc(100vh - "+top+"px)","important");
+  rail.style.setProperty("transform","none","important");
+  rail.style.setProperty("background","#fff","important");
+  rail.style.setProperty("z-index","115000","important");
 }
 
-function lockLeftL(){
-  const host=findLeftHostL();
-  if(!host)return;
-
-  host.style.setProperty("position","fixed","important");
-  host.style.setProperty("left","0","important");
-  host.style.setProperty("top","0","important");
-  host.style.setProperty("bottom","0","important");
-  host.style.setProperty("height","100vh","important");
-  host.style.setProperty("max-height","100vh","important");
-  host.style.setProperty("overflow-y","auto","important");
-  host.style.setProperty("overflow-x","hidden","important");
-  host.style.setProperty("z-index","118000","important");
-  host.style.setProperty("background","#fff","important");
-  host.style.setProperty("transform","none","important");
-}
-
-function markL(){
+function mark(){
   const b=$L("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   if(b)b.textContent="v120";
-  document.documentElement.dataset.sofiaVersion="120-clean-mobile";
+  document.documentElement.dataset.sofiaVersion="120-from119-left-symmetric";
 }
 
-function repairL(){
-  cssL();
-  lockLeftL();
+function repair(){
+  cssLeft();
+  positionLeft();
 }
 
-function initL(){
-  repairL();
-  markL();
-  [350,900,1600].forEach(ms=>setTimeout(repairL,ms));
+function init(){
+  repair();
+  mark();
+
+  /* Тільки одноразове позиціонування після остаточного layout */
+  [250,700,1400].forEach(ms=>setTimeout(positionLeft,ms));
 }
 
-document.addEventListener("fullscreenchange",()=>setTimeout(repairL,100));
-window.addEventListener("resize",()=>setTimeout(repairL,100));
+window.addEventListener("resize",()=>setTimeout(positionLeft,80));
+document.addEventListener("fullscreenchange",()=>setTimeout(positionLeft,100));
 
 if(document.readyState==="loading"){
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(initL,180),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
 }else{
-  setTimeout(initL,180);
+  setTimeout(init,160);
 }
 })();
