@@ -5743,302 +5743,6 @@ else
 
 
 
-/* =========================================================
-   V94 — КУРСОР ВСТАВКИ ЯК У MS WORD
-   ========================================================= */
-(function(){
-"use strict";
-const $94=id=>document.getElementById(id);
-
-let insertPoint={x:180,y:160,active:false};
-let suppressMove=false;
-let lastCanvasClick=0;
-
-function addCss(){
-  if($94("v94Css")) return;
-  const st=document.createElement("style");
-  st.id="v94Css";
-  st.textContent=`
-    #v94InsertCaret{
-      position:absolute;
-      z-index:76000;
-      width:2px;
-      height:34px;
-      background:#173b78;
-      border-radius:2px;
-      pointer-events:none;
-      display:none;
-      animation:v94blink 1s steps(1,end) infinite;
-      box-shadow:0 0 0 1px rgba(255,255,255,.55);
-    }
-    #v94InsertCaret.show{display:block}
-    @keyframes v94blink{0%,48%{opacity:1}49%,100%{opacity:.12}}
-
-    #v94CursorHint{
-      position:fixed;
-      left:94px;
-      bottom:58px;
-      z-index:76000;
-      display:none;
-      background:rgba(23,59,120,.92);
-      color:#fff;
-      padding:5px 8px;
-      border-radius:7px;
-      font:12px/1.2 Arial,sans-serif;
-      pointer-events:none;
-    }
-    #v94CursorHint.show{display:block}
-
-    /* На робочому полі курсор миші схожий на текстовий */
-    body.v94-insert-ready .upper-canvas,
-    body.v94-insert-ready canvas{
-      cursor:text!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function ensureCaret(){
-  let c=$94("v94InsertCaret");
-  if(!c){
-    c=document.createElement("div");
-    c.id="v94InsertCaret";
-    document.body.appendChild(c);
-  }
-  let h=$94("v94CursorHint");
-  if(!h){
-    h=document.createElement("div");
-    h.id="v94CursorHint";
-    h.textContent="Місце вставки";
-    document.body.appendChild(h);
-  }
-  return c;
-}
-
-function canvasEl(){
-  return document.querySelector(".upper-canvas") ||
-         document.querySelector("canvas.upper-canvas") ||
-         document.querySelector("canvas");
-}
-
-function canvasPointFromEvent(e){
-  const c=canvasEl();
-  if(!c) return null;
-  const r=c.getBoundingClientRect();
-  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return null;
-
-  let x=e.clientX-r.left;
-  let y=e.clientY-r.top;
-
-  // Fabric zoom/viewport aware conversion where available.
-  try{
-    if(typeof fcanvas!=="undefined"){
-      const p=fcanvas.getPointer(e);
-      x=p.x; y=p.y;
-    }
-  }catch(_){}
-
-  return {x,y,screenX:e.clientX,screenY:e.clientY};
-}
-
-function positionCaret(screenX,screenY){
-  const c=ensureCaret();
-  c.style.left=(screenX-1)+"px";
-  c.style.top=(screenY-17)+"px";
-  c.classList.add("show");
-  $94("v94CursorHint")?.classList.add("show");
-  clearTimeout(positionCaret._t);
-  positionCaret._t=setTimeout(()=>$94("v94CursorHint")?.classList.remove("show"),900);
-}
-
-function setInsertPointFromEvent(e){
-  const p=canvasPointFromEvent(e);
-  if(!p) return;
-  insertPoint={x:p.x,y:p.y,active:true};
-  positionCaret(p.screenX,p.screenY);
-  document.body.classList.add("v94-insert-ready");
-  lastCanvasClick=Date.now();
-}
-
-function currentTool(){
-  try{
-    if(typeof activeTool!=="undefined") return activeTool;
-  }catch(_){}
-  const active=document.querySelector(".side-tool.active[data-tool],.side-tool[data-tool].selected");
-  return active?.dataset.tool || "";
-}
-
-function shouldSetCaret(e){
-  if(e.button!==0) return false;
-  const p=canvasPointFromEvent(e);
-  if(!p) return false;
-
-  // Don't steal clicks while actively drawing/erasing/using geometry tools.
-  const t=currentTool();
-  const drawingTools=["pen","marker","eraser","line","curve","polyline","wave","arrow","rectangle","ellipse","triangle"];
-  if(drawingTools.includes(t)) return false;
-
-  // If clicking an existing Fabric object, selection should win.
-  try{
-    if(typeof fcanvas!=="undefined"){
-      const target=fcanvas.findTarget?.(e);
-      if(target) return false;
-    }
-  }catch(_){}
-
-  return true;
-}
-
-function bindCanvasClick(){
-  document.addEventListener("pointerdown",e=>{
-    if(!shouldSetCaret(e)) return;
-    setInsertPointFromEvent(e);
-  },true);
-}
-
-function isDrawablePrimitive(o){
-  if(!o) return true;
-  const t=(o.type||"").toLowerCase();
-
-  // Objects drawn directly with mouse should stay where user drew them.
-  if(["path","line","polyline"].includes(t)) return true;
-
-  // Geometric shapes are only moved when they are inserted by a command,
-  // not when just drawn. We distinguish by time since a canvas click.
-  if(["rect","circle","ellipse","triangle","polygon"].includes(t)){
-    return Date.now()-lastCanvasClick < 700;
-  }
-  return false;
-}
-
-function moveNewObjectToCaret(o){
-  if(!insertPoint.active || suppressMove || !o) return;
-  if(isDrawablePrimitive(o)) return;
-
-  // Don't reposition background/grid/ruler/measurement objects.
-  if(o.isBackground || o.sofiaInstrument || o.isInstrument || o.excludeFromInsertCursor) return;
-
-  suppressMove=true;
-  try{
-    const w=(o.getScaledWidth?.()||o.width||40);
-    const h=(o.getScaledHeight?.()||o.height||30);
-
-    o.set({
-      left:insertPoint.x,
-      top:insertPoint.y
-    });
-    o.setCoords?.();
-
-    // Advance cursor approximately after inserted object, Word-like.
-    insertPoint.x += Math.min(Math.max(w+10,35),220);
-
-    fcanvas?.requestRenderAll?.();
-    try{autoSave()}catch(_){}
-  }finally{
-    setTimeout(()=>{suppressMove=false},0);
-  }
-}
-
-function bindObjectInsert(){
-  if(typeof fcanvas==="undefined" || fcanvas.__v94CursorBound) return;
-  fcanvas.__v94CursorBound=true;
-
-  fcanvas.on("object:added",e=>{
-    const o=e?.target;
-    setTimeout(()=>moveNewObjectToCaret(o),0);
-  });
-
-  fcanvas.on("selection:created",()=>{
-    $94("v94InsertCaret")?.classList.remove("show");
-  });
-  fcanvas.on("selection:updated",()=>{
-    $94("v94InsertCaret")?.classList.remove("show");
-  });
-}
-
-function patchTextTool(){
-  // Existing text tool already creates text at clicked point in later versions.
-  // This patch simply ensures default caret position is used if text is created by a toolbar button.
-  const textButtons=[...document.querySelectorAll("button")].filter(b=>
-    /^Текст$/i.test((b.textContent||"").trim()) || /T Текст/i.test((b.textContent||"").trim())
-  );
-
-  textButtons.forEach(b=>{
-    if(b.__v94Bound) return;
-    b.__v94Bound=true;
-    b.addEventListener("click",()=>{
-      document.body.classList.add("v94-insert-ready");
-      const h=$94("v94CursorHint");
-      if(h){
-        h.textContent="Клацніть на аркуші — текст з’явиться саме там";
-        h.classList.add("show");
-        clearTimeout(patchTextTool._t);
-        patchTextTool._t=setTimeout(()=>h.classList.remove("show"),1800);
-      }
-    },true);
-  });
-}
-
-function updateCaretAfterScroll(){
-  if(!insertPoint.active) return;
-  try{
-    const c=canvasEl();
-    if(!c) return;
-    const r=c.getBoundingClientRect();
-
-    // Convert canvas point back to screen coords.
-    let sx=r.left+insertPoint.x, sy=r.top+insertPoint.y;
-    if(typeof fcanvas!=="undefined"){
-      const v=fcanvas.viewportTransform||[1,0,0,1,0,0];
-      sx=r.left + insertPoint.x*v[0] + v[4];
-      sy=r.top + insertPoint.y*v[3] + v[5];
-    }
-    positionCaret(sx,sy);
-  }catch(_){}
-}
-
-function markVersion(){
-  let b=$94("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  }
-  if(b) b.textContent="v94";
-  document.documentElement.dataset.sofiaVersion="94";
-}
-
-function init(){
-  addCss();
-  ensureCaret();
-  bindCanvasClick();
-  bindObjectInsert();
-  patchTextTool();
-  markVersion();
-
-  window.addEventListener("scroll",updateCaretAfterScroll,true);
-  window.addEventListener("resize",updateCaretAfterScroll);
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v94);
-    mo.__v94=setTimeout(()=>{
-      bindObjectInsert();
-      patchTextTool();
-    },80);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,900,1600].forEach(ms=>setTimeout(()=>{
-    bindObjectInsert();
-    patchTextTool();
-  },ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
-else
-  setTimeout(init,160);
-})();
-
-
 
 /* =========================================================
    V95 — FIX HIERARCHYREQUESTERROR + STABLE PAGE DOCK
@@ -6127,188 +5831,6 @@ else
   setTimeout(init,140);
 })();
 
-
-
-/* =========================================================
-   V97 — УСІ ВСТАВЛЕНІ ОБ'ЄКТИ СТАВЛЯТЬСЯ САМЕ В КУРСОР
-   ========================================================= */
-(function(){
-"use strict";
-const $97=id=>document.getElementById(id);
-
-window.sofiaInsertPoint = window.sofiaInsertPoint || {
-  x:180, y:160, active:false, setAt:0
-};
-
-let ignoreMove=false;
-
-function canvasEl(){
-  return document.querySelector(".upper-canvas") ||
-         document.querySelector("canvas.upper-canvas") ||
-         document.querySelector("canvas");
-}
-
-function currentTool(){
-  const active=document.querySelector(
-    '.side-tool.active[data-tool],.side-tool.selected[data-tool],.side-tool[data-tool].v96-hand-active'
-  );
-  return active?.dataset.tool || "";
-}
-
-function isDrawingTool(){
-  return ["pen","marker","eraser","line","curve","polyline","wave","arrow","rectangle","ellipse","triangle"].includes(currentTool());
-}
-
-function pointerOnCanvas(e){
-  const c=canvasEl();
-  if(!c) return null;
-  const r=c.getBoundingClientRect();
-  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return null;
-
-  try{
-    if(typeof fcanvas!=="undefined"){
-      const p=fcanvas.getPointer(e);
-      return {x:p.x,y:p.y};
-    }
-  }catch(_){}
-
-  return {x:e.clientX-r.left,y:e.clientY-r.top};
-}
-
-function rememberCursor(e){
-  if(isDrawingTool()) return;
-  const p=pointerOnCanvas(e);
-  if(!p) return;
-
-  // If user clicked an existing object, this is selection, not a new insertion point.
-  try{
-    if(typeof fcanvas!=="undefined" && fcanvas.findTarget?.(e)) return;
-  }catch(_){}
-
-  window.sofiaInsertPoint={
-    x:p.x,
-    y:p.y,
-    active:true,
-    setAt:Date.now()
-  };
-}
-
-function bindCursor(){
-  if(document.__v97CursorBound) return;
-  document.__v97CursorBound=true;
-  document.addEventListener("pointerdown",rememberCursor,true);
-}
-
-function shouldMoveNewObject(o){
-  if(!o || !window.sofiaInsertPoint?.active || ignoreMove) return false;
-
-  // Never relocate technical/background objects.
-  if(
-    o.isBackground ||
-    o.backgroundObject ||
-    o.sofiaInstrument ||
-    o.isInstrument ||
-    o.excludeFromInsertCursor
-  ) return false;
-
-  // When drawing with mouse, object geometry must stay where it was drawn.
-  if(isDrawingTool()) return false;
-
-  return true;
-}
-
-function moveExactlyToCursor(o){
-  if(!shouldMoveNewObject(o)) return;
-
-  const pt=window.sofiaInsertPoint;
-  ignoreMove=true;
-  try{
-    o.set({
-      left:pt.x,
-      top:pt.y,
-      originX:"left",
-      originY:"top"
-    });
-    o.setCoords?.();
-
-    if(typeof fcanvas!=="undefined"){
-      fcanvas.setActiveObject?.(o);
-      fcanvas.requestRenderAll?.();
-    }
-
-    try{ autoSave(); }catch(_){}
-  }finally{
-    setTimeout(()=>{ignoreMove=false},0);
-  }
-}
-
-function bindFabric(){
-  if(typeof fcanvas==="undefined" || fcanvas.__v97ExactInsertBound) return;
-  fcanvas.__v97ExactInsertBound=true;
-
-  fcanvas.on("object:added",e=>{
-    const o=e?.target;
-    setTimeout(()=>moveExactlyToCursor(o),0);
-  });
-}
-
-function patchCommonInsertButtons(){
-  const words=[
-    "Нотатка","Зображення","Таблиця","Фігури","Картки",
-    "Тест","Списки","AI","Вставка","Медіа","Фото","Відео"
-  ];
-
-  [...document.querySelectorAll("button")].forEach(b=>{
-    if(b.__v97InsertAware) return;
-    const t=(b.textContent||"").trim();
-    if(!words.some(w=>t.includes(w))) return;
-    b.__v97InsertAware=true;
-
-    b.addEventListener("click",()=>{
-      // Keep current cursor point as insertion anchor.
-      // If user has not placed cursor yet, use a sensible visible default.
-      if(!window.sofiaInsertPoint?.active){
-        window.sofiaInsertPoint={x:180,y:160,active:true,setAt:Date.now()};
-      }
-    },true);
-  });
-}
-
-function markVersion(){
-  let b=$97("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  }
-  if(b) b.textContent="v97";
-  document.documentElement.dataset.sofiaVersion="97";
-}
-
-function init(){
-  bindCursor();
-  bindFabric();
-  patchCommonInsertButtons();
-  markVersion();
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v97);
-    mo.__v97=setTimeout(()=>{
-      bindFabric();
-      patchCommonInsertButtons();
-    },80);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,900,1600].forEach(ms=>setTimeout(()=>{
-    bindFabric();
-    patchCommonInsertButtons();
-  },ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
-else
-  setTimeout(init,150);
-})();
 
 
 
@@ -7183,76 +6705,45 @@ else setTimeout(init,180);
 
 
 /* =========================================================
-   V105 — clean patch from V103
-   1) fixed transparent right dock
-   2) correct page tabs (no injected duplicate labels)
-   3) one Parasochka signature
-   4) explicit Cursor mode + Hand mode visual cursor
+   V113 — STABLE CURSOR + FIXED LEFT PANEL
+   One cursor system only. No animation loop / no MutationObserver storm.
    ========================================================= */
 (function(){
 "use strict";
-const $105=id=>document.getElementById(id);
+const $113=id=>document.getElementById(id);
 
-function css(){
-  if($105("v105Css")) return;
+let cursorMode=true;
+let activeTypingObject=null;
+
+/* ---------- CSS ---------- */
+function addCss(){
+  if($113("v113Css")) return;
   const st=document.createElement("style");
-  st.id="v105Css";
+  st.id="v113Css";
   st.textContent=`
-    /* RIGHT PANEL: always fixed, transparent, never travels with the sheet */
-    #v86Dock{
+    :root{
+      --v113-left-top: 188px;
+      --v113-left-width: 86px;
+    }
+
+    /* left panel is ALWAYS fixed */
+    .side-tools,
+    .left-toolbar,
+    .left-tools,
+    .tool-sidebar{
       position:fixed!important;
-      right:0!important;
-      top:128px!important;
+      left:0!important;
+      top:var(--v113-left-top)!important;
       bottom:0!important;
-      left:auto!important;
-      transform:none;
-      background:transparent!important;
-      border-left:0!important;
-      box-shadow:none!important;
-      backdrop-filter:none!important;
-      z-index:75000!important;
-    }
-    #v86Dock .v86tab,
-    #v86Help{
-      background:transparent!important;
-      box-shadow:none!important;
-    }
-    #v86Dock .v86tab:hover,
-    #v86Help:hover{
-      background:rgba(238,244,251,.92)!important;
-    }
-    #v86Dock .v86tab.active{
-      background:#173b78!important;
-      color:#fff!important;
-    }
-    body.v89-right-collapsed #v86Dock{
-      transform:translateX(100%)!important;
+      width:var(--v113-left-width)!important;
+      z-index:76000!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      background:rgba(255,255,255,.97)!important;
+      box-sizing:border-box!important;
     }
 
-    /* Keep right dock aligned in fullscreen too */
-    :fullscreen #v86Dock,
-    :-webkit-full-screen #v86Dock{
-      position:fixed!important;
-      right:0!important;
-      top:128px!important;
-      bottom:0!important;
-    }
-
-    /* Only ONE author signature: keep original sofiaAuthorSignature */
-    #v102Signature{display:none!important}
-    #sofiaAuthorSignature{
-      display:block!important;
-      position:fixed!important;
-      right:86px!important;
-      bottom:55px!important;
-      z-index:70000!important;
-      pointer-events:none!important;
-      background:transparent!important;
-    }
-    body.v89-right-collapsed #sofiaAuthorSignature{right:12px!important}
-
-    /* Explicit cursor button */
-    #v105CursorBtn{
+    #v113CursorBtn{
       width:100%;
       min-height:47px;
       border:0;
@@ -7268,17 +6759,17 @@ function css(){
       cursor:pointer;
       font:600 9px/1.05 Arial,sans-serif;
     }
-    #v105CursorBtn .ico{font-size:18px;line-height:1}
-    #v105CursorBtn.active{
+    #v113CursorBtn .ico{font-size:18px;line-height:1}
+    #v113CursorBtn.active{
       background:#173b78!important;
       color:#fff!important;
     }
 
-    /* Real mouse pointer appearance for the two modes */
-    body.v105-cursor-mode .upper-canvas,
-    body.v105-cursor-mode canvas{
+    body.v113-cursor-mode .upper-canvas,
+    body.v113-cursor-mode canvas{
       cursor:text!important;
     }
+
     body.v99-hand-mode .upper-canvas,
     body.v99-hand-mode canvas{
       cursor:grab!important;
@@ -7288,1558 +6779,292 @@ function css(){
       cursor:grabbing!important;
     }
 
-    /* Bottom page dock: transparent but stable */
-    #v99PageDock{
-      background:transparent!important;
-      border-top:0!important;
-      box-shadow:none!important;
-      backdrop-filter:none!important;
+    /* while actually typing, property panels stay hidden */
+    body.v113-typing #v102ObjectPanel,
+    body.v113-typing #v100ObjectPanel,
+    body.v113-typing #v81ObjectPanel{
+      display:none!important;
     }
   `;
   document.head.appendChild(st);
 }
 
-function leftTools(){
-  return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
-         document.querySelector(".side-tool[data-tool]")?.parentElement;
-}
-function sideButtons(){
-  return [...document.querySelectorAll(".side-tool[data-tool]")];
-}
-function handButton(){
-  return document.querySelector('.side-tool[data-tool="select"],.side-tool[data-tool="hand"],#handBtn');
-}
-function clearSideVisuals(){
-  sideButtons().forEach(b=>{
-    b.classList.remove("active","selected","v96-hand-active","v99-hand-active");
-    b.setAttribute("aria-pressed","false");
-  });
-}
-
-function setCursorMode(){
-  document.body.classList.add("v105-cursor-mode","v94-insert-ready","v96-select-mode");
-  document.body.classList.remove("v96-hand-mode","v96-dragging","v99-hand-mode","v99-dragging");
-  clearSideVisuals();
-
-  const cb=$105("v105CursorBtn");
-  cb?.classList.add("active");
-  cb?.setAttribute("aria-pressed","true");
-
-  try{
-    if(typeof fcanvas!=="undefined"){
-      fcanvas.selection=true;
-      fcanvas.isDrawingMode=false;
-      fcanvas.defaultCursor="text";
-      fcanvas.hoverCursor="text";
-      fcanvas.requestRenderAll();
-    }
-  }catch(_){}
-
-  // The blinking insertion caret appears after the user clicks the sheet.
-  $105("v94InsertCaret")?.classList.remove("show");
-}
-
-function ensureCursorButton(){
-  const host=leftTools();
-  if(!host) return;
-  let b=$105("v105CursorBtn");
-  if(b) return;
-
-  b=document.createElement("button");
-  b.id="v105CursorBtn";
-  b.type="button";
-  b.title="Курсор — поставити місце вставки";
-  b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
-  b.addEventListener("click",e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    setCursorMode();
-  },true);
-  host.insertBefore(b,host.firstChild);
-}
-
-function bindModeVisuals(){
-  // When any real tool is clicked, Cursor button must turn off.
-  if(document.__v105ModesBound) return;
-  document.__v105ModesBound=true;
-
-  document.addEventListener("click",e=>{
-    const b=e.target.closest?.(".side-tool[data-tool]");
-    if(!b) return;
-
-    $105("v105CursorBtn")?.classList.remove("active");
-    document.body.classList.remove("v105-cursor-mode");
-
-    // Hand/select button gets a hand pointer through the existing V99 hand mode.
-    // Other tools keep their own original behavior.
-  },true);
-}
-
-/* Clicking anywhere on empty paper in Cursor mode must be allowed.
-   V94 already stores the exact Fabric insertion point; this listener only
-   ensures old visual tool states do not block that V94 handler. */
-function bindPaperCursor(){
-  if(document.__v105PaperCursorBound) return;
-  document.__v105PaperCursorBound=true;
-
-  document.addEventListener("pointerdown",e=>{
-    if(!document.body.classList.contains("v105-cursor-mode")) return;
-    const canvas=e.target.closest?.("canvas");
-    if(!canvas) return;
-
-    clearSideVisuals();
-    try{
-      if(typeof fcanvas!=="undefined"){
-        fcanvas.isDrawingMode=false;
-        fcanvas.defaultCursor="text";
-        fcanvas.hoverCursor="text";
-      }
-    }catch(_){}
-  },true);
-}
-
-/* Restore the native page-tab renderer.
-   Do NOT rewrite button text: page titles may legitimately be custom names. */
-function repairPages(){
-  try{
-    if(typeof renderPageTabs==="function") renderPageTabs();
-    if(typeof updatePageIndicator==="function") updatePageIndicator();
-  }catch(_){}
-}
-
-function removeDuplicateSignature(){
-  // V102 added a second signature. Hide/remove that one; keep the original V56 signature.
-  const extra=$105("v102Signature");
-  if(extra) extra.remove();
-
-  const original=$105("sofiaAuthorSignature");
-  if(original) original.textContent="Sofia Notebook © Parasochka";
-}
-
-function mark(){
-  const b=$105("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v105";
-  document.documentElement.dataset.sofiaVersion="105";
-}
-
-function init(){
-  css();
-  removeDuplicateSignature();
-  ensureCursorButton();
-  bindModeVisuals();
-  bindPaperCursor();
-  repairPages();
-  setCursorMode();
-  mark();
-
-  // Only maintain structural elements; no page-label rewriting.
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v105);
-    mo.__v105=setTimeout(()=>{
-      removeDuplicateSignature();
-      ensureCursorButton();
-    },100);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [350,900,1600].forEach(ms=>setTimeout(()=>{
-    removeDuplicateSignature();
-    ensureCursorButton();
-    repairPages();
-  },ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else
-  setTimeout(init,180);
-})();
-
-
-
-/* =========================================================
-   V106 — СТОРІНКИ / ОЧИСТИТИ СТОРІНКУ / КУРСОР БУДЬ-ДЕ
-   ========================================================= */
-(function(){
-"use strict";
-const $106=id=>document.getElementById(id);
-
-/* ---------- CSS ---------- */
-function addCss(){
-  if($106("v106Css")) return;
-  const st=document.createElement("style");
-  st.id="v106Css";
-  st.textContent=`
-    #v99PageDock{
-      background:transparent!important;
-      border-top:0!important;
-      box-shadow:none!important;
-    }
-    #v99PageDock button{
-      opacity:1!important;
-      visibility:visible!important;
-      white-space:nowrap!important;
-    }
-    #v106ClearPageBtn{
-      min-height:34px!important;
-      height:34px!important;
-      padding:3px 10px!important;
-      border:1px solid #f1b7b7!important;
-      border-radius:8px!important;
-      background:rgba(255,255,255,.94)!important;
-      color:#c62828!important;
-      cursor:pointer!important;
-      flex:0 0 auto!important;
-    }
-    body.v105-cursor-mode .upper-canvas,
-    body.v105-cursor-mode canvas{
-      cursor:text!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-/* ---------- PAGE DEFAULT TITLES ---------- */
-function getPagesArray(){
-  try{
-    if(Array.isArray(window.pages)) return window.pages;
-  }catch(_){}
-  try{
-    if(typeof pages!=="undefined" && Array.isArray(pages)) return pages;
-  }catch(_){}
-  return null;
-}
-
-function normalizePageTitles(){
-  const arr=getPagesArray();
-  if(!arr) return;
-
-  arr.forEach((pg,i)=>{
-    const defaultName=`Сторінка ${i+1}`;
-    const title=(pg.pageTitle ?? pg.title ?? "").toString().trim();
-
-    // Only repair empty/obviously broken autogenerated titles.
-    // Custom titles such as "матем" remain untouched.
-    if(!title || /^[\s✎✏×✕✖]+$/.test(title)){
-      if("pageTitle" in pg) pg.pageTitle=defaultName;
-      else if("title" in pg) pg.title=defaultName;
-      else pg.pageTitle=defaultName;
-    }
-  });
-
-  try{ if(typeof renderPageTabs==="function") renderPageTabs(); }catch(_){}
-  try{ if(typeof updatePageIndicator==="function") updatePageIndicator(); }catch(_){}
-}
-
-function patchAddPageDefault(){
-  const btn=$106("addPageBtn");
-  if(!btn || btn.__v106DefaultName) return;
-  btn.__v106DefaultName=true;
-
-  btn.addEventListener("click",()=>{
-    setTimeout(()=>{
-      const arr=getPagesArray();
-      if(arr && arr.length){
-        const pg=arr[arr.length-1];
-        const title=(pg.pageTitle ?? pg.title ?? "").toString().trim();
-        if(!title || /^[\s✎✏×✕✖]+$/.test(title)){
-          const name=`Сторінка ${arr.length}`;
-          if("pageTitle" in pg) pg.pageTitle=name;
-          else if("title" in pg) pg.title=name;
-          else pg.pageTitle=name;
-        }
-      }
-      normalizePageTitles();
-      restorePageControls();
-    },50);
-  },true);
-}
-
-/* ---------- RESTORE PAGE CONTROLS ---------- */
-function restorePageControls(){
-  const dock=$106("v99PageDock");
-  if(!dock) return;
-
-  const prev=$106("prevPageBtn");
-  const indicator=$106("pageIndicator");
-  const next=$106("nextPageBtn");
-  const add=$106("addPageBtn");
-  const tabs=$106("pageTabsWrap");
-  const del=$106("deletePageBtn");
-
-  [prev,indicator,next,add,tabs,del].forEach(el=>{
-    if(el && el.parentElement!==dock) dock.appendChild(el);
-  });
-
-  // Force the add button visible and named.
-  if(add){
-    add.hidden=false;
-    add.style.removeProperty("display");
-    add.style.removeProperty("visibility");
-    if(!/Нова сторінка/i.test((add.textContent||"").trim())){
-      add.textContent="+ Нова сторінка";
-    }
-  }
-
-  // Preserve user page names, but ensure default page tabs are correct.
-  normalizePageTitles();
-
-  // Keep order without insertBefore.
-  [prev,indicator,next,add,$106("pageTabsWrap"),del,$106("v106ClearPageBtn")].forEach(el=>{
-    if(el) dock.appendChild(el);
-  });
-}
-
-/* ---------- CLEAR CURRENT PAGE ---------- */
-function clearCurrentPage(){
-  if(typeof fcanvas==="undefined") return;
-
-  // Keep technical/background objects; remove user content only.
-  const objects=[...fcanvas.getObjects()];
-  const removable=objects.filter(o=>{
-    if(o.isBackground || o.backgroundObject || o.sofiaInstrument || o.isInstrument) return false;
-    if(o.excludeFromClearPage) return false;
-    return true;
-  });
-
-  removable.forEach(o=>fcanvas.remove(o));
-  fcanvas.discardActiveObject?.();
-  fcanvas.requestRenderAll?.();
-
-  try{pushHistory()}catch(_){}
-  try{autoSave()}catch(_){}
-}
-
-function ensureClearButton(){
-  const dock=$106("v99PageDock");
-  if(!dock) return;
-
-  let b=$106("v106ClearPageBtn");
-  if(!b){
-    b=document.createElement("button");
-    b.id="v106ClearPageBtn";
-    b.type="button";
-    b.textContent="Очистити сторінку";
-    b.title="Очистити все на поточній сторінці";
-    b.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      clearCurrentPage();
-    };
-  }
-  if(b.parentElement!==dock) dock.appendChild(b);
-}
-
-/* ---------- CURSOR ANYWHERE ---------- */
-function activeCanvasEl(){
-  return document.querySelector(".upper-canvas") ||
-         document.querySelector("canvas.upper-canvas") ||
-         document.querySelector("canvas");
-}
-
-function setCaretAtScreen(clientX,clientY){
-  const caret=$106("v94InsertCaret");
-  if(!caret) return;
-  caret.style.left=(clientX-1)+"px";
-  caret.style.top=(clientY-17)+"px";
-  caret.classList.add("show");
-}
-
-/* Capture before Fabric so any empty point on the sheet can become an insertion point.
-   Existing objects still select normally because we don't stop propagation. */
-function bindCursorAnywhere(){
-  if(document.__v106CursorAnywhere) return;
-  document.__v106CursorAnywhere=true;
-
-  document.addEventListener("pointerdown",e=>{
-    if(!document.body.classList.contains("v105-cursor-mode")) return;
-    if(e.button!==0) return;
-
-    const canvas=activeCanvasEl();
-    if(!canvas) return;
-    const r=canvas.getBoundingClientRect();
-
-    // Accept every pixel inside the working canvas, including lower areas.
-    if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return;
-
-    let x=e.clientX-r.left;
-    let y=e.clientY-r.top;
-
-    try{
-      if(typeof fcanvas!=="undefined"){
-        // Fabric pointer gives true logical canvas coordinates regardless zoom/viewport.
-        const p=fcanvas.getPointer(e);
-        x=p.x; y=p.y;
-
-        fcanvas.isDrawingMode=false;
-        fcanvas.selection=true;
-        fcanvas.defaultCursor="text";
-        fcanvas.hoverCursor="text";
-      }
-    }catch(_){}
-
-    // V97 reads window.sofiaInsertPoint when inserting objects.
-    window.sofiaInsertPoint={
-      x:x,
-      y:y,
-      active:true,
-      setAt:Date.now()
-    };
-
-    // V94 used a private insertPoint, so also expose a compatible global marker.
-    window.sofiaLastInsertPoint={x:x,y:y};
-
-    setCaretAtScreen(e.clientX,e.clientY);
-  },true);
-}
-
-/* Make sure cursor mode remains a true cursor mode after selecting it. */
-function bindCursorButton(){
-  const b=$106("v105CursorBtn");
-  if(!b || b.__v106Bound) return;
-  b.__v106Bound=true;
-
-  b.addEventListener("click",()=>{
-    setTimeout(()=>{
-      document.body.classList.add("v105-cursor-mode","v94-insert-ready");
-      document.body.classList.remove("v96-hand-mode","v99-hand-mode","v96-dragging","v99-dragging");
-      try{
-        if(typeof fcanvas!=="undefined"){
-          fcanvas.isDrawingMode=false;
-          fcanvas.selection=true;
-          fcanvas.defaultCursor="text";
-          fcanvas.hoverCursor="text";
-          fcanvas.requestRenderAll();
-        }
-      }catch(_){}
-    },20);
-  },true);
-}
-
-function mark(){
-  const b=$106("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v106";
-  document.documentElement.dataset.sofiaVersion="106";
-}
-
-function repair(){
-  normalizePageTitles();
-  restorePageControls();
-  ensureClearButton();
-  patchAddPageDefault();
-  bindCursorButton();
-}
-
-function init(){
-  addCss();
-  repair();
-  bindCursorAnywhere();
-  mark();
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v106);
-    mo.__v106=setTimeout(repair,100);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,800,1500,2400].forEach(ms=>setTimeout(repair,ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else
-  setTimeout(init,180);
-})();
-
-
-
-/* =========================================================
-   V107 — FULLSCREEN: workspace + both sidebars directly
-   under the Class/Subject metadata row. No large empty gap.
-   ========================================================= */
-(function(){
-"use strict";
-
-function addV107Css(){
-  if(document.getElementById("v107Css")) return;
-  const st=document.createElement("style");
-  st.id="v107Css";
-  st.textContent=`
-    /* Fullscreen only — compact everything below metadata */
-    :fullscreen body,
-    :-webkit-full-screen body{
-      --v107-work-top: 122px;
-    }
-
-    :fullscreen #v86Dock,
-    :-webkit-full-screen #v86Dock{
-      top:var(--v107-work-top)!important;
-      bottom:0!important;
-      height:auto!important;
-    }
-
-    :fullscreen .side-tools,
-    :fullscreen .left-toolbar,
-    :fullscreen .left-tools,
-    :fullscreen .tool-sidebar,
-    :-webkit-full-screen .side-tools,
-    :-webkit-full-screen .left-toolbar,
-    :-webkit-full-screen .left-tools,
-    :-webkit-full-screen .tool-sidebar{
-      top:var(--v107-work-top)!important;
-      bottom:0!important;
-      height:auto!important;
-    }
-
-    /* Remove the fullscreen spacer/gap between metadata and paper */
-    :fullscreen #canvasWrap,
-    :fullscreen .canvas-wrap,
-    :fullscreen .canvas-container-wrap,
-    :fullscreen .workspace,
-    :fullscreen .board-wrap,
-    :fullscreen main,
-    :-webkit-full-screen #canvasWrap,
-    :-webkit-full-screen .canvas-wrap,
-    :-webkit-full-screen .canvas-container-wrap,
-    :-webkit-full-screen .workspace,
-    :-webkit-full-screen .board-wrap,
-    :-webkit-full-screen main{
-      margin-top:0!important;
-      padding-top:0!important;
-    }
-
-    body.v107-fullscreen-compact #v99PageDock{
-      bottom:0!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function visible(el){
-  if(!el) return false;
-  const cs=getComputedStyle(el), r=el.getBoundingClientRect();
-  return cs.display!=="none" && cs.visibility!=="hidden" && r.height>0;
-}
-
+/* ---------- LEFT PANEL POSITION ---------- */
 function metadataBottom(){
-  /* Find the row containing Class and Subject. */
-  const candidates=[...document.querySelectorAll("div,section,header")];
-  let best=null;
-  for(const el of candidates){
-    if(!visible(el)) continue;
-    const t=(el.innerText||"").replace(/\s+/g," ");
-    if(!t.includes("Клас") || !t.includes("Предмет")) continue;
+  let bottom=0;
+  [...document.querySelectorAll("select,input")].forEach(el=>{
     const r=el.getBoundingClientRect();
-    if(r.top<0 || r.top>220 || r.height>100) continue;
-    if(!best || r.height<best.getBoundingClientRect().height) best=el;
-  }
-  if(best) return Math.round(best.getBoundingClientRect().bottom);
-
-  /* fallback: bottom of subject/class controls */
-  const controls=[
-    document.getElementById("classSelect"),
-    document.getElementById("subjectSelect")
-  ].filter(Boolean);
-  if(controls.length)
-    return Math.round(Math.max(...controls.map(x=>x.getBoundingClientRect().bottom)));
-
-  return 122;
+    if(r.top>=0 && r.top<220 && r.bottom>bottom) bottom=r.bottom;
+  });
+  return bottom || 180;
 }
 
-function findPaperHost(){
-  const canvas=document.querySelector(".upper-canvas") || document.querySelector("canvas");
-  if(!canvas) return null;
-  let el=canvas.parentElement;
-  for(let i=0;i<5 && el;i++,el=el.parentElement){
-    const r=el.getBoundingClientRect();
-    if(r.width>600 && r.height>300) return el;
-  }
-  return canvas.parentElement;
-}
-
-function applyFullscreenLayout(){
-  const fs=!!(document.fullscreenElement || document.webkitFullscreenElement);
-  document.body.classList.toggle("v107-fullscreen-compact",fs);
-  if(!fs) return;
-
-  const top=metadataBottom()+2;
-  document.documentElement.style.setProperty("--v107-work-top",top+"px");
-
-  /* Align left and right toolbars exactly with the top of the work zone. */
-  const right=document.getElementById("v86Dock");
-  if(right){
-    right.style.setProperty("top",top+"px","important");
-    right.style.setProperty("bottom","0","important");
-  }
+function fixLeftPanel(){
+  const top=Math.round(metadataBottom()+4);
+  document.documentElement.style.setProperty("--v113-left-top",top+"px");
 
   const left=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
              document.querySelector(".side-tool[data-tool]")?.parentElement;
   if(left){
+    left.style.setProperty("position","fixed","important");
+    left.style.setProperty("left","0","important");
     left.style.setProperty("top",top+"px","important");
     left.style.setProperty("bottom","0","important");
   }
-
-  /* The actual work wrapper is pulled up to the same line.
-     We do NOT move the canvas itself, avoiding Fabric coordinate errors. */
-  const paper=findPaperHost();
-  if(paper){
-    let host=paper;
-    for(let i=0;i<3 && host.parentElement;i++){
-      const pr=host.parentElement.getBoundingClientRect();
-      if(pr.width>900) host=host.parentElement;
-    }
-    const r=host.getBoundingClientRect();
-    if(r.top>top+8){
-      host.style.setProperty("margin-top",(top-r.top)+"px","important");
-    }
-  }
 }
 
-function init(){
-  addV107Css();
-  document.addEventListener("fullscreenchange",()=>setTimeout(applyFullscreenLayout,80));
-  document.addEventListener("webkitfullscreenchange",()=>setTimeout(applyFullscreenLayout,80));
-  window.addEventListener("resize",()=>setTimeout(applyFullscreenLayout,80));
-  [250,700,1400].forEach(ms=>setTimeout(applyFullscreenLayout,ms));
-
-  const b=document.getElementById("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v107";
-  document.documentElement.dataset.sofiaVersion="107";
-}
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else setTimeout(init,180);
-})();
-
-
-
-/* =========================================================
-   V108 — FULLSCREEN: прибираємо порожню смугу під Клас/Предмет
-   ========================================================= */
-(function(){
-"use strict";
-
-function addCss(){
-  if(document.getElementById("v108Css")) return;
-  const st=document.createElement("style");
-  st.id="v108Css";
-  st.textContent=`
-    :fullscreen .v108-empty-under-meta,
-    :-webkit-full-screen .v108-empty-under-meta{
-      display:none!important;
-      height:0!important;
-      min-height:0!important;
-      max-height:0!important;
-      margin:0!important;
-      padding:0!important;
-      border:0!important;
-      overflow:hidden!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function metaBottom(){
-  let best=0;
-  [...document.querySelectorAll("select,input")].forEach(el=>{
-    const r=el.getBoundingClientRect();
-    if(r.top<180 && r.bottom>best) best=r.bottom;
-  });
-  return best || 120;
-}
-
-function removeEmptyStrip(){
-  const fs=document.fullscreenElement || document.webkitFullscreenElement;
-  if(!fs) return;
-
-  const bottom=metaBottom();
-
-  document.querySelectorAll("div,section,main").forEach(el=>{
-    if(el.id==="v86Dock" || el.id==="v99PageDock") return;
-
-    const r=el.getBoundingClientRect();
-    const txt=(el.textContent||"").trim();
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-
-    // конкретно шукаємо порожню горизонтальну смугу одразу під metadata-row
-    if(
-      r.width > innerWidth * .75 &&
-      r.height >= 8 && r.height <= 80 &&
-      r.top >= bottom - 2 && r.top <= bottom + 90 &&
-      !txt &&
-      controls===0
-    ){
-      el.classList.add("v108-empty-under-meta");
-    }
-  });
-}
-
-function raisePaperToMeta(){
-  const fs=document.fullscreenElement || document.webkitFullscreenElement;
-  if(!fs) return;
-
-  const top=metaBottom()+2;
-  const canvas=document.querySelector(".upper-canvas") || document.querySelector("canvas");
-  if(!canvas) return;
-
-  let host=canvas.parentElement;
-  for(let i=0;i<4 && host?.parentElement;i++){
-    const r=host.getBoundingClientRect();
-    if(r.width>800 && r.height>300) break;
-    host=host.parentElement;
-  }
-  if(!host) return;
-
-  const r=host.getBoundingClientRect();
-  if(r.top > top+6){
-    host.style.setProperty("margin-top",(top-r.top)+"px","important");
-  }
-
-  // align left/right panels to the same line
-  const left=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
-             document.querySelector(".side-tool[data-tool]")?.parentElement;
-  const right=document.getElementById("v86Dock");
-  if(left) left.style.setProperty("top",top+"px","important");
-  if(right) right.style.setProperty("top",top+"px","important");
-}
-
-function apply(){
-  removeEmptyStrip();
-  raisePaperToMeta();
-}
-
-function mark(){
-  const b=document.getElementById("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v108";
-}
-
-function init(){
-  addCss();
-  mark();
-  document.addEventListener("fullscreenchange",()=>{
-    setTimeout(apply,80);
-    setTimeout(apply,350);
-    setTimeout(apply,900);
-  });
-  document.addEventListener("webkitfullscreenchange",()=>{
-    setTimeout(apply,80);
-    setTimeout(apply,350);
-    setTimeout(apply,900);
-  });
-  window.addEventListener("resize",()=>setTimeout(apply,100));
-  [250,700,1400].forEach(ms=>setTimeout(apply,ms));
-}
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else setTimeout(init,180);
-})();
-
-
-
-/* V109 — підпис Sofia Notebook © Parasochka на рівні кнопки Довідка */
-(function(){
-"use strict";
-
-function fixSignature(){
-  const help = [...document.querySelectorAll("button,div,a")].find(el =>
-    /Довідка/i.test((el.textContent||"").trim()) &&
-    el.getBoundingClientRect().right > innerWidth - 180
-  );
-
-  const sigs = [...document.querySelectorAll("div,span,p,small")].filter(el =>
-    (el.textContent||"").trim() === "Sofia Notebook © Parasochka"
-  );
-
-  if(!sigs.length) return;
-
-  // лишаємо один підпис
-  sigs.slice(1).forEach(el=>el.remove());
-  const sig=sigs[0];
-
-  sig.style.setProperty("position","fixed","important");
-  sig.style.setProperty("z-index","9990","important");
-  sig.style.setProperty("margin","0","important");
-  sig.style.setProperty("pointer-events","none","important");
-  sig.style.setProperty("white-space","nowrap","important");
-
-  if(help){
-    const hr=help.getBoundingClientRect();
-    sig.style.setProperty("bottom", Math.max(8, innerHeight-hr.bottom+8)+"px","important");
-    sig.style.setProperty("right", Math.max(90, innerWidth-hr.left+18)+"px","important");
-  }else{
-    sig.style.setProperty("bottom","12px","important");
-    sig.style.setProperty("right","105px","important");
-  }
-}
-
-function init(){
-  fixSignature();
-  window.addEventListener("resize",fixSignature);
-  document.addEventListener("fullscreenchange",()=>setTimeout(fixSignature,150));
-  document.addEventListener("webkitfullscreenchange",()=>setTimeout(fixSignature,150));
-  new MutationObserver(()=>fixSignature()).observe(document.body,{childList:true,subtree:true});
-}
-if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init,{once:true});
-else init();
-})();
-
-
-
-/* =========================================================
-   V110 — repair fullscreen page dock + Help + true Word-like Cursor
-   ========================================================= */
-(function(){
-"use strict";
-const $110=id=>document.getElementById(id);
-
-function addCss(){
-  if($110("v110Css")) return;
-  const st=document.createElement("style");
-  st.id="v110Css";
-  st.textContent=`
-    /* Bottom page dock: always visible, readable and fixed in fullscreen */
-    #v99PageDock{
-      position:fixed!important;
-      left:86px!important;
-      right:78px!important;
-      bottom:0!important;
-      top:auto!important;
-      z-index:79500!important;
-      display:flex!important;
-      align-items:center!important;
-      gap:6px!important;
-      min-height:48px!important;
-      max-height:54px!important;
-      padding:4px 8px!important;
-      background:transparent!important;
-      border:0!important;
-      box-shadow:none!important;
-      overflow-x:auto!important;
-      overflow-y:hidden!important;
-      white-space:nowrap!important;
-    }
-    :fullscreen #v99PageDock,
-    :-webkit-full-screen #v99PageDock{
-      left:78px!important;
-      right:78px!important;
-      bottom:0!important;
-      display:flex!important;
-    }
-    #v99PageDock #addPageBtn,
-    #v99PageDock #deletePageBtn,
-    #v99PageDock #v106ClearPageBtn{
-      display:inline-flex!important;
-      visibility:visible!important;
-      opacity:1!important;
-      flex:0 0 auto!important;
-      min-height:34px!important;
-      height:34px!important;
-      align-items:center!important;
-      justify-content:center!important;
-      background:rgba(255,255,255,.94)!important;
-    }
-    #v99PageDock #pageTabsWrap{
-      display:inline-flex!important;
-      visibility:visible!important;
-      opacity:1!important;
-      max-width:none!important;
-      margin:0!important;
-      flex:0 0 auto!important;
-    }
-    #v99PageDock #pageTabs{
-      display:flex!important;
-      gap:6px!important;
-      overflow:visible!important;
-      max-width:none!important;
-      padding:0!important;
-    }
-    #v99PageDock .page-tab-title{
-      display:inline-flex!important;
-      visibility:visible!important;
-      opacity:1!important;
-      min-width:88px!important;
-      justify-content:center!important;
-    }
-
-    /* Right Help button fixed at bottom of right rail */
-    #v110HelpBtn{
-      width:100%;
-      min-height:48px;
-      border:0;
-      background:transparent;
-      color:#24354e;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:2px;
-      cursor:pointer;
-      font:600 9px/1.05 Arial,sans-serif;
-      margin-top:auto;
-    }
-    #v110HelpBtn .ico{font-size:18px;line-height:1}
-
-    #v110Help{
-      position:fixed;
-      right:86px;
-      top:78px;
-      z-index:92000;
-      width:min(720px,calc(100vw - 180px));
-      max-height:calc(100vh - 100px);
-      display:none;
-      flex-direction:column;
-      background:#fff;
-      border:1px solid #d6e0ec;
-      border-radius:14px;
-      box-shadow:0 10px 36px rgba(15,23,42,.25);
-      overflow:hidden;
-      font:14px/1.4 Arial,sans-serif;
-    }
-    #v110Help.show{display:flex!important}
-    #v110HelpHead{
-      display:flex;align-items:center;gap:8px;
-      padding:11px 13px;background:#f8fafc;border-bottom:1px solid #e7edf4;
-    }
-    #v110HelpHead strong{font-size:17px}
-    #v110HelpClose{
-      margin-left:auto;width:30px;height:30px;border:0;border-radius:7px;background:#eef2f7;cursor:pointer;
-    }
-    #v110HelpSearchWrap{padding:10px 13px;border-bottom:1px solid #edf1f5}
-    #v110HelpSearch{
-      width:100%;height:36px;border:1px solid #bfcddd;border-radius:8px;
-      padding:5px 11px;font-size:14px;box-sizing:border-box;
-    }
-    #v110HelpResults{overflow:auto;padding:8px 13px 15px}
-    .v110HelpSection{font-weight:700;color:#173b78;margin:10px 0 4px}
-    .v110HelpItem{padding:7px 3px;border-bottom:1px solid #eef2f7}
-    .v110HelpItem b{display:block}
-
-    /* True cursor mode */
-    body.v110-cursor-mode .upper-canvas,
-    body.v110-cursor-mode canvas{cursor:text!important}
-
-    #v110CursorBtn{
-      width:100%;
-      min-height:47px;
-      border:0;
-      border-radius:8px;
-      background:transparent;
-      color:#24354e;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:2px;
-      padding:3px 1px;
-      cursor:pointer;
-      font:600 9px/1.05 Arial,sans-serif;
-    }
-    #v110CursorBtn .ico{font-size:18px}
-    #v110CursorBtn.active{background:#173b78!important;color:#fff!important}
-  `;
-  document.head.appendChild(st);
-}
-
-/* ---------------- Pages ---------------- */
-function repairPages(){
-  const dock=$110("v99PageDock");
-  if(!dock) return;
-
-  try{
-    if(typeof ensurePageTabsUI==="function") ensurePageTabsUI();
-    if(typeof renderPageTabs==="function") renderPageTabs();
-    if(typeof updatePageIndicator==="function") updatePageIndicator();
-  }catch(_){}
-
-  const prev=$110("prevPageBtn");
-  const ind=$110("pageIndicator");
-  const next=$110("nextPageBtn");
-  const add=$110("addPageBtn");
-  const tabs=$110("pageTabsWrap");
-  const del=$110("deletePageBtn");
-  const clear=$110("v106ClearPageBtn");
-
-  if(add){
-    add.hidden=false;
-    add.style.removeProperty("display");
-    add.textContent="+ Нова сторінка";
-  }
-  if(del){
-    del.hidden=false;
-    del.style.removeProperty("display");
-    del.textContent="Видалити сторінку";
-  }
-  if(clear){
-    clear.hidden=false;
-    clear.style.removeProperty("display");
-    clear.textContent="Очистити сторінку";
-  }
-
-  [prev,ind,next,add,tabs,del,clear].forEach(el=>{
-    if(el) dock.appendChild(el);
-  });
-
-  /* Page default labels remain native pageTitleAt(i):
-     Сторінка 1, Сторінка 2... Custom user titles remain untouched. */
-  try{
-    if(typeof renderPageTabs==="function") renderPageTabs();
-  }catch(_){}
-}
-
-/* ---------------- Help ---------------- */
-const helpRows=[
-["Вкладки","Основне","Основні команди: текст, збереження, скасування/повтор, видалення."],
-["Вкладки","Вставка","Нотатка, таблиця, зображення, відео, посилання, файли."],
-["Вкладки","Малювання","Колір, товщина, стиль лінії, фігури, групування."],
-["Вкладки","Математика","Графіки, координатна площина, числова пряма, геометричні інструменти."],
-["Вкладки","Вчитель","Колесо, картки, тести, списки, перекладач, таймер, UA-розбір."],
-["Вкладки","AI","AI-чат і AI-зображення."],
-["Ліва панель","Курсор","Клацніть у будь-якому місці аркуша. Там з'явиться текстовий курсор і можна одразу друкувати."],
-["Ліва панель","Рука","Вибір і переміщення об'єктів."],
-["Ліва панель","Ручка","Вільне малювання."],
-["Ліва панель","Маркер","Малювання маркером."],
-["Ліва панель","Стирачка","Стирання намальованих елементів."],
-["Ліва панель","Лінія","Пряма лінія."],
-["Ліва панель","Крива","Крива."],
-["Ліва панель","Ламана","Ламана лінія."],
-["Ліва панель","Хвиляста","Хвиляста лінія."],
-["Ліва панель","Стрілка","Стрілка."],
-["Ліва панель","Прямокутник","Прямокутник."],
-["Ліва панель","Коло","Коло або еліпс."],
-["Ліва панель","Трикутник","Трикутник."],
-["Ліва панель","Текст","Вставка тексту."],
-["Сторінки","+ Нова сторінка","Створює нову чисту сторінку з назвою Сторінка N."],
-["Сторінки","Сторінка 1 / 2 / …","Перемикання сторінок. Олівець — перейменування, × — видалення."],
-["Сторінки","Очистити сторінку","Очищує лише поточну сторінку."],
-["Сторінки","Видалити сторінку","Видаляє поточну сторінку."],
-["Об'єкти","Виділення об'єкта","Відкриває панель властивостей: колір, заливка, товщина, шрифт, прозорість тощо."],
-["Верхня панель","Повний екран","Розгортає робоче поле на весь екран."],
-["Верхня панель","Перекладач","Переклад тексту."],
-["Верхня панель","Перевірка","Інструменти перевірки."],
-["Верхня панель","Очистити все","Очищує весь зошит."],
-["Параметри","Клас","Вибір класу."],
-["Параметри","Предмет","Вибір предмета."],
-["Параметри","Дата","Вибір дати."],
-["Параметри","Лінійка / Клітинка","Тип фону аркуша."],
-["Параметри","Розмір","Розмір ліній або клітинок."]
-];
-
-function makeHelp(){
-  let h=$110("v110Help");
-  if(h) return h;
-  h=document.createElement("div");
-  h.id="v110Help";
-  h.innerHTML=`
-    <div id="v110HelpHead">
-      <strong>Довідка Sofia Notebook</strong>
-      <button id="v110HelpClose" type="button">×</button>
-    </div>
-    <div id="v110HelpSearchWrap">
-      <input id="v110HelpSearch" type="search" placeholder="Пошук: курсор, сторінка, математика, колір, AI…">
-    </div>
-    <div id="v110HelpResults"></div>
-  `;
-  document.body.appendChild(h);
-  $110("v110HelpClose").onclick=()=>h.classList.remove("show");
-  $110("v110HelpSearch").addEventListener("input",renderHelp);
-  renderHelp();
-  return h;
-}
-function renderHelp(){
-  const out=$110("v110HelpResults");
-  if(!out) return;
-  const q=($110("v110HelpSearch")?.value||"").trim().toLowerCase();
-  const rows=helpRows.filter(([s,n,d])=>!q || (s+" "+n+" "+d).toLowerCase().includes(q));
-  let last="";
-  out.innerHTML=rows.length ? rows.map(([sec,n,d])=>{
-    const sh=sec!==last?`<div class="v110HelpSection">${sec}</div>`:"";
-    last=sec;
-    return `${sh}<div class="v110HelpItem"><b>${n}</b><span>${d}</span></div>`;
-  }).join("") : `<div style="padding:24px;text-align:center;color:#6b7280">Нічого не знайдено</div>`;
-}
-function ensureHelpButton(){
-  const dock=$110("v86Dock");
-  if(!dock) return;
-  let b=$110("v110HelpBtn");
-  if(!b){
-    b=document.createElement("button");
-    b.id="v110HelpBtn";
-    b.type="button";
-    b.innerHTML='<span class="ico">?</span><span>Довідка</span>';
-    b.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      const h=makeHelp();
-      h.classList.add("show");
-      const s=$110("v110HelpSearch");
-      if(s){s.value="";renderHelp();setTimeout(()=>s.focus(),20)}
-    };
-    dock.appendChild(b);
-  }
-}
-
-/* ---------------- True Word-like cursor ---------------- */
+/* ---------- CURSOR BUTTON ---------- */
 function leftHost(){
   return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
          document.querySelector(".side-tool[data-tool]")?.parentElement;
 }
-function ensureCursorButton(){
+
+function removeOldCursorButtons(){
   const host=leftHost();
   if(!host) return;
-  let b=$110("v110CursorBtn");
-  if(!b){
-    b=document.createElement("button");
-    b.id="v110CursorBtn";
-    b.type="button";
-    b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
-    b.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      activateCursorMode();
-    };
-    host.insertBefore(b,host.firstChild);
-  }
-}
-function activateCursorMode(){
-  document.body.classList.add("v110-cursor-mode");
-  document.body.classList.remove("v96-hand-mode","v99-hand-mode","v96-dragging","v99-dragging");
-
-  document.querySelectorAll(".side-tool[data-tool]").forEach(b=>b.classList.remove("active","selected","v96-hand-active","v99-hand-active"));
-  $110("v110CursorBtn")?.classList.add("active");
-
-  try{
-    if(typeof fcanvas!=="undefined"){
-      fcanvas.isDrawingMode=false;
-      fcanvas.selection=false;
-      fcanvas.discardActiveObject();
-      fcanvas.defaultCursor="text";
-      fcanvas.hoverCursor="text";
-      fcanvas.forEachObject(o=>{o.selectable=false;o.evented=false});
-      fcanvas.requestRenderAll();
-    }
-  }catch(_){}
-}
-
-function canvasEl(){
-  return document.querySelector(".upper-canvas") || document.querySelector("canvas");
-}
-
-function bindCursorTyping(){
-  if(document.__v110CursorTyping) return;
-  document.__v110CursorTyping=true;
-
-  document.addEventListener("pointerdown",e=>{
-    if(!document.body.classList.contains("v110-cursor-mode")) return;
-    if(e.button!==0) return;
-
-    const c=canvasEl();
-    if(!c) return;
-    const r=c.getBoundingClientRect();
-    if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return;
-
-    let x=e.clientX-r.left, y=e.clientY-r.top;
-    try{
-      const p=fcanvas.getPointer(e);
-      x=p.x;y=p.y;
-    }catch(_){}
-
-    window.sofiaInsertPoint={x,y,active:true,setAt:Date.now()};
-
-    /* Create a real editable Fabric IText at EXACT click point.
-       This gives a genuine typing caret and immediate keyboard input. */
-    try{
-      const t=new fabric.IText("",{
-        left:x,
-        top:y,
-        originX:"left",
-        originY:"top",
-        fontFamily:"Segoe Script",
-        fontSize:26,
-        fill:"#4a7fbd",
-        editable:true,
-        selectable:true,
-        evented:true
-      });
-      t.sofiaCursorText=true;
-
-      fcanvas.add(t);
-      fcanvas.setActiveObject(t);
-      t.enterEditing();
-      t.setSelectionStart?.(0);
-      t.setSelectionEnd?.(0);
-      fcanvas.requestRenderAll();
-
-      /* Temporarily allow this one text object to receive keyboard input. */
-      t.selectable=true;t.evented=true;
-
-      t.on("editing:exited",()=>{
-        if((t.text||"")===""){
-          fcanvas.remove(t);
-          fcanvas.requestRenderAll();
-        }
-        if(document.body.classList.contains("v110-cursor-mode")){
-          fcanvas.forEachObject(o=>{
-            if(o!==t){o.selectable=false;o.evented=false}
-          });
-        }
-        try{autoSave()}catch(_){}
-      });
-    }catch(_){}
-  },true);
-}
-
-/* Other tools switch off Cursor mode */
-function bindToolExit(){
-  if(document.__v110ToolExit) return;
-  document.__v110ToolExit=true;
-  document.addEventListener("click",e=>{
-    const b=e.target.closest?.(".side-tool[data-tool]");
-    if(!b) return;
-    document.body.classList.remove("v110-cursor-mode");
-    $110("v110CursorBtn")?.classList.remove("active");
-  },true);
-}
-
-function mark(){
-  const b=$110("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v110";
-  document.documentElement.dataset.sofiaVersion="110";
-}
-
-function repair(){
-  repairPages();
-  ensureHelpButton();
-  ensureCursorButton();
-}
-
-function init(){
-  addCss();
-  makeHelp();
-  repair();
-  bindCursorTyping();
-  bindToolExit();
-  activateCursorMode();
-  mark();
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v110);
-    mo.__v110=setTimeout(repair,100);
+  [...host.querySelectorAll("button")].forEach(b=>{
+    if(b.id==="v113CursorBtn") return;
+    if((b.textContent||"").trim()==="Курсор") b.remove();
   });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,800,1500,2400].forEach(ms=>setTimeout(repair,ms));
-}
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else
-  setTimeout(init,180);
-})();
-
-
-
-/* =========================================================
-   V112 — CLEANUP: ONE CURSOR, ONE HELP, CURSOR TYPES ANYWHERE
-   ========================================================= */
-(function(){
-"use strict";
-const $112=id=>document.getElementById(id);
-
-function addCss(){
-  if($112("v112Css")) return;
-  const st=document.createElement("style");
-  st.id="v112Css";
-  st.textContent=`
-    /* only the v112 cursor button is shown */
-    #v104CursorBtn,#v105CursorBtn,#v110CursorBtn{display:none!important}
-    #v112CursorBtn{
-      width:100%;min-height:47px;border:0;border-radius:8px;background:transparent;
-      color:#24354e;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:2px;padding:3px 1px;cursor:pointer;font:600 9px/1.05 Arial,sans-serif;
-    }
-    #v112CursorBtn .ico{font-size:18px;line-height:1}
-    #v112CursorBtn.active{background:#173b78!important;color:#fff!important}
-
-    /* only the v112 help is shown */
-    #v86Help,#v100Help,#v102Help,#v110Help,#v100HelpBtn,#v110HelpBtn{display:none!important}
-    #v112HelpBtn{
-      width:100%;min-height:48px;border:0;background:transparent;color:#24354e;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:2px;cursor:pointer;font:600 9px/1.05 Arial,sans-serif;margin-top:auto;
-    }
-    #v112HelpBtn .ico{font-size:18px;line-height:1}
-
-    #v112Help{
-      position:fixed;right:86px;top:78px;z-index:95000;
-      width:min(720px,calc(100vw - 180px));max-height:calc(100vh - 100px);
-      display:none;flex-direction:column;background:#fff;border:1px solid #d6e0ec;
-      border-radius:14px;box-shadow:0 10px 36px rgba(15,23,42,.25);
-      overflow:hidden;font:14px/1.4 Arial,sans-serif;
-    }
-    #v112Help.show{display:flex!important}
-    #v112HelpHead{display:flex;align-items:center;gap:8px;padding:11px 13px;background:#f8fafc;border-bottom:1px solid #e7edf4}
-    #v112HelpClose{margin-left:auto;width:30px;height:30px;border:0;border-radius:7px;background:#eef2f7;cursor:pointer}
-    #v112HelpSearchWrap{padding:10px 13px;border-bottom:1px solid #edf1f5}
-    #v112HelpSearch{width:100%;height:36px;border:1px solid #bfcddd;border-radius:8px;padding:5px 11px;font-size:14px;box-sizing:border-box}
-    #v112HelpResults{overflow:auto;padding:8px 13px 15px}
-    .v112Sec{font-weight:700;color:#173b78;margin:10px 0 4px}
-    .v112Item{padding:7px 3px;border-bottom:1px solid #eef2f7}
-    .v112Item b{display:block}
-
-    body.v112-cursor-mode .upper-canvas,
-    body.v112-cursor-mode canvas{cursor:text!important}
-  `;
-  document.head.appendChild(st);
-}
-
-function leftHost(){
-  return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
-         document.querySelector(".side-tool[data-tool]")?.parentElement;
-}
-function rightHost(){ return $112("v86Dock"); }
-
-function cleanupDuplicateCursorButtons(){
-  ["v104CursorBtn","v105CursorBtn","v110CursorBtn"].forEach(id=>{
-    const el=$112(id); if(el) el.remove();
-  });
-  // remove accidental duplicates with same label "Курсор"
-  const host=leftHost();
-  if(host){
-    [...host.querySelectorAll("button")].forEach(b=>{
-      if(b.id==="v112CursorBtn") return;
-      if((b.textContent||"").trim()==="Курсор") b.remove();
-    });
-  }
-}
-
-function ensureCursorBtn(){
-  const host=leftHost(); if(!host) return;
-  cleanupDuplicateCursorButtons();
-  let b=$112("v112CursorBtn");
-  if(!b){
-    b=document.createElement("button");
-    b.id="v112CursorBtn"; b.type="button";
-    b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
-    b.title="Курсор — поставити місце для тексту";
-    b.onclick=e=>{e.preventDefault();e.stopPropagation();activateCursor();};
-    host.insertBefore(b,host.firstChild);
-  }
 }
 
 function clearToolVisuals(){
   document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
     b.classList.remove("active","selected","v96-hand-active","v99-hand-active");
+    b.setAttribute("aria-pressed","false");
   });
 }
+
 function activateCursor(){
-  document.body.classList.add("v112-cursor-mode");
-  document.body.classList.remove("v96-hand-mode","v99-hand-mode","v96-dragging","v99-dragging");
+  cursorMode=true;
+  document.body.classList.add("v113-cursor-mode");
+  document.body.classList.remove("v99-hand-mode","v99-dragging","v96-hand-mode","v96-dragging");
   clearToolVisuals();
-  $112("v112CursorBtn")?.classList.add("active");
+  $113("v113CursorBtn")?.classList.add("active");
+
   try{
     if(typeof fcanvas!=="undefined"){
       fcanvas.isDrawingMode=false;
-      fcanvas.selection=false;
-      fcanvas.discardActiveObject?.();
+      fcanvas.selection=true;
       fcanvas.defaultCursor="text";
       fcanvas.hoverCursor="text";
       fcanvas.requestRenderAll?.();
     }
   }catch(_){}
 }
+
 function deactivateCursor(){
-  document.body.classList.remove("v112-cursor-mode");
-  $112("v112CursorBtn")?.classList.remove("active");
+  cursorMode=false;
+  document.body.classList.remove("v113-cursor-mode");
+  $113("v113CursorBtn")?.classList.remove("active");
 }
 
-function canvasTarget(){
-  return document.querySelector(".upper-canvas") || document.querySelector("canvas.upper-canvas") || document.querySelector("canvas");
+function ensureCursorButton(){
+  const host=leftHost();
+  if(!host) return;
+  removeOldCursorButtons();
+
+  let b=$113("v113CursorBtn");
+  if(!b){
+    b=document.createElement("button");
+    b.id="v113CursorBtn";
+    b.type="button";
+    b.title="Курсор — клацніть будь-де на аркуші та друкуйте";
+    b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
+    b.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      activateCursor();
+    };
+    host.insertBefore(b,host.firstChild);
+  }
 }
 
-/* One capture handler. It stops older cursor handlers from also firing.
-   A click anywhere inside the working canvas creates ONE editable IText at that exact point. */
-function bindExactTyping(){
-  if(document.__v112CursorBound) return;
-  document.__v112CursorBound=true;
+/* ---------- TRUE TYPING ANYWHERE ---------- */
+function canvasEl(){
+  return document.querySelector(".upper-canvas") ||
+         document.querySelector("canvas.upper-canvas") ||
+         document.querySelector("canvas");
+}
 
-  document.addEventListener("pointerdown",e=>{
-    if(!document.body.classList.contains("v112-cursor-mode")) return;
-    if(e.button!==0) return;
+function pointerToFabric(e){
+  const c=canvasEl();
+  if(!c) return null;
+  const r=c.getBoundingClientRect();
 
-    const c=canvasTarget(); if(!c) return;
-    const r=c.getBoundingClientRect();
-    if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return;
+  if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom)
+    return null;
 
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-
-    let x=e.clientX-r.left, y=e.clientY-r.top;
-    try{
-      if(typeof fcanvas!=="undefined"){
-        const p=fcanvas.getPointer(e);
-        x=p.x; y=p.y;
-      }
-    }catch(_){}
-
-    window.sofiaInsertPoint={x,y,active:true,setAt:Date.now()};
-
-    try{
-      // if we are already editing an empty cursor text, move it instead of creating a second one
-      const current=fcanvas.getActiveObject?.();
-      if(current && current.sofiaV112CursorText && current.isEditing && !(current.text||"")){
-        current.set({left:x,top:y});
-        current.setCoords?.();
-        fcanvas.requestRenderAll?.();
-        current.enterEditing?.();
-        return;
-      }
-
-      const t=new fabric.IText("",{
-        left:x,top:y,originX:"left",originY:"top",
-        fontFamily:"Segoe Script",fontSize:26,fill:"#4a7fbd",
-        editable:true,selectable:true,evented:true
-      });
-      t.sofiaV112CursorText=true;
-      fcanvas.add(t);
-      fcanvas.setActiveObject(t);
-      t.enterEditing();
-      if("selectionStart" in t){t.selectionStart=0;t.selectionEnd=0;}
-      fcanvas.requestRenderAll();
-
-      // hide object-property panels while actively typing
-      ["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"].forEach(id=>$112(id)?.classList.remove("show"));
-
-      t.on("editing:exited",()=>{
-        if(!(t.text||"").trim()){
-          fcanvas.remove(t);
-          fcanvas.requestRenderAll();
-        }
-        try{autoSave()}catch(_){}
-      });
-    }catch(err){
-      console.error("V112 cursor error",err);
+  try{
+    if(typeof fcanvas!=="undefined"){
+      const p=fcanvas.getPointer(e);
+      return {x:p.x,y:p.y};
     }
+  }catch(_){}
+
+  return {x:e.clientX-r.left,y:e.clientY-r.top};
+}
+
+function closeExistingEmptyCursor(){
+  try{
+    if(activeTypingObject && activeTypingObject.isEditing){
+      activeTypingObject.exitEditing?.();
+    }
+    if(activeTypingObject && !(activeTypingObject.text||"").trim()){
+      fcanvas.remove(activeTypingObject);
+    }
+  }catch(_){}
+  activeTypingObject=null;
+}
+
+function createTextAt(x,y){
+  if(typeof fcanvas==="undefined" || !window.fabric) return;
+
+  closeExistingEmptyCursor();
+
+  const t=new fabric.IText("",{
+    left:x,
+    top:y,
+    originX:"left",
+    originY:"top",
+    fontFamily:"Segoe Script",
+    fontSize:26,
+    fill:"#4a7fbd",
+    editable:true,
+    selectable:true,
+    evented:true,
+    padding:0
+  });
+
+  t.sofiaV113Text=true;
+  activeTypingObject=t;
+
+  fcanvas.add(t);
+  fcanvas.setActiveObject(t);
+  t.enterEditing();
+
+  if("selectionStart" in t){
+    t.selectionStart=0;
+    t.selectionEnd=0;
+  }
+
+  document.body.classList.add("v113-typing");
+  ["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"].forEach(id=>{
+    $113(id)?.classList.remove("show");
+  });
+
+  t.on("editing:exited",()=>{
+    document.body.classList.remove("v113-typing");
+    if(!(t.text||"").trim()){
+      try{fcanvas.remove(t)}catch(_){}
+    }
+    activeTypingObject=null;
+    try{autoSave()}catch(_){}
+    fcanvas.requestRenderAll?.();
+  });
+
+  fcanvas.requestRenderAll?.();
+}
+
+function bindCanvasTyping(){
+  const c=canvasEl();
+  if(!c || c.__v113Bound) return;
+  c.__v113Bound=true;
+
+  c.addEventListener("pointerdown",e=>{
+    if(!cursorMode || e.button!==0) return;
+
+    const p=pointerToFabric(e);
+    if(!p) return;
+
+    /* Important:
+       do NOT stopImmediatePropagation. That was the source of UI conflicts.
+       We only create one text object and let Fabric keep keyboard focus. */
+    e.preventDefault();
+
+    window.sofiaInsertPoint={x:p.x,y:p.y,active:true,setAt:Date.now()};
+    createTextAt(p.x,p.y);
   },true);
 }
 
-/* Other tools turn cursor mode off */
-function bindToolExit(){
-  if(document.__v112ToolExit) return;
-  document.__v112ToolExit=true;
+/* Other side tools disable cursor mode; Cursor button re-enables it. */
+function bindToolSwitch(){
+  if(document.__v113ToolSwitch) return;
+  document.__v113ToolSwitch=true;
+
   document.addEventListener("click",e=>{
-    const b=e.target.closest?.(".side-tool[data-tool]");
-    if(!b) return;
+    const tool=e.target.closest?.(".side-tool[data-tool]");
+    if(!tool) return;
     deactivateCursor();
   },true);
 }
 
-/* One help system */
-const HELP=[
-["Вкладки","Основне","Основні команди: текст, збереження, скасування/повтор, видалення."],
-["Вкладки","Вставка","Нотатка, таблиця, зображення, відео, посилання, файли."],
-["Вкладки","Малювання","Колір, товщина, стиль лінії, фігури та групування."],
-["Вкладки","Математика","Графіки, координатна площина, числова пряма та геометричні інструменти."],
-["Вкладки","Вчитель","Колесо, картки, тести, списки, перекладач, таймер, UA-розбір."],
-["Вкладки","AI","AI-чат і AI-зображення."],
-["Ліва панель","Курсор","Клацніть у будь-якій точці аркуша — там одразу можна друкувати."],
-["Ліва панель","Рука","Вибір і переміщення об'єктів."],
-["Ліва панель","Ручка","Вільне малювання."],
-["Ліва панель","Маркер","Малювання маркером."],
-["Ліва панель","Стирачка","Стирання намальованих елементів."],
-["Сторінки","+ Нова сторінка","Створює нову чисту сторінку."],
-["Сторінки","Сторінка 1 / 2 / …","Перемикання сторінок; олівець — перейменування."],
-["Сторінки","Очистити сторінку","Очищує поточну сторінку."],
-["Сторінки","Видалити сторінку","Видаляє поточну сторінку."],
-["Об'єкти","Виділення","Відкриває властивості: колір, заливка, товщина, шрифт, прозорість."],
-["Параметри","Клас / Предмет / Дата","Параметри поточної роботи."],
-["Параметри","Лінійка / Клітинка","Тип фону сторінки."]
-];
-function makeHelp(){
-  let h=$112("v112Help"); if(h) return h;
-  h=document.createElement("div"); h.id="v112Help";
-  h.innerHTML=`<div id="v112HelpHead"><strong>Довідка Sofia Notebook</strong><button id="v112HelpClose">×</button></div>
-  <div id="v112HelpSearchWrap"><input id="v112HelpSearch" type="search" placeholder="Пошук: курсор, сторінка, математика, AI…"></div>
-  <div id="v112HelpResults"></div>`;
-  document.body.appendChild(h);
-  $112("v112HelpClose").onclick=()=>h.classList.remove("show");
-  $112("v112HelpSearch").addEventListener("input",renderHelp);
-  renderHelp();
-  return h;
-}
-function renderHelp(){
-  const out=$112("v112HelpResults"); if(!out) return;
-  const q=($112("v112HelpSearch")?.value||"").trim().toLowerCase();
-  const rows=HELP.filter(([s,n,d])=>!q || (s+" "+n+" "+d).toLowerCase().includes(q));
-  let last="";
-  out.innerHTML=rows.length?rows.map(([sec,n,d])=>{
-    const sh=sec!==last?`<div class="v112Sec">${sec}</div>`:""; last=sec;
-    return `${sh}<div class="v112Item"><b>${n}</b><span>${d}</span></div>`;
-  }).join(""):`<div style="padding:24px;text-align:center;color:#6b7280">Нічого не знайдено</div>`;
-}
-function cleanupHelp(){
-  ["v86Help","v100Help","v102Help","v110Help","v100HelpBtn","v110HelpBtn"].forEach(id=>{
-    const el=$112(id); if(el) el.remove();
+/* ---------- ERROR GUARD ----------
+   Prevent the app's generic startup dialog from opening for harmless cursor UI events.
+   Real errors are still written to console. */
+function installErrorGuard(){
+  if(window.__v113ErrorGuard) return;
+  window.__v113ErrorGuard=true;
+
+  window.addEventListener("error",e=>{
+    const msg=String(e?.message||"");
+    if(/HierarchyRequestError|insertAdjacentElement|insertBefore/i.test(msg)){
+      e.preventDefault();
+      console.warn("V113 suppressed legacy UI error:",msg);
+    }
   });
-  const host=rightHost();
-  if(host){
-    [...host.querySelectorAll("button")].forEach(b=>{
-      if(b.id==="v112HelpBtn") return;
-      if((b.textContent||"").includes("Довідка")) b.remove();
-    });
-  }
-}
-function ensureHelpBtn(){
-  const host=rightHost(); if(!host) return;
-  cleanupHelp();
-  let b=$112("v112HelpBtn");
-  if(!b){
-    b=document.createElement("button"); b.id="v112HelpBtn"; b.type="button";
-    b.innerHTML='<span class="ico">?</span><span>Довідка</span>';
-    b.onclick=e=>{e.preventDefault();e.stopPropagation();const h=makeHelp();h.classList.add("show");const s=$112("v112HelpSearch");if(s){s.value="";renderHelp();setTimeout(()=>s.focus(),20)}};
-    host.appendChild(b);
-  }
 }
 
+/* ---------- VERSION ---------- */
 function mark(){
-  const b=$112("appVersionBadge") ||
+  const b=$113("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v112";
-  document.documentElement.dataset.sofiaVersion="112";
+  if(b)b.textContent="v113";
+  document.documentElement.dataset.sofiaVersion="113";
 }
 
-function repair(){
-  ensureCursorBtn();
-  ensureHelpBtn();
-  // keep page controls from V110 visible
-  try{ if(typeof repairPages==="function") repairPages(); }catch(_){}
-}
-
+/* ---------- INIT ----------
+   Intentionally no MutationObserver and no requestAnimationFrame loop:
+   this keeps typing responsive. */
 function init(){
   addCss();
-  cleanupDuplicateCursorButtons();
-  cleanupHelp();
-  ensureCursorBtn();
-  ensureHelpBtn();
-  makeHelp();
-  bindExactTyping();
-  bindToolExit();
+  installErrorGuard();
+  fixLeftPanel();
+  ensureCursorButton();
+  bindCanvasTyping();
+  bindToolSwitch();
   activateCursor();
   mark();
 
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v112);
-    mo.__v112=setTimeout(repair,120);
+  window.addEventListener("resize",()=>{
+    fixLeftPanel();
+    bindCanvasTyping();
   });
-  mo.observe(document.body,{childList:true,subtree:true});
 
-  [350,900,1700].forEach(ms=>setTimeout(repair,ms));
+  document.addEventListener("fullscreenchange",()=>{
+    setTimeout(()=>{
+      fixLeftPanel();
+      bindCanvasTyping();
+    },120);
+  });
+
+  document.addEventListener("webkitfullscreenchange",()=>{
+    setTimeout(()=>{
+      fixLeftPanel();
+      bindCanvasTyping();
+    },120);
+  });
+
+  /* A few one-time retries only, because Fabric canvas can mount slightly later. */
+  [250,700,1400].forEach(ms=>setTimeout(()=>{
+    fixLeftPanel();
+    ensureCursorButton();
+    bindCanvasTyping();
+  },ms));
 }
+
 if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
 else
-  setTimeout(init,180);
+  setTimeout(init,160);
 })();
