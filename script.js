@@ -8983,3 +8983,516 @@ if(document.readyState==="loading"){
   addCss111();mark111();
 }
 })();
+
+
+
+/* =========================================================
+   V112 CLEAN — БАЗА: КОРИСТУВАЦЬКА V111
+   Виправлення подвійних обробників кнопок + надійна побудова графіка.
+   БЕЗ MutationObserver, БЕЗ циклів, БЕЗ перенесення Fabric canvas.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $C=id=>document.getElementById(id);
+const panelInitialState=new Map();
+
+function cv(){
+  try{return typeof fcanvas!=="undefined"?fcanvas:null}catch(_){return null}
+}
+function panelHidden(p){
+  return !p || p.hidden || p.classList.contains("hidden") || getComputedStyle(p).display==="none";
+}
+function bringFront(p){
+  if(!p)return;
+  p.style.setProperty("z-index","140000","important");
+}
+function setPanelOpen(p,open){
+  if(!p)return;
+  if(open){
+    p.hidden=false;
+    p.classList.remove("hidden");
+    p.style.removeProperty("display");
+    if(getComputedStyle(p).display==="none") p.style.setProperty("display","block","important");
+    bringFront(p);
+  }else{
+    p.classList.add("hidden");
+    p.style.removeProperty("display");
+  }
+}
+
+/* ---------------------------------------------------------
+   1. ПРИБИРАЄМО ЕФЕКТ "ВІДКРИЛОСЬ І ОДРАЗУ ЗАКРИЛОСЬ"
+   У V111 на частину кнопок одночасно навішані старі onclick
+   і V109 capture-listener. Фіксуємо кінцевий стан однозначно.
+   --------------------------------------------------------- */
+const PANEL_BUTTONS={
+  mediaBtn:"mediaPanel",
+  elementsBtn:"elementsPanel",
+  geometryBtn:"geometryPanel",
+  angleBtn:"anglePanel",
+  numberRayBtn:"numberRayPanel",
+  graphBuilderBtn:"graphBuilderPanel",
+  calculatorBtn:"calculatorPanel",
+  timerBtn:"timerPanel",
+  ukrainianBtn:"ukrainianPanel",
+  keyboardBtn:"keyboardPanel",
+  aiBtn:"aiPanel"
+};
+
+document.addEventListener("pointerdown",e=>{
+  const b=e.target.closest?.("button");
+  if(!b)return;
+  const pid=PANEL_BUTTONS[b.id];
+  if(!pid)return;
+  panelInitialState.set(b.id,panelHidden($C(pid)));
+},true);
+
+function bindPanelFinalizers(){
+  Object.entries(PANEL_BUTTONS).forEach(([bid,pid])=>{
+    const b=$C(bid);
+    if(!b || b.__clean112)return;
+    b.__clean112=true;
+
+    /* target-capture: після старого document-capture, але до onclick.
+       Ставимо правильний фінальний стан і зупиняємо старий onclick. */
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const p=$C(pid);
+      if(!p)return;
+
+      const wasHidden=panelInitialState.has(bid)
+        ? panelInitialState.get(bid)
+        : panelHidden(p);
+
+      setPanelOpen(p,wasHidden);
+
+      if(bid==="graphBuilderBtn" && wasHidden){
+        try{ if(typeof renderGraphParams==="function") renderGraphParams(); }catch(_){}
+      }
+      if(bid==="keyboardBtn" && wasHidden){
+        try{ if(typeof renderKeyboard==="function") renderKeyboard(); }catch(_){}
+      }
+    },true);
+  });
+}
+
+/* ---------------------------------------------------------
+   2. НАДІЙНА ПОБУДОВА ГРАФІКА
+   --------------------------------------------------------- */
+function buildGraphClean(){
+  try{
+    const c=cv();
+    if(!c) throw new Error("Полотно ще не готове.");
+
+    const gp=$C("graphParams");
+    if(!gp) throw new Error("Параметри графіка не знайдені.");
+
+    if($C("paperType")){
+      $C("paperType").value="coordinate";
+      try{applyPaper()}catch(_){}
+    }
+
+    const meta={
+      name:($C("graphName")?.value||"").trim() || `Графік ${typeof graphCounter!=="undefined"?graphCounter:1}`,
+      type:$C("graphType")?.value || "linear",
+      params:getParamObjectFromPanel(gp),
+      customExpr:($C("customGraphExpression")?.value||"").trim(),
+      showPoints:!!$C("graphShowPoints")?.checked,
+      shiftX:0,
+      shiftY:0,
+      range:readGraphRange(),
+      autoScale:!!$C("graphAutoScale")?.checked,
+      clipToPlane:!!$C("graphClipToPlane")?.checked,
+      color:$C("colorPicker")?.value || "#17315f",
+      strokeWidth:Math.max(2,Number($C("lineWidth")?.value)||2)
+    };
+
+    const g=createGraphGroup(meta);
+    g.set({
+      left:0,top:0,
+      scaleX:1,scaleY:1,
+      visible:true,opacity:1,
+      selectable:true,evented:true
+    });
+    g.excludeFromInsertCursor=true;
+    g.setCoords?.();
+
+    c.add(g);
+    c.setActiveObject(g);
+    c.bringToFront?.(g);
+    c.requestRenderAll?.();
+
+    try{
+      if(typeof graphCounter!=="undefined"){
+        graphCounter++;
+        if($C("graphName"))$C("graphName").value=`Графік ${graphCounter}`;
+      }
+    }catch(_){}
+
+    try{pushHistory();autoSave()}catch(_){}
+    try{setTool("select")}catch(_){}
+
+    $C("graphBuilderPanel")?.classList.add("hidden");
+    try{openGraphEditor(g)}catch(_){}
+
+    /* Після setTool ще раз гарантуємо видимість. */
+    setTimeout(()=>{
+      g.visible=true;
+      if(Number(g.opacity)===0)g.opacity=1;
+      g.excludeFromInsertCursor=true;
+      g.setCoords?.();
+      c.requestRenderAll?.();
+    },30);
+
+    return g;
+  }catch(err){
+    console.error("CLEAN112 graph:",err);
+    alert("Не вдалося побудувати графік: "+(err?.message||err));
+    return null;
+  }
+}
+
+function bindGraphInsert(){
+  const b=$C("insertGraphBtn");
+  if(!b || b.__clean112)return;
+  b.__clean112=true;
+
+  b.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    buildGraphClean();
+  },true);
+}
+
+/* ---------------------------------------------------------
+   3. ТОЧКА / ВЕРШИНА — ОДИН НАДІЙНИЙ ЗАПУСК
+   --------------------------------------------------------- */
+function bindPointVertex(){
+  const point=$C("pointBtn");
+  if(point && !point.__clean112){
+    point.__clean112=true;
+    point.addEventListener("click",e=>{
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      try{addPoint()}catch(err){console.error(err)}
+    },true);
+  }
+
+  const vertex=$C("vertexLabelBtn");
+  if(vertex && !vertex.__clean112){
+    vertex.__clean112=true;
+    vertex.addEventListener("click",e=>{
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      const c=cv(); if(!c)return;
+      const name=(prompt("Позначення вершини:","A")||"A").trim()||"A";
+      const t=new fabric.IText(name,{
+        left:350,top:250,fontSize:22,fontWeight:"bold",
+        fontFamily:"Times New Roman",
+        fill:$C("colorPicker")?.value||"#17315f",
+        selectable:true,evented:true,erasable:false
+      });
+      t.excludeFromInsertCursor=true;
+      c.add(t);c.setActiveObject(t);c.requestRenderAll();
+      try{pushHistory();autoSave();setTool("select")}catch(_){}
+    },true);
+  }
+}
+
+/* ---------------------------------------------------------
+   4. УСІ КНОПКИ У ВКЛАДКАХ: НЕ disabled / НЕ hidden
+   Не змінюємо їхню бізнес-логіку — лише не даємо старим патчам
+   сховати або вимкнути робочі команди.
+   --------------------------------------------------------- */
+const TAB_BUTTONS=[
+  "mediaBtn","elementsBtn","geometryBtn","noteBtn","v56TableBtn",
+  "correctionMarkerBtn","groupBtn","ungroupBtn","explodeShapeBtn","editVerticesBtn","v56FiguresBtn",
+  "calculatorBtn","angleBtn","numberRayBtn","graphBuilderBtn","pointBtn","vertexLabelBtn",
+  "v56Wheel","v56Cards","v56Test","v56Lists","v56Translate","timerBtn","ukrainianBtn",
+  "aiBtn","v56AiImage","keyboardBtn","voiceBtn","saveBtn","undoBtn","redoBtn",
+  "deleteSelectedBtn","clearPageBtn"
+];
+
+function auditButtons(){
+  TAB_BUTTONS.forEach(id=>{
+    const b=$C(id);
+    if(!b)return;
+    b.disabled=false;
+    b.removeAttribute("aria-disabled");
+    b.style.removeProperty("visibility");
+    b.style.removeProperty("opacity");
+    /* Не чіпаємо display для старого shapeLibraryBtn, який свідомо замінено на v56FiguresBtn. */
+    if(id!=="shapeLibraryBtn"){
+      b.hidden=false;
+    }
+  });
+
+  /* Вкладені панелі завжди поверх полотна. */
+  [
+    "mediaPanel","elementsPanel","geometryPanel","anglePanel","numberRayPanel",
+    "graphBuilderPanel","graphEditorPanel","calculatorPanel","timerPanel",
+    "ukrainianPanel","keyboardPanel","aiPanel","shapeLibraryPanel",
+    "v56FiguresPanel","v56CompassPanel","teacherToolsPanel"
+  ].forEach(id=>{
+    const p=$C(id);
+    if(p)p.style.setProperty("z-index","140000","important");
+  });
+}
+
+/* ---------------------------------------------------------
+   5. ЗАХИСТ НОВИХ ОБ'ЄКТІВ ВІД СТАРОГО INSERT-CURSOR
+   --------------------------------------------------------- */
+function protectNewObjects(){
+  const c=cv();
+  if(!c || c.__clean112Protect)return;
+  c.__clean112Protect=true;
+  c.on("object:added",e=>{
+    const o=e?.target;
+    if(!o)return;
+    const type=String(o.type||"").toLowerCase();
+    const isText=["text","i-text","textbox"].includes(type);
+    if(!isText || o.graphObject || o.isInstrument || o.sofiaTable || o.sofiaNote){
+      o.excludeFromInsertCursor=true;
+    }
+  });
+}
+
+/* ---------------------------------------------------------
+   VERSION
+   --------------------------------------------------------- */
+function mark(){
+  const b=$C("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v112";
+  document.documentElement.dataset.sofiaVersion="112-clean";
+}
+
+function init(){
+  bindPanelFinalizers();
+  bindGraphInsert();
+  bindPointVertex();
+  protectNewObjects();
+  auditButtons();
+  mark();
+
+  /* Частина кнопок створюється V56 трохи пізніше. */
+  [300,800,1500].forEach(ms=>setTimeout(()=>{
+    bindPanelFinalizers();
+    bindGraphInsert();
+    bindPointVertex();
+    auditButtons();
+  },ms));
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+}else{
+  setTimeout(init,180);
+}
+})();
+
+
+
+/* =========================================================
+   V113 CLEAN — ПЕРЕТЯГУВАННЯ ДОДАТКОВИХ ВІКОН ЗА ЗАГОЛОВОК
+   База: V112 CLEAN від робочої V111.
+   Без MutationObserver. Без циклів. Без перенесення Fabric canvas.
+   ========================================================= */
+(function(){
+"use strict";
+
+const $D=id=>document.getElementById(id);
+
+/* Панелі, які можна рухати */
+const DRAG_IDS=[
+  "v102ObjectPanel",
+  "textFormatBar",
+  "v68ToolSettings",
+  "graphBuilderPanel",
+  "graphEditorPanel",
+  "numberRayPanel",
+  "geometryPanel",
+  "anglePanel",
+  "mediaPanel",
+  "elementsPanel",
+  "calculatorPanel",
+  "timerPanel",
+  "ukrainianPanel",
+  "keyboardPanel",
+  "aiPanel",
+  "shapeLibraryPanel",
+  "v56FiguresPanel",
+  "v56CompassPanel",
+  "teacherToolsPanel",
+  "v87Help",
+  "v102Help",
+  "v86HelpBox"
+];
+
+function panelTitleElement(panel){
+  if(!panel) return null;
+
+  /* Спочатку шукаємо справжній заголовок */
+  const selectors=[
+    ".panel-header",
+    ".modal-header",
+    ".dialog-header",
+    ".head",
+    "[id$='Header']",
+    "[id$='Head']",
+    "h1","h2","h3","h4",
+    "strong"
+  ];
+
+  for(const sel of selectors){
+    const el=panel.querySelector(sel);
+    if(el) return el;
+  }
+
+  /* Для панелі "Властивості" заголовок може бути просто першим рядком */
+  const first=panel.firstElementChild;
+  if(first) return first;
+
+  return null;
+}
+
+function makePanelDraggable(panel){
+  if(!panel || panel.__dragClean113) return;
+  panel.__dragClean113=true;
+
+  const head=panelTitleElement(panel);
+  if(!head) return;
+
+  head.style.setProperty("cursor","move","important");
+  head.style.setProperty("user-select","none","important");
+  head.title="Перетягніть за назву, щоб перемістити вікно";
+
+  let dragging=false;
+  let startX=0,startY=0,startLeft=0,startTop=0;
+
+  function onMove(e){
+    if(!dragging) return;
+
+    const r=panel.getBoundingClientRect();
+    let left=startLeft+(e.clientX-startX);
+    let top=startTop+(e.clientY-startY);
+
+    /* Не дозволяємо загубити вікно за межами екрана */
+    const maxLeft=Math.max(4,window.innerWidth-r.width-4);
+    const maxTop=Math.max(4,window.innerHeight-44);
+
+    left=Math.max(4,Math.min(maxLeft,left));
+    top=Math.max(4,Math.min(maxTop,top));
+
+    panel.style.setProperty("position","fixed","important");
+    panel.style.setProperty("left",left+"px","important");
+    panel.style.setProperty("top",top+"px","important");
+    panel.style.setProperty("right","auto","important");
+    panel.style.setProperty("bottom","auto","important");
+    panel.style.setProperty("z-index","150000","important");
+  }
+
+  function stopDrag(){
+    if(!dragging) return;
+    dragging=false;
+
+    document.removeEventListener("pointermove",onMove,true);
+    document.removeEventListener("pointerup",stopDrag,true);
+    document.removeEventListener("pointercancel",stopDrag,true);
+
+    const r=panel.getBoundingClientRect();
+    try{
+      localStorage.setItem(
+        "sofiaPanelPosition:"+panel.id,
+        JSON.stringify({left:r.left,top:r.top})
+      );
+    }catch(_){}
+  }
+
+  head.addEventListener("pointerdown",e=>{
+    /* Кнопка ×, input, select тощо повинні працювати як завжди */
+    if(e.target.closest("button,input,select,textarea,a,label")) return;
+    if(e.button!==0) return;
+
+    const r=panel.getBoundingClientRect();
+
+    dragging=true;
+    startX=e.clientX;
+    startY=e.clientY;
+    startLeft=r.left;
+    startTop=r.top;
+
+    panel.style.setProperty("z-index","150000","important");
+
+    try{ head.setPointerCapture?.(e.pointerId); }catch(_){}
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    document.addEventListener("pointermove",onMove,true);
+    document.addEventListener("pointerup",stopDrag,true);
+    document.addEventListener("pointercancel",stopDrag,true);
+  },true);
+
+  /* Відновлюємо останню позицію */
+  try{
+    const saved=JSON.parse(localStorage.getItem("sofiaPanelPosition:"+panel.id)||"null");
+    if(saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)){
+      const left=Math.max(4,Math.min(window.innerWidth-80,saved.left));
+      const top=Math.max(4,Math.min(window.innerHeight-44,saved.top));
+
+      panel.style.setProperty("position","fixed","important");
+      panel.style.setProperty("left",left+"px","important");
+      panel.style.setProperty("top",top+"px","important");
+      panel.style.setProperty("right","auto","important");
+      panel.style.setProperty("bottom","auto","important");
+    }
+  }catch(_){}
+}
+
+function scanDraggablePanels(){
+  DRAG_IDS.forEach(id=>makePanelDraggable($D(id)));
+
+  /* Також підхоплюємо інші вже створені floating-панелі */
+  document.querySelectorAll(
+    ".floating-panel,.v56-floating,.teacher-tools-panel,.modal,.dialog"
+  ).forEach(makePanelDraggable);
+}
+
+/* Відкрите вікно одразу піднімаємо поверх інших */
+document.addEventListener("pointerdown",e=>{
+  const panel=e.target.closest(
+    "#v102ObjectPanel,#textFormatBar,#v68ToolSettings,#graphBuilderPanel,"+
+    "#graphEditorPanel,#numberRayPanel,#geometryPanel,#anglePanel,#mediaPanel,"+
+    "#elementsPanel,#calculatorPanel,#timerPanel,#ukrainianPanel,#keyboardPanel,"+
+    "#aiPanel,#shapeLibraryPanel,#v56FiguresPanel,#v56CompassPanel,"+
+    "#teacherToolsPanel,#v87Help,#v102Help,#v86HelpBox,"+
+    ".floating-panel,.v56-floating,.teacher-tools-panel,.modal,.dialog"
+  );
+  if(panel) panel.style.setProperty("z-index","150000","important");
+},true);
+
+function mark(){
+  const b=$D("appVersionBadge") ||
+    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  if(b)b.textContent="v113";
+  document.documentElement.dataset.sofiaVersion="113-clean";
+}
+
+function init(){
+  scanDraggablePanels();
+  mark();
+
+  /* Деякі панелі створюються після завантаження вкладок */
+  [400,1000,1800].forEach(ms=>setTimeout(scanDraggablePanels,ms));
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
+}else{
+  setTimeout(init,180);
+}
+})();
