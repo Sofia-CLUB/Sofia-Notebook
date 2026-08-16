@@ -4420,3 +4420,116 @@ else setTimeout(init,180);
   else
     setTimeout(init,220);
 })();
+
+
+
+/* =========================================================
+   V64 — ТОЧНИЙ РЕЖИМ «ТЕКСТ»: ТЕКСТОВИЙ КУРСОР У МІСЦІ КЛІКУ
+   ========================================================= */
+(function(){
+"use strict";
+let armed=false;
+
+function canvasEl(){
+  return document.querySelector(".upper-canvas") || document.querySelector("canvas.upper-canvas");
+}
+function setCursor(on){
+  const el=canvasEl();
+  if(el) el.style.cursor=on ? "text" : "";
+}
+function textButton(){
+  return document.getElementById("v57InsertTextBtn");
+}
+function arm(){
+  armed=true;
+  setCursor(true);
+  const b=textButton();
+  if(b){
+    b.textContent="T Вкажіть місце";
+    b.title="Клікніть на аркуші — там з’явиться текстовий курсор";
+  }
+  try{
+    fcanvas.discardActiveObject();
+    fcanvas.requestRenderAll();
+  }catch(e){}
+}
+function disarm(){
+  armed=false;
+  setCursor(false);
+  const b=textButton();
+  if(b){
+    b.textContent="T Текст";
+    b.title="Натисніть, потім клікніть у потрібному місці аркуша";
+  }
+}
+function createAt(pointer){
+  if(!window.fabric || typeof fcanvas==="undefined") return;
+  const t=new fabric.IText("",{
+    left:pointer.x,
+    top:pointer.y,
+    fontFamily:"Segoe Script",
+    fontSize:38,
+    fontStyle:"normal",
+    fontWeight:"normal",
+    fill:"#4a7fbd",
+    editable:true,
+    selectable:true,
+    evented:true,
+    erasable:false,
+    originX:"left",
+    originY:"top"
+  });
+  fcanvas.add(t);
+  fcanvas.setActiveObject(t);
+  t.enterEditing();
+  t.selectionStart=0;
+  t.selectionEnd=0;
+  fcanvas.requestRenderAll();
+
+  // Фокус клавіатури без додаткового кліку.
+  setTimeout(()=>{
+    try{
+      t.enterEditing();
+      t.hiddenTextarea?.focus();
+      fcanvas.requestRenderAll();
+    }catch(e){}
+  },0);
+
+  try{pushHistory();autoSave();}catch(e){}
+  disarm();
+}
+function bind(){
+  const b=textButton();
+  if(b && !b.dataset.v64Text){
+    b.dataset.v64Text="1";
+    // Перехоплюємо раніше старого обробника.
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      arm();
+    },true);
+  }
+
+  if(typeof fcanvas!=="undefined" && !fcanvas.__v64TextCursor){
+    fcanvas.__v64TextCursor=true;
+    fcanvas.on("mouse:down",opt=>{
+      if(!armed)return;
+      const p=fcanvas.getPointer(opt.e);
+      // Створення після завершення поточного mouse down, щоб Fabric не скинув editing.
+      setTimeout(()=>createAt(p),0);
+    });
+  }
+}
+function init(){
+  bind();
+  [250,700,1500].forEach(ms=>setTimeout(bind,ms));
+  const mo=new MutationObserver(()=>setTimeout(bind,20));
+  mo.observe(document.body,{childList:true,subtree:true});
+  const badge=document.getElementById("appVersionBadge");
+  if(badge)badge.textContent="v64";
+  document.documentElement.dataset.sofiaVersion="64";
+}
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
+else setTimeout(init,220);
+})();
