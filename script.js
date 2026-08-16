@@ -5385,162 +5385,6 @@ else
 
 
 
-/* =========================================================
-   V89 — ПРАВА ПАНЕЛЬ МОЖНА ЗГОРТАТИ / РОЗГОРТАТИ
-   ========================================================= */
-(function(){
-"use strict";
-const $89=id=>document.getElementById(id);
-const KEY="sofiaRightDockCollapsed";
-
-function addCss(){
-  if($89("v89Css")) return;
-  const st=document.createElement("style");
-  st.id="v89Css";
-  st.textContent=`
-    /* кнопка згортання */
-    #v89DockToggle{
-      position:fixed;
-      right:76px;
-      top:50%;
-      transform:translateY(-50%);
-      z-index:77000;
-      width:24px;
-      height:54px;
-      border:1px solid #cdd8e6;
-      border-right:0;
-      border-radius:10px 0 0 10px;
-      background:#fff;
-      color:#173b78;
-      box-shadow:-3px 0 10px rgba(15,23,42,.10);
-      cursor:pointer;
-      font:700 18px/1 Arial,sans-serif;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:0;
-    }
-    #v89DockToggle:hover{background:#eef4fb}
-
-    /* згорнутий стан: сама права панель ховається */
-    body.v89-right-collapsed #v86Dock{
-      transform:translateX(100%)!important;
-      pointer-events:none!important;
-    }
-    body.v89-right-collapsed #v89DockToggle{
-      right:0!important;
-      border-right:1px solid #cdd8e6;
-      border-radius:10px 0 0 10px;
-    }
-
-    /* якщо панель згорнули — її відкриті вікна не залишаються висіти */
-    body.v89-right-collapsed #v86Commands,
-    body.v89-right-collapsed #v86HelpBox,
-    body.v89-right-collapsed #v87Help{
-      display:none!important;
-    }
-
-    /* нижня панель сторінок використовує звільнене місце */
-    body.v89-right-collapsed .v88-page-bottom{
-      right:4px!important;
-    }
-
-    /* плавність без важких анімацій */
-    #v86Dock{
-      transition:transform .16s ease!important;
-    }
-    #v89DockToggle{
-      transition:right .16s ease,background .12s ease!important;
-    }
-
-    :fullscreen #v89DockToggle,
-    :-webkit-full-screen #v89DockToggle{
-      top:50%!important;
-    }
-
-    @media(max-width:900px){
-      #v89DockToggle{right:66px}
-      body.v89-right-collapsed #v89DockToggle{right:0}
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function isCollapsed(){
-  return document.body.classList.contains("v89-right-collapsed");
-}
-
-function applyState(collapsed, save=true){
-  document.body.classList.toggle("v89-right-collapsed", collapsed);
-
-  const btn=$89("v89DockToggle");
-  if(btn){
-    btn.textContent=collapsed ? "‹" : "›";
-    btn.title=collapsed ? "Відкрити праву панель" : "Згорнути праву панель";
-    btn.setAttribute("aria-label",btn.title);
-  }
-
-  if(collapsed){
-    $89("v86Commands")?.classList.remove("show");
-    $89("v86HelpBox")?.classList.remove("show");
-    $89("v87Help")?.classList.remove("show");
-  }
-
-  if(save){
-    try{ localStorage.setItem(KEY, collapsed ? "1" : "0"); }catch(_){}
-  }
-}
-
-function ensureToggle(){
-  let b=$89("v89DockToggle");
-  if(!b){
-    b=document.createElement("button");
-    b.type="button";
-    b.id="v89DockToggle";
-    b.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      applyState(!isCollapsed());
-    };
-    document.body.appendChild(b);
-  }
-
-  let saved=false;
-  try{ saved=localStorage.getItem(KEY)==="1"; }catch(_){}
-  applyState(saved,false);
-}
-
-function markVersion(){
-  let b=$89("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  }
-  if(b) b.textContent="v89";
-  document.documentElement.dataset.sofiaVersion="89";
-}
-
-function init(){
-  addCss();
-  ensureToggle();
-  markVersion();
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v89);
-    mo.__v89=setTimeout(()=>{
-      if(!$89("v89DockToggle")) ensureToggle();
-    },80);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,900,1600].forEach(ms=>setTimeout(ensureToggle,ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else
-  setTimeout(init,180);
-})();
-
 
 
 /* =========================================================
@@ -8859,131 +8703,6 @@ else {addCss110();mark110();}
 
 
 
-/* =========================================================
-   V111 — ПРАВА ПАНЕЛЬ ЗАВЖДИ ВИДИМА У FULLSCREEN
-   ========================================================= */
-(function(){
-"use strict";
-const $111=id=>document.getElementById(id);
-
-function addCss111(){
-  if($111("v111Css")) return;
-  const st=document.createElement("style");
-  st.id="v111Css";
-  st.textContent=`
-    /* У повноекранному режимі права панель завжди залишається видимою */
-    body.v86-fullscreen #v86Dock,
-    body.v56-fullscreen #v86Dock,
-    body.fullscreen-mode #v86Dock,
-    :fullscreen #v86Dock{
-      display:flex!important;
-      visibility:visible!important;
-      opacity:1!important;
-      pointer-events:auto!important;
-      position:fixed!important;
-      right:0!important;
-      top:0!important;
-      bottom:0!important;
-      z-index:115000!important;
-      transform:none!important;
-    }
-
-    /* Якщо панель була "згорнута" старою логікою — у fullscreen показуємо її повністю */
-    body.v86-fullscreen.v89-right-collapsed #v86Dock,
-    body.v56-fullscreen.v89-right-collapsed #v86Dock,
-    body.fullscreen-mode.v89-right-collapsed #v86Dock,
-    :fullscreen body.v89-right-collapsed #v86Dock{
-      transform:none!important;
-      right:0!important;
-    }
-
-    /* Кнопка згортання лишається доступною */
-    body.v86-fullscreen #v89RightToggle,
-    body.v56-fullscreen #v89RightToggle,
-    body.fullscreen-mode #v89RightToggle,
-    :fullscreen #v89RightToggle{
-      display:flex!important;
-      visibility:visible!important;
-      opacity:1!important;
-      z-index:116000!important;
-      position:fixed!important;
-      right:0!important;
-    }
-
-    /* Робочий аркуш не заходить під праву панель */
-    body.v86-fullscreen #notebook,
-    body.v56-fullscreen #notebook,
-    body.fullscreen-mode #notebook,
-    :fullscreen #notebook{
-      width:calc(100vw - 74px)!important;
-      max-width:calc(100vw - 74px)!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function showRight111(){
-  const dock=$111("v86Dock");
-  if(!dock) return;
-
-  const fs=!!document.fullscreenElement ||
-    document.body.classList.contains("v86-fullscreen") ||
-    document.body.classList.contains("v56-fullscreen") ||
-    document.body.classList.contains("fullscreen-mode");
-
-  if(!fs) return;
-
-  dock.style.setProperty("display","flex","important");
-  dock.style.setProperty("visibility","visible","important");
-  dock.style.setProperty("opacity","1","important");
-  dock.style.setProperty("right","0","important");
-  dock.style.setProperty("transform","none","important");
-
-  // У fullscreen прибираємо стан згорнутої правої панелі.
-  document.body.classList.remove("v89-right-collapsed");
-
-  try{
-    if(typeof fcanvas!=="undefined"){
-      const nb=$111("notebook");
-      if(nb){
-        const rect=nb.getBoundingClientRect();
-        const w=Math.max(600,window.innerWidth-rect.left-74);
-        nb.style.setProperty("width",w+"px","important");
-        fcanvas.setWidth(w);
-        fcanvas.calcOffset?.();
-        fcanvas.requestRenderAll?.();
-      }
-    }
-  }catch(_){}
-}
-
-function mark111(){
-  const b=$111("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v111";
-  document.documentElement.dataset.sofiaVersion="111";
-}
-
-function apply111(){
-  addCss111();
-  [30,120,350].forEach(ms=>setTimeout(showRight111,ms));
-}
-
-document.addEventListener("fullscreenchange",apply111);
-window.addEventListener("resize",()=>setTimeout(showRight111,80));
-
-document.addEventListener("click",e=>{
-  const b=e.target.closest?.("#fullscreenBtn,#v86FullscreenBtn");
-  if(b) setTimeout(apply111,100);
-},true);
-
-if(document.readyState==="loading"){
-  document.addEventListener("DOMContentLoaded",()=>{addCss111();mark111();},{once:true});
-}else{
-  addCss111();mark111();
-}
-})();
-
 
 
 /* =========================================================
@@ -9735,252 +9454,6 @@ if(document.readyState==="loading"){
 
 
 
-/* =========================================================
-   V115 CLEAN — ПРАВА ПАНЕЛЬ:
-   1) згортається і в fullscreen;
-   2) у звичайному режимі НЕ прозора;
-   3) одна кнопка згортання;
-   4) без MutationObserver і без циклів.
-   ========================================================= */
-(function(){
-"use strict";
-
-const $R=id=>document.getElementById(id);
-
-function dockR(){
-  return $R("v86Dock");
-}
-
-function isFullscreenR(){
-  return !!document.fullscreenElement ||
-         document.body.classList.contains("v86-fullscreen") ||
-         document.body.classList.contains("v56-fullscreen") ||
-         document.body.classList.contains("fullscreen-mode");
-}
-
-function cssR(){
-  if($R("v115RightDockCss")) return;
-
-  const st=document.createElement("style");
-  st.id="v115RightDockCss";
-  st.textContent=`
-    /* ПРАВА ПАНЕЛЬ — БІЛА І НЕПРОЗОРА В УСІХ РЕЖИМАХ */
-    #v86Dock{
-      background:#ffffff!important;
-      background-color:#ffffff!important;
-      opacity:1!important;
-      backdrop-filter:none!important;
-      -webkit-backdrop-filter:none!important;
-      border-left:1px solid #d8e2ef!important;
-      box-shadow:-4px 0 16px rgba(15,23,42,.10)!important;
-      visibility:visible!important;
-      pointer-events:auto!important;
-      position:fixed!important;
-      right:0!important;
-      z-index:115000!important;
-      transition:transform .22s ease!important;
-      transform:translateX(0)!important;
-    }
-
-    #v86Dock,
-    #v86Dock *{
-      opacity:1;
-    }
-
-    /* СТАН ЗГОРНУТОЇ ПАНЕЛІ — ПРАЦЮЄ І ЗВИЧАЙНО, І У FULLSCREEN */
-    body.v115-right-collapsed #v86Dock{
-      transform:translateX(100%)!important;
-    }
-
-    body.v115-right-collapsed.v86-fullscreen #v86Dock,
-    body.v115-right-collapsed.v56-fullscreen #v86Dock,
-    body.v115-right-collapsed.fullscreen-mode #v86Dock,
-    body.v115-right-collapsed:fullscreen #v86Dock,
-    :fullscreen body.v115-right-collapsed #v86Dock{
-      transform:translateX(100%)!important;
-      right:0!important;
-    }
-
-    /* Прибираємо стару дубльовану кнопку, якщо вона лишилась */
-    #v89RightToggle,
-    #v112RightToggle{
-      display:none!important;
-      visibility:hidden!important;
-      pointer-events:none!important;
-    }
-
-    /* ЄДИНА КНОПКА ЗГОРТАННЯ */
-    #v115RightToggle{
-      position:fixed!important;
-      top:50%!important;
-      transform:translateY(-50%)!important;
-      width:30px!important;
-      height:64px!important;
-      border:1px solid #cbd7e6!important;
-      border-radius:10px 0 0 10px!important;
-      background:#173b78!important;
-      color:#fff!important;
-      display:flex!important;
-      align-items:center!important;
-      justify-content:center!important;
-      cursor:pointer!important;
-      z-index:116500!important;
-      font:700 20px/1 Arial,sans-serif!important;
-      box-shadow:0 4px 14px rgba(0,0,0,.16)!important;
-      transition:right .22s ease!important;
-    }
-
-    body:not(.v115-right-collapsed) #v115RightToggle{
-      right:74px!important;
-    }
-
-    body.v115-right-collapsed #v115RightToggle{
-      right:0!important;
-    }
-
-    /* У fullscreen теж не ховаємо кнопку */
-    :fullscreen #v115RightToggle{
-      display:flex!important;
-      visibility:visible!important;
-      opacity:1!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function removeOldTogglesR(){
-  ["v89RightToggle","v112RightToggle"].forEach(id=>{
-    const el=$R(id);
-    if(el) el.remove();
-  });
-
-  /* Прибираємо тільки явні дублікати-стрілки fixed.
-     Інші кнопки інтерфейсу не чіпаємо. */
-  [...document.querySelectorAll("button")].forEach(b=>{
-    if(b.id==="v115RightToggle") return;
-    const t=(b.textContent||"").trim();
-    if((t==="‹"||t==="›") && /RightToggle|right.*toggle/i.test(b.id||"")){
-      b.remove();
-    }
-  });
-}
-
-function ensureToggleR(){
-  let b=$R("v115RightToggle");
-  if(b) return b;
-
-  b=document.createElement("button");
-  b.id="v115RightToggle";
-  b.type="button";
-  b.title="Згорнути / розгорнути праву панель";
-  b.setAttribute("aria-label","Згорнути або розгорнути праву панель");
-  document.body.appendChild(b);
-
-  b.addEventListener("click",e=>{
-    e.preventDefault();
-    e.stopPropagation();
-
-    const collapsed=document.body.classList.toggle("v115-right-collapsed");
-    b.textContent=collapsed?"‹":"›";
-
-    try{
-      localStorage.setItem("sofiaRightPanelCollapsedV115",collapsed?"1":"0");
-    }catch(_){}
-
-    setTimeout(resizeWorkspaceR,240);
-  });
-
-  return b;
-}
-
-function restoreStateR(){
-  let collapsed=false;
-  try{
-    collapsed=localStorage.getItem("sofiaRightPanelCollapsedV115")==="1";
-  }catch(_){}
-
-  document.body.classList.toggle("v115-right-collapsed",collapsed);
-  const b=ensureToggleR();
-  b.textContent=collapsed?"‹":"›";
-}
-
-function forceDockVisibleR(){
-  const d=dockR();
-  if(!d) return;
-
-  d.style.setProperty("display","flex","important");
-  d.style.setProperty("visibility","visible","important");
-  d.style.setProperty("opacity","1","important");
-  d.style.setProperty("background","#fff","important");
-  d.style.setProperty("background-color","#fff","important");
-}
-
-/* Підлаштовуємо аркуш під видиму/згорнуту праву панель,
-   не переносимо Fabric canvas у DOM. */
-function resizeWorkspaceR(){
-  const nb=$R("notebook");
-  let c=null;
-  try{ c=typeof fcanvas!=="undefined"?fcanvas:null; }catch(_){}
-  if(!nb || !c) return;
-
-  const rect=nb.getBoundingClientRect();
-  const collapsed=document.body.classList.contains("v115-right-collapsed");
-  const reserve=collapsed?0:74;
-  const available=Math.max(600,window.innerWidth-rect.left-reserve);
-
-  try{
-    nb.style.setProperty("width",available+"px","important");
-    nb.style.setProperty("max-width","none","important");
-    c.setWidth(available);
-    c.calcOffset?.();
-    c.requestRenderAll?.();
-  }catch(_){}
-}
-
-function markR(){
-  const b=$R("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v115";
-  document.documentElement.dataset.sofiaVersion="115-clean";
-}
-
-function repairR(){
-  cssR();
-  removeOldTogglesR();
-  ensureToggleR();
-  forceDockVisibleR();
-}
-
-function initR(){
-  repairR();
-  restoreStateR();
-  resizeWorkspaceR();
-  markR();
-
-  /* Деякі елементи V111 створюються трохи пізніше */
-  [350,900,1600].forEach(ms=>setTimeout(()=>{
-    repairR();
-    forceDockVisibleR();
-  },ms));
-}
-
-document.addEventListener("fullscreenchange",()=>{
-  setTimeout(()=>{
-    repairR();
-    forceDockVisibleR();
-    resizeWorkspaceR();
-  },120);
-});
-
-window.addEventListener("resize",()=>setTimeout(resizeWorkspaceR,100));
-
-if(document.readyState==="loading"){
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(initR,180),{once:true});
-}else{
-  setTimeout(initR,180);
-}
-})();
-
 
 
 /* =========================================================
@@ -10280,289 +9753,134 @@ if(document.readyState==="loading"){
 
 
 
+
+
+
+
+
+
+
 /* =========================================================
-   V117 CLEAN — ОДНА КНОПКА ЗГОРТАННЯ ПРАВОЇ ПАНЕЛІ
-   - прибирає старі дублікати;
-   - працює у звичайному і fullscreen;
-   - працює на телефоні;
-   - без MutationObserver / циклів.
+   V119 CLEAN — ОДНА РЕАЛЬНА КНОПКА ЗГОРТАННЯ ПРАВОЇ ПАНЕЛІ
+   Аналіз:
+   - V89 сам відтворював стару білу кнопку через MutationObserver;
+   - V111 у fullscreen примусово ставив transform:none і знімав
+     клас згорнутого стану;
+   - тому нові кнопки не могли реально керувати панеллю.
+   У V119 ці конфліктні блоки прибрані з самого script.js.
    ========================================================= */
 (function(){
 "use strict";
-const $T=id=>document.getElementById(id);
 
-function cssT(){
-  if($T("v117ToggleCss"))return;
+const $119=id=>document.getElementById(id);
+const KEY119="sofiaRightDockCollapsed119";
+
+function host119(){
+  /* fullscreen target у цій програмі — pageViewport */
+  return $119("pageViewport") || document.body;
+}
+function dock119(){
+  return $119("v86Dock");
+}
+
+function css119(){
+  if($119("v119Css"))return;
   const st=document.createElement("style");
-  st.id="v117ToggleCss";
+  st.id="v119Css";
   st.textContent=`
-    /* Усі попередні кнопки згортання приховуємо */
-    #v89RightToggle,#v112RightToggle,#v115RightToggle,
-    .v86-collapse-toggle,.v89-right-toggle,.right-panel-toggle{
-      display:none!important;
-      visibility:hidden!important;
-      pointer-events:none!important;
-    }
-
-    /* Єдина нова кнопка */
-    #v117RightToggle{
-      display:flex!important;
-      visibility:visible!important;
+    /* Права панель завжди непрозора */
+    #v86Dock{
+      background:#fff!important;
+      background-color:#fff!important;
       opacity:1!important;
-      pointer-events:auto!important;
-      position:fixed!important;
-      top:50%!important;
-      transform:translateY(-50%)!important;
-      right:74px!important;
-      width:32px!important;
-      height:64px!important;
-      align-items:center!important;
-      justify-content:center!important;
-      border:1px solid #cbd7e6!important;
-      border-radius:10px 0 0 10px!important;
-      background:#173b78!important;
-      color:#fff!important;
-      box-shadow:0 4px 14px rgba(0,0,0,.16)!important;
-      cursor:pointer!important;
-      z-index:190000!important;
-      font:700 22px/1 Arial,sans-serif!important;
-    }
-
-    body.v117-right-collapsed #v117RightToggle{
-      right:0!important;
-    }
-
-    body.v117-right-collapsed #v86Dock,
-    body.v117-right-collapsed.v86-fullscreen #v86Dock,
-    body.v117-right-collapsed.v56-fullscreen #v86Dock,
-    body.v117-right-collapsed.fullscreen-mode #v86Dock,
-    :fullscreen body.v117-right-collapsed #v86Dock{
-      transform:translateX(100%)!important;
-      pointer-events:none!important;
-    }
-
-    body:not(.v117-right-collapsed) #v86Dock{
+      backdrop-filter:none!important;
+      -webkit-backdrop-filter:none!important;
+      border-left:1px solid #d8e2ef!important;
+      box-shadow:-4px 0 14px rgba(15,23,42,.10)!important;
+      transition:transform .20s ease!important;
       transform:translateX(0)!important;
-      pointer-events:auto!important;
-    }
-
-    :fullscreen #v117RightToggle{
-      display:flex!important;
       visibility:visible!important;
-      opacity:1!important;
-    }
-
-    @media(max-width:768px){
-      #v117RightToggle{right:68px!important;}
-      body.v117-right-collapsed #v117RightToggle{right:0!important;}
-    }
-    @media(max-width:480px){
-      #v117RightToggle{right:64px!important;}
-      body.v117-right-collapsed #v117RightToggle{right:0!important;}
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function removeDuplicatesT(){
-  ["v89RightToggle","v112RightToggle","v115RightToggle"].forEach(id=>{
-    const x=$T(id); if(x)x.remove();
-  });
-
-  /* На скріншоті друга біла кнопка може не мати відомого id.
-     Видаляємо лише вузькі fixed-кнопки зі стрілкою ‹/› біля правого краю. */
-  [...document.querySelectorAll("button")].forEach(b=>{
-    if(b.id==="v117RightToggle")return;
-    const txt=(b.textContent||"").trim();
-    if(txt!=="‹" && txt!=="›")return;
-    const r=b.getBoundingClientRect();
-    const cs=getComputedStyle(b);
-    if(cs.position==="fixed" && r.width<=55 && r.height<=90 &&
-       r.left>window.innerWidth-180){
-      b.remove();
-    }
-  });
-}
-
-function ensureToggleT(){
-  let b=$T("v117RightToggle");
-  if(b)return b;
-  b=document.createElement("button");
-  b.id="v117RightToggle";
-  b.type="button";
-  b.title="Згорнути / розгорнути праву панель";
-  document.body.appendChild(b);
-
-  b.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    const collapsed=document.body.classList.toggle("v117-right-collapsed");
-    b.textContent=collapsed?"‹":"›";
-    try{localStorage.setItem("sofiaRightCollapsed117",collapsed?"1":"0")}catch(_){}
-  };
-  return b;
-}
-
-function restoreT(){
-  let collapsed=false;
-  try{collapsed=localStorage.getItem("sofiaRightCollapsed117")==="1"}catch(_){}
-  document.body.classList.toggle("v117-right-collapsed",collapsed);
-  const b=ensureToggleT();
-  b.textContent=collapsed?"‹":"›";
-}
-
-function repairT(){
-  cssT();
-  removeDuplicatesT();
-  ensureToggleT();
-}
-
-function markT(){
-  const b=$T("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v117";
-  document.documentElement.dataset.sofiaVersion="117-clean-mobile";
-}
-
-function initT(){
-  repairT();
-  restoreT();
-  markT();
-  /* Лише кілька одноразових перевірок, бо старі елементи створюються пізніше */
-  [350,900,1600].forEach(ms=>setTimeout(repairT,ms));
-}
-
-document.addEventListener("fullscreenchange",()=>setTimeout(repairT,100));
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(initT,180),{once:true});
-else setTimeout(initT,180);
-})();
-
-
-
-/* =========================================================
-   V118 CLEAN — FIX FULLSCREEN RIGHT PANEL TOGGLE
-   Причина V117: fullscreen відкриває #pageViewport, а нова кнопка
-   була додана у document.body. У fullscreen браузер показує тільки
-   вміст #pageViewport, тому видно було стару кнопку, а не нову.
-   Рішення:
-   - єдина кнопка живе ВСЕРЕДИНІ #pageViewport;
-   - та сама кнопка працює і звичайно, і fullscreen;
-   - старі стрілки прибираються;
-   - панель реально зсувається за межі viewport.
-   ========================================================= */
-(function(){
-"use strict";
-
-const $F=id=>document.getElementById(id);
-
-function viewportF(){
-  return $F("pageViewport") || document.body;
-}
-function dockF(){
-  return $F("v86Dock");
-}
-
-function addCssF(){
-  if($F("v118FullscreenToggleCss"))return;
-
-  const st=document.createElement("style");
-  st.id="v118FullscreenToggleCss";
-  st.textContent=`
-    /* Старі кнопки гарантовано не показуємо */
-    #v89RightToggle,#v112RightToggle,#v115RightToggle,#v117RightToggle,
-    .v86-collapse-toggle,.v89-right-toggle,.right-panel-toggle{
-      display:none!important;
-      visibility:hidden!important;
-      opacity:0!important;
-      pointer-events:none!important;
-    }
-
-    /* Єдина кнопка — нащадок #pageViewport, тому видима у fullscreen */
-    #v118RightToggle{
-      display:flex!important;
-      visibility:visible!important;
-      opacity:1!important;
       pointer-events:auto!important;
+      z-index:115000!important;
+    }
+
+    /* ЄДИНА кнопка */
+    #v119DockToggle{
       position:fixed!important;
       top:50%!important;
       right:74px!important;
       transform:translateY(-50%)!important;
-      width:32px!important;
+      width:30px!important;
       height:64px!important;
+      display:flex!important;
       align-items:center!important;
       justify-content:center!important;
       border:1px solid #cbd7e6!important;
+      border-right:0!important;
       border-radius:10px 0 0 10px!important;
       background:#173b78!important;
       color:#fff!important;
-      box-shadow:0 4px 14px rgba(0,0,0,.18)!important;
       cursor:pointer!important;
       z-index:2147483000!important;
       font:700 22px/1 Arial,sans-serif!important;
-    }
-
-    /* Права панель */
-    #v86Dock{
-      background:#fff!important;
-      opacity:1!important;
+      box-shadow:0 4px 14px rgba(0,0,0,.16)!important;
       visibility:visible!important;
-      transition:transform .22s ease!important;
-      transform:translateX(0)!important;
-      will-change:transform;
+      opacity:1!important;
+      pointer-events:auto!important;
     }
 
-    /* Згортання — однаково для normal + fullscreen */
-    #pageViewport.v118-right-collapsed #v86Dock{
+    /* Стан згорнуто — клас ставимо НА pageViewport,
+       тобто він працює всередині fullscreen target */
+    #pageViewport.v119-right-collapsed #v86Dock{
       transform:translateX(105%)!important;
       pointer-events:none!important;
     }
-
-    #pageViewport.v118-right-collapsed #v118RightToggle{
+    #pageViewport.v119-right-collapsed #v119DockToggle{
       right:0!important;
     }
 
-    /* Fullscreen target — саме #pageViewport */
-    #pageViewport:fullscreen #v118RightToggle,
-    #pageViewport:-webkit-full-screen #v118RightToggle{
+    /* Те саме у fullscreen — без body-селекторів */
+    #pageViewport:fullscreen.v119-right-collapsed #v86Dock,
+    #pageViewport:-webkit-full-screen.v119-right-collapsed #v86Dock{
+      transform:translateX(105%)!important;
+      pointer-events:none!important;
+    }
+    #pageViewport:fullscreen #v119DockToggle,
+    #pageViewport:-webkit-full-screen #v119DockToggle{
       display:flex!important;
       visibility:visible!important;
       opacity:1!important;
       pointer-events:auto!important;
     }
 
-    #pageViewport:fullscreen.v118-right-collapsed #v86Dock,
-    #pageViewport:-webkit-full-screen.v118-right-collapsed #v86Dock{
-      transform:translateX(105%)!important;
-      pointer-events:none!important;
-    }
-
     @media(max-width:768px){
-      #v118RightToggle{right:68px!important;}
-      #pageViewport.v118-right-collapsed #v118RightToggle{right:0!important;}
+      #v119DockToggle{right:68px!important}
+      #pageViewport.v119-right-collapsed #v119DockToggle{right:0!important}
     }
-
     @media(max-width:480px){
-      #v118RightToggle{right:64px!important;}
-      #pageViewport.v118-right-collapsed #v118RightToggle{right:0!important;}
+      #v119DockToggle{right:64px!important}
+      #pageViewport.v119-right-collapsed #v119DockToggle{right:0!important}
     }
   `;
   document.head.appendChild(st);
 }
 
-function removeOldButtonsF(){
-  ["v89RightToggle","v112RightToggle","v115RightToggle","v117RightToggle"].forEach(id=>{
-    const el=$F(id);
+function removeAllOtherToggles119(){
+  const known=[
+    "v89DockToggle","v89RightToggle","v112RightToggle",
+    "v115RightToggle","v117RightToggle","v118RightToggle"
+  ];
+  known.forEach(id=>{
+    const el=$119(id);
     if(el)el.remove();
   });
 
-  /* Прибираємо невідомі дублікати-стрілки біля правої панелі */
+  /* Прибираємо невідомий дубль тільки якщо це вузька кнопка-стрілка
+     біля правого краю. */
   [...document.querySelectorAll("button")].forEach(b=>{
-    if(b.id==="v118RightToggle")return;
+    if(b.id==="v119DockToggle")return;
     const t=(b.textContent||"").trim();
     if(t!=="‹" && t!=="›")return;
-
     const r=b.getBoundingClientRect();
     if(r.width<=60 && r.height<=100 && r.left>window.innerWidth-220){
       b.remove();
@@ -10570,115 +9888,109 @@ function removeOldButtonsF(){
   });
 }
 
-function ensureToggleF(){
-  const host=viewportF();
-  let b=$F("v118RightToggle");
+function setCollapsed119(collapsed,save=true){
+  const vp=host119();
+  const d=dock119();
+  const b=$119("v119DockToggle");
 
-  if(!b){
-    b=document.createElement("button");
-    b.id="v118RightToggle";
-    b.type="button";
-    b.title="Згорнути / розгорнути праву панель";
-    b.setAttribute("aria-label","Згорнути або розгорнути праву панель");
+  vp.classList.toggle("v119-right-collapsed",collapsed);
+
+  if(b){
+    b.textContent=collapsed?"‹":"›";
+    b.title=collapsed?"Розгорнути праву панель":"Згорнути праву панель";
   }
 
-  /* КРИТИЧНО: кнопка має бути всередині fullscreen-target */
-  if(b.parentElement!==host) host.appendChild(b);
-
-  if(!b.__v118Bound){
-    b.__v118Bound=true;
-    b.addEventListener("click",e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
-      const vp=viewportF();
-      const collapsed=vp.classList.toggle("v118-right-collapsed");
-      b.textContent=collapsed?"‹":"›";
-
-      try{
-        localStorage.setItem("sofiaRightCollapsed118",collapsed?"1":"0");
-      }catch(_){}
-
-      /* Прямий style fallback — на випадок старих !important правил */
-      const dock=dockF();
-      if(dock){
-        dock.style.setProperty(
-          "transform",
-          collapsed?"translateX(105%)":"translateX(0)",
-          "important"
-        );
-        dock.style.setProperty(
-          "pointer-events",
-          collapsed?"none":"auto",
-          "important"
-        );
-      }
-    },true);
-  }
-
-  return b;
-}
-
-function restoreF(){
-  const vp=viewportF();
-  let collapsed=false;
-  try{
-    collapsed=localStorage.getItem("sofiaRightCollapsed118")==="1";
-  }catch(_){}
-
-  vp.classList.toggle("v118-right-collapsed",collapsed);
-
-  const b=ensureToggleF();
-  b.textContent=collapsed?"‹":"›";
-
-  const dock=dockF();
-  if(dock){
-    dock.style.setProperty(
+  /* Прямий fallback на випадок стороннього CSS */
+  if(d){
+    d.style.setProperty(
       "transform",
       collapsed?"translateX(105%)":"translateX(0)",
       "important"
     );
-    dock.style.setProperty(
+    d.style.setProperty(
       "pointer-events",
       collapsed?"none":"auto",
       "important"
     );
   }
+
+  if(collapsed){
+    $119("v86Commands")?.classList.remove("show");
+    $119("v86HelpBox")?.classList.remove("show");
+    $119("v87Help")?.classList.remove("show");
+  }
+
+  if(save){
+    try{localStorage.setItem(KEY119,collapsed?"1":"0")}catch(_){}
+  }
 }
 
-function repairF(){
-  addCssF();
-  removeOldButtonsF();
-  ensureToggleF();
+function ensureToggle119(){
+  const vp=host119();
+  let b=$119("v119DockToggle");
+
+  if(!b){
+    b=document.createElement("button");
+    b.id="v119DockToggle";
+    b.type="button";
+    b.setAttribute("aria-label","Згорнути або розгорнути праву панель");
+    vp.appendChild(b);
+
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      setCollapsed119(!vp.classList.contains("v119-right-collapsed"));
+    },true);
+  }else if(b.parentElement!==vp){
+    vp.appendChild(b);
+  }
+
+  return b;
 }
 
-function markF(){
-  const b=$F("appVersionBadge") ||
+function restore119(){
+  let collapsed=false;
+  try{collapsed=localStorage.getItem(KEY119)==="1"}catch(_){}
+  ensureToggle119();
+  setCollapsed119(collapsed,false);
+}
+
+function repair119(){
+  css119();
+  removeAllOtherToggles119();
+  ensureToggle119();
+}
+
+function mark119(){
+  const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v118";
-  document.documentElement.dataset.sofiaVersion="118-clean-mobile";
+  if(b)b.textContent="v119";
+  document.documentElement.dataset.sofiaVersion="119-clean-mobile";
 }
 
-function initF(){
-  repairF();
-  restoreF();
-  markF();
+function init119(){
+  repair119();
+  restore119();
+  mark119();
 
-  /* старі кнопки можуть створюватися із затримкою */
-  [300,800,1500].forEach(ms=>setTimeout(repairF,ms));
+  /* лише одноразові перевірки після створення DOM, без observer */
+  [350,900,1600].forEach(ms=>setTimeout(repair119,ms));
 }
 
 document.addEventListener("fullscreenchange",()=>{
   setTimeout(()=>{
-    repairF();
-    restoreF();
+    repair119();
+    /* НЕ розгортаємо панель автоматично:
+       зберігаємо поточний стан і у fullscreen */
+    const collapsed=host119().classList.contains("v119-right-collapsed");
+    setCollapsed119(collapsed,false);
   },100);
 });
 
 if(document.readyState==="loading"){
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(initF,180),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init119,180),{once:true});
 }else{
-  setTimeout(initF,180);
+  setTimeout(init119,180);
 }
 })();
