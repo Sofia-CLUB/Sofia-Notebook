@@ -8542,148 +8542,304 @@ else
 
 
 /* =========================================================
-   V111 — ПІД ЧАС НАБОРУ ТЕКСТУ НЕ ПОКАЗУЄМО ПАНЕЛЬ ОБ'ЄКТА
-   + КНОПКА × ДІЙСНО ЗАКРИВАЄ ЇЇ
+   V112 — CLEANUP: ONE CURSOR, ONE HELP, CURSOR TYPES ANYWHERE
    ========================================================= */
 (function(){
 "use strict";
-const $111=id=>document.getElementById(id);
-
-let objectPanelManuallyClosed=false;
-
-function activeTextIsEditing(){
-  try{
-    if(typeof fcanvas==="undefined") return false;
-    const o=fcanvas.getActiveObject?.();
-    return !!(o && ["i-text","textbox","text"].includes(o.type) && o.isEditing);
-  }catch(_){
-    return false;
-  }
-}
-
-function hideObjectPanelsWhileTyping(){
-  if(!activeTextIsEditing()) return;
-
-  ["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"].forEach(id=>{
-    const p=$111(id);
-    if(p) p.classList.remove("show");
-  });
-}
-
-function bindPanelClose(){
-  const pairs=[
-    ["v102ObjClose","v102ObjectPanel"],
-    ["v100ObjClose","v100ObjectPanel"],
-    ["v81ObjClose","v81ObjectPanel"]
-  ];
-
-  pairs.forEach(([btnId,panelId])=>{
-    const b=$111(btnId);
-    const p=$111(panelId);
-    if(!b || !p || b.__v111Bound) return;
-
-    b.__v111Bound=true;
-    b.addEventListener("click",e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      objectPanelManuallyClosed=true;
-      p.classList.remove("show");
-    },true);
-  });
-}
-
-function bindCanvas(){
-  if(typeof fcanvas==="undefined" || fcanvas.__v111TypingBound) return;
-  fcanvas.__v111TypingBound=true;
-
-  fcanvas.on("text:editing:entered",()=>{
-    objectPanelManuallyClosed=true;
-    hideObjectPanelsWhileTyping();
-  });
-
-  fcanvas.on("text:changed",()=>{
-    hideObjectPanelsWhileTyping();
-  });
-
-  fcanvas.on("text:editing:exited",()=>{
-    objectPanelManuallyClosed=false;
-  });
-
-  fcanvas.on("selection:cleared",()=>{
-    objectPanelManuallyClosed=false;
-  });
-
-  /* Панель властивостей показуємо тільки після звичайного виділення,
-     але НЕ під час введення тексту. */
-  ["selection:created","selection:updated","object:modified"].forEach(ev=>{
-    fcanvas.on(ev,()=>{
-      setTimeout(()=>{
-        if(activeTextIsEditing() || objectPanelManuallyClosed){
-          hideObjectPanelsWhileTyping();
-          return;
-        }
-      },0);
-    });
-  });
-}
-
-/* Перехоплюємо старі refresh-функції лише в момент набору:
-   якщо текст редагується — одразу ховаємо панель після їх спроби відкритись. */
-function watchdog(){
-  if(activeTextIsEditing()){
-    hideObjectPanelsWhileTyping();
-  }
-  bindPanelClose();
-  bindCanvas();
-}
+const $112=id=>document.getElementById(id);
 
 function addCss(){
-  if($111("v111Css")) return;
+  if($112("v112Css")) return;
   const st=document.createElement("style");
-  st.id="v111Css";
+  st.id="v112Css";
   st.textContent=`
-    body.v111-typing #v102ObjectPanel,
-    body.v111-typing #v100ObjectPanel,
-    body.v111-typing #v81ObjectPanel{
-      display:none!important;
+    /* only the v112 cursor button is shown */
+    #v104CursorBtn,#v105CursorBtn,#v110CursorBtn{display:none!important}
+    #v112CursorBtn{
+      width:100%;min-height:47px;border:0;border-radius:8px;background:transparent;
+      color:#24354e;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:2px;padding:3px 1px;cursor:pointer;font:600 9px/1.05 Arial,sans-serif;
     }
+    #v112CursorBtn .ico{font-size:18px;line-height:1}
+    #v112CursorBtn.active{background:#173b78!important;color:#fff!important}
+
+    /* only the v112 help is shown */
+    #v86Help,#v100Help,#v102Help,#v110Help,#v100HelpBtn,#v110HelpBtn{display:none!important}
+    #v112HelpBtn{
+      width:100%;min-height:48px;border:0;background:transparent;color:#24354e;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:2px;cursor:pointer;font:600 9px/1.05 Arial,sans-serif;margin-top:auto;
+    }
+    #v112HelpBtn .ico{font-size:18px;line-height:1}
+
+    #v112Help{
+      position:fixed;right:86px;top:78px;z-index:95000;
+      width:min(720px,calc(100vw - 180px));max-height:calc(100vh - 100px);
+      display:none;flex-direction:column;background:#fff;border:1px solid #d6e0ec;
+      border-radius:14px;box-shadow:0 10px 36px rgba(15,23,42,.25);
+      overflow:hidden;font:14px/1.4 Arial,sans-serif;
+    }
+    #v112Help.show{display:flex!important}
+    #v112HelpHead{display:flex;align-items:center;gap:8px;padding:11px 13px;background:#f8fafc;border-bottom:1px solid #e7edf4}
+    #v112HelpClose{margin-left:auto;width:30px;height:30px;border:0;border-radius:7px;background:#eef2f7;cursor:pointer}
+    #v112HelpSearchWrap{padding:10px 13px;border-bottom:1px solid #edf1f5}
+    #v112HelpSearch{width:100%;height:36px;border:1px solid #bfcddd;border-radius:8px;padding:5px 11px;font-size:14px;box-sizing:border-box}
+    #v112HelpResults{overflow:auto;padding:8px 13px 15px}
+    .v112Sec{font-weight:700;color:#173b78;margin:10px 0 4px}
+    .v112Item{padding:7px 3px;border-bottom:1px solid #eef2f7}
+    .v112Item b{display:block}
+
+    body.v112-cursor-mode .upper-canvas,
+    body.v112-cursor-mode canvas{cursor:text!important}
   `;
   document.head.appendChild(st);
 }
 
-function typingStateLoop(){
-  const typing=activeTextIsEditing();
-  document.body.classList.toggle("v111-typing",typing);
-  if(typing) hideObjectPanelsWhileTyping();
-  requestAnimationFrame(typingStateLoop);
+function leftHost(){
+  return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+         document.querySelector(".side-tool[data-tool]")?.parentElement;
+}
+function rightHost(){ return $112("v86Dock"); }
+
+function cleanupDuplicateCursorButtons(){
+  ["v104CursorBtn","v105CursorBtn","v110CursorBtn"].forEach(id=>{
+    const el=$112(id); if(el) el.remove();
+  });
+  // remove accidental duplicates with same label "Курсор"
+  const host=leftHost();
+  if(host){
+    [...host.querySelectorAll("button")].forEach(b=>{
+      if(b.id==="v112CursorBtn") return;
+      if((b.textContent||"").trim()==="Курсор") b.remove();
+    });
+  }
+}
+
+function ensureCursorBtn(){
+  const host=leftHost(); if(!host) return;
+  cleanupDuplicateCursorButtons();
+  let b=$112("v112CursorBtn");
+  if(!b){
+    b=document.createElement("button");
+    b.id="v112CursorBtn"; b.type="button";
+    b.innerHTML='<span class="ico">⌶</span><span>Курсор</span>';
+    b.title="Курсор — поставити місце для тексту";
+    b.onclick=e=>{e.preventDefault();e.stopPropagation();activateCursor();};
+    host.insertBefore(b,host.firstChild);
+  }
+}
+
+function clearToolVisuals(){
+  document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+    b.classList.remove("active","selected","v96-hand-active","v99-hand-active");
+  });
+}
+function activateCursor(){
+  document.body.classList.add("v112-cursor-mode");
+  document.body.classList.remove("v96-hand-mode","v99-hand-mode","v96-dragging","v99-dragging");
+  clearToolVisuals();
+  $112("v112CursorBtn")?.classList.add("active");
+  try{
+    if(typeof fcanvas!=="undefined"){
+      fcanvas.isDrawingMode=false;
+      fcanvas.selection=false;
+      fcanvas.discardActiveObject?.();
+      fcanvas.defaultCursor="text";
+      fcanvas.hoverCursor="text";
+      fcanvas.requestRenderAll?.();
+    }
+  }catch(_){}
+}
+function deactivateCursor(){
+  document.body.classList.remove("v112-cursor-mode");
+  $112("v112CursorBtn")?.classList.remove("active");
+}
+
+function canvasTarget(){
+  return document.querySelector(".upper-canvas") || document.querySelector("canvas.upper-canvas") || document.querySelector("canvas");
+}
+
+/* One capture handler. It stops older cursor handlers from also firing.
+   A click anywhere inside the working canvas creates ONE editable IText at that exact point. */
+function bindExactTyping(){
+  if(document.__v112CursorBound) return;
+  document.__v112CursorBound=true;
+
+  document.addEventListener("pointerdown",e=>{
+    if(!document.body.classList.contains("v112-cursor-mode")) return;
+    if(e.button!==0) return;
+
+    const c=canvasTarget(); if(!c) return;
+    const r=c.getBoundingClientRect();
+    if(e.clientX<r.left || e.clientX>r.right || e.clientY<r.top || e.clientY>r.bottom) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    let x=e.clientX-r.left, y=e.clientY-r.top;
+    try{
+      if(typeof fcanvas!=="undefined"){
+        const p=fcanvas.getPointer(e);
+        x=p.x; y=p.y;
+      }
+    }catch(_){}
+
+    window.sofiaInsertPoint={x,y,active:true,setAt:Date.now()};
+
+    try{
+      // if we are already editing an empty cursor text, move it instead of creating a second one
+      const current=fcanvas.getActiveObject?.();
+      if(current && current.sofiaV112CursorText && current.isEditing && !(current.text||"")){
+        current.set({left:x,top:y});
+        current.setCoords?.();
+        fcanvas.requestRenderAll?.();
+        current.enterEditing?.();
+        return;
+      }
+
+      const t=new fabric.IText("",{
+        left:x,top:y,originX:"left",originY:"top",
+        fontFamily:"Segoe Script",fontSize:26,fill:"#4a7fbd",
+        editable:true,selectable:true,evented:true
+      });
+      t.sofiaV112CursorText=true;
+      fcanvas.add(t);
+      fcanvas.setActiveObject(t);
+      t.enterEditing();
+      if("selectionStart" in t){t.selectionStart=0;t.selectionEnd=0;}
+      fcanvas.requestRenderAll();
+
+      // hide object-property panels while actively typing
+      ["v102ObjectPanel","v100ObjectPanel","v81ObjectPanel"].forEach(id=>$112(id)?.classList.remove("show"));
+
+      t.on("editing:exited",()=>{
+        if(!(t.text||"").trim()){
+          fcanvas.remove(t);
+          fcanvas.requestRenderAll();
+        }
+        try{autoSave()}catch(_){}
+      });
+    }catch(err){
+      console.error("V112 cursor error",err);
+    }
+  },true);
+}
+
+/* Other tools turn cursor mode off */
+function bindToolExit(){
+  if(document.__v112ToolExit) return;
+  document.__v112ToolExit=true;
+  document.addEventListener("click",e=>{
+    const b=e.target.closest?.(".side-tool[data-tool]");
+    if(!b) return;
+    deactivateCursor();
+  },true);
+}
+
+/* One help system */
+const HELP=[
+["Вкладки","Основне","Основні команди: текст, збереження, скасування/повтор, видалення."],
+["Вкладки","Вставка","Нотатка, таблиця, зображення, відео, посилання, файли."],
+["Вкладки","Малювання","Колір, товщина, стиль лінії, фігури та групування."],
+["Вкладки","Математика","Графіки, координатна площина, числова пряма та геометричні інструменти."],
+["Вкладки","Вчитель","Колесо, картки, тести, списки, перекладач, таймер, UA-розбір."],
+["Вкладки","AI","AI-чат і AI-зображення."],
+["Ліва панель","Курсор","Клацніть у будь-якій точці аркуша — там одразу можна друкувати."],
+["Ліва панель","Рука","Вибір і переміщення об'єктів."],
+["Ліва панель","Ручка","Вільне малювання."],
+["Ліва панель","Маркер","Малювання маркером."],
+["Ліва панель","Стирачка","Стирання намальованих елементів."],
+["Сторінки","+ Нова сторінка","Створює нову чисту сторінку."],
+["Сторінки","Сторінка 1 / 2 / …","Перемикання сторінок; олівець — перейменування."],
+["Сторінки","Очистити сторінку","Очищує поточну сторінку."],
+["Сторінки","Видалити сторінку","Видаляє поточну сторінку."],
+["Об'єкти","Виділення","Відкриває властивості: колір, заливка, товщина, шрифт, прозорість."],
+["Параметри","Клас / Предмет / Дата","Параметри поточної роботи."],
+["Параметри","Лінійка / Клітинка","Тип фону сторінки."]
+];
+function makeHelp(){
+  let h=$112("v112Help"); if(h) return h;
+  h=document.createElement("div"); h.id="v112Help";
+  h.innerHTML=`<div id="v112HelpHead"><strong>Довідка Sofia Notebook</strong><button id="v112HelpClose">×</button></div>
+  <div id="v112HelpSearchWrap"><input id="v112HelpSearch" type="search" placeholder="Пошук: курсор, сторінка, математика, AI…"></div>
+  <div id="v112HelpResults"></div>`;
+  document.body.appendChild(h);
+  $112("v112HelpClose").onclick=()=>h.classList.remove("show");
+  $112("v112HelpSearch").addEventListener("input",renderHelp);
+  renderHelp();
+  return h;
+}
+function renderHelp(){
+  const out=$112("v112HelpResults"); if(!out) return;
+  const q=($112("v112HelpSearch")?.value||"").trim().toLowerCase();
+  const rows=HELP.filter(([s,n,d])=>!q || (s+" "+n+" "+d).toLowerCase().includes(q));
+  let last="";
+  out.innerHTML=rows.length?rows.map(([sec,n,d])=>{
+    const sh=sec!==last?`<div class="v112Sec">${sec}</div>`:""; last=sec;
+    return `${sh}<div class="v112Item"><b>${n}</b><span>${d}</span></div>`;
+  }).join(""):`<div style="padding:24px;text-align:center;color:#6b7280">Нічого не знайдено</div>`;
+}
+function cleanupHelp(){
+  ["v86Help","v100Help","v102Help","v110Help","v100HelpBtn","v110HelpBtn"].forEach(id=>{
+    const el=$112(id); if(el) el.remove();
+  });
+  const host=rightHost();
+  if(host){
+    [...host.querySelectorAll("button")].forEach(b=>{
+      if(b.id==="v112HelpBtn") return;
+      if((b.textContent||"").includes("Довідка")) b.remove();
+    });
+  }
+}
+function ensureHelpBtn(){
+  const host=rightHost(); if(!host) return;
+  cleanupHelp();
+  let b=$112("v112HelpBtn");
+  if(!b){
+    b=document.createElement("button"); b.id="v112HelpBtn"; b.type="button";
+    b.innerHTML='<span class="ico">?</span><span>Довідка</span>';
+    b.onclick=e=>{e.preventDefault();e.stopPropagation();const h=makeHelp();h.classList.add("show");const s=$112("v112HelpSearch");if(s){s.value="";renderHelp();setTimeout(()=>s.focus(),20)}};
+    host.appendChild(b);
+  }
 }
 
 function mark(){
-  const b=$111("appVersionBadge") ||
+  const b=$112("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v111";
-  document.documentElement.dataset.sofiaVersion="111";
+  if(b)b.textContent="v112";
+  document.documentElement.dataset.sofiaVersion="112";
+}
+
+function repair(){
+  ensureCursorBtn();
+  ensureHelpBtn();
+  // keep page controls from V110 visible
+  try{ if(typeof repairPages==="function") repairPages(); }catch(_){}
 }
 
 function init(){
   addCss();
-  bindCanvas();
-  bindPanelClose();
-  typingStateLoop();
+  cleanupDuplicateCursorButtons();
+  cleanupHelp();
+  ensureCursorBtn();
+  ensureHelpBtn();
+  makeHelp();
+  bindExactTyping();
+  bindToolExit();
+  activateCursor();
   mark();
 
   const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v111);
-    mo.__v111=setTimeout(watchdog,80);
+    clearTimeout(mo.__v112);
+    mo.__v112=setTimeout(repair,120);
   });
   mo.observe(document.body,{childList:true,subtree:true});
 
-  [300,900,1600].forEach(ms=>setTimeout(watchdog,ms));
+  [350,900,1700].forEach(ms=>setTimeout(repair,ms));
 }
-
 if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
 else
-  setTimeout(init,160);
+  setTimeout(init,180);
 })();
