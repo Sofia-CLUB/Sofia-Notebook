@@ -7322,3 +7322,202 @@ if(document.readyState==="loading")
 else
   setTimeout(init,160);
 })();
+
+
+
+/* =========================================================
+   V101 — ПРОЗОРА ПАНЕЛЬ СТОРІНОК + АКТИВНА ДОВІДКА + ЗАЛИВКА
+   ========================================================= */
+(function(){
+"use strict";
+const $101=id=>document.getElementById(id);
+
+/* ---------- CSS ---------- */
+function addCss(){
+  if($101("v101Css")) return;
+  const st=document.createElement("style");
+  st.id="v101Css";
+  st.textContent=`
+    /* Нижня панель сторінок — прозора */
+    #v99PageDock,
+    #v96PageDock,
+    #v92PageDock,
+    #v88PageDock,
+    #v90PageDock,
+    #v91PageDock,
+    #v100PageDock{
+      background:transparent!important;
+      border-top:0!important;
+      box-shadow:none!important;
+      backdrop-filter:none!important;
+    }
+
+    /* Кнопки залишаємо читабельними */
+    #v99PageDock button,
+    #v96PageDock button,
+    #v92PageDock button{
+      background:rgba(255,255,255,.94)!important;
+    }
+
+    /* Довідка завжди клікабельна */
+    #v100Help{
+      pointer-events:auto!important;
+      z-index:90000!important;
+    }
+    #v100Help *{
+      pointer-events:auto!important;
+    }
+    #v86Help{
+      pointer-events:auto!important;
+      position:relative!important;
+      z-index:91000!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+/* ---------- HELP FIX ---------- */
+function helpButton(){
+  return $101("v86Help") ||
+    [...document.querySelectorAll("button")].find(b=>/Довідка/i.test((b.textContent||"").trim()));
+}
+
+function openHelp(){
+  if(typeof makeHelp==="function"){
+    const h=makeHelp();
+    if(typeof renderHelp==="function") renderHelp();
+    h.classList.add("show");
+    const inp=$101("v100HelpSearch");
+    if(inp){
+      inp.value="";
+      if(typeof renderHelp==="function") renderHelp();
+      setTimeout(()=>inp.focus(),20);
+    }
+  }else{
+    const h=$101("v100Help");
+    if(h) h.classList.add("show");
+  }
+}
+
+function bindHelpHard(){
+  const b=helpButton();
+  if(!b) return;
+
+  // overwrite old conflicting handlers
+  b.onclick=null;
+  if(b.__v101HelpBound) return;
+  b.__v101HelpBound=true;
+
+  b.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    openHelp();
+  },true);
+}
+
+/* ---------- OBJECT FILL FIX ---------- */
+function fc101(){ return (typeof fcanvas!=="undefined") ? fcanvas : null; }
+function obj101(){ return fc101()?.getActiveObject?.() || null; }
+
+function descendants(o){
+  if(!o) return [];
+  const type=(o.type||"").toLowerCase();
+  if((type==="group" || type==="activeselection") && Array.isArray(o._objects)){
+    return o._objects.flatMap(x=>[x,...descendants(x)]);
+  }
+  return [];
+}
+
+function closedShape(o){
+  const t=(o?.type||"").toLowerCase();
+  return ["rect","circle","ellipse","triangle","polygon","textbox","i-text","text"].includes(t);
+}
+
+function applyRecursive(prop,value){
+  const o=obj101();
+  if(!o) return;
+
+  const targets=[o,...descendants(o)];
+  targets.forEach(t=>{
+    if(prop==="fill"){
+      if(closedShape(t) || (t.type==="path" && t.path && /z/i.test(JSON.stringify(t.path)))){
+        t.set({fill:value});
+      }
+    }else{
+      t.set({[prop]:value});
+    }
+    t.dirty=true;
+    t.setCoords?.();
+  });
+
+  o.dirty=true;
+  fc101()?.requestRenderAll?.();
+  try{autoSave()}catch(_){}
+}
+
+/* Replace only the fill control behavior from V100. */
+function bindFill(){
+  const fill=$101("v100Fill");
+  if(!fill) return;
+  fill.oninput=e=>{
+    applyRecursive("fill",e.target.value);
+  };
+
+  const stroke=$101("v100Stroke");
+  if(stroke){
+    stroke.oninput=e=>applyRecursive("stroke",e.target.value);
+  }
+}
+
+/* For grouped objects / activeSelection show the same panel and support fill recursively. */
+function bindSelectionRefresh(){
+  const c=fc101();
+  if(!c || c.__v101SelectionBound) return;
+  c.__v101SelectionBound=true;
+  ["selection:created","selection:updated","object:modified"].forEach(ev=>{
+    c.on(ev,()=>{
+      try{refreshObjectPanel()}catch(_){}
+      setTimeout(bindFill,0);
+    });
+  });
+}
+
+function markVersion(){
+  let b=$101("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b)b.textContent="v101";
+  document.documentElement.dataset.sofiaVersion="101";
+}
+
+function init(){
+  addCss();
+  bindHelpHard();
+  bindFill();
+  bindSelectionRefresh();
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v101);
+    mo.__v101=setTimeout(()=>{
+      bindHelpHard();
+      bindFill();
+      bindSelectionRefresh();
+    },80);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,900,1600].forEach(ms=>setTimeout(()=>{
+    bindHelpHard();
+    bindFill();
+    bindSelectionRefresh();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
+})();
