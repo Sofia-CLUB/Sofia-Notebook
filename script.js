@@ -7317,583 +7317,101 @@ else
   setTimeout(init,160);
 })();
 
-
-
 /* =========================================================
-   V115 — HARD FIX: прибираємо великий сірий проміжок
-   і виносимо старі налаштування інструмента у плаваюче вікно
+   V118 — STABLE WORKSPACE RESET
+   Removes the V115–V117 layout overrides that broke the Fabric canvas.
+   Keeps the working V114 core and applies only safe visual fixes.
    ========================================================= */
 (function(){
 "use strict";
-const $115=id=>document.getElementById(id);
-
-function addCss(){
-  if($115("v115Css")) return;
+const $=id=>document.getElementById(id);
+function css(){
+  if($("v118Css")) return;
   const st=document.createElement("style");
-  st.id="v115Css";
+  st.id="v118Css";
   st.textContent=`
-    :root{
-      --v115-top: 178px;
-      --v115-left: 88px;
-      --v115-right: 78px;
-    }
+    /* Keep canvas/Fabric in its native DOM flow — never reparent/fix its host. */
+    .canvas-container{margin-top:0!important}
 
-    /* Панелі зліва/справа починаються одразу під рядком Клас/Предмет */
+    /* Fixed side rails, visually light. */
     .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
-      top:var(--v115-top)!important;
-      position:fixed!important;
-      left:0!important;
-      bottom:0!important;
+      position:fixed!important;left:0!important;z-index:76000!important;
+      background:rgba(255,255,255,.94)!important;
     }
     #v86Dock{
-      top:var(--v115-top)!important;
-      position:fixed!important;
-      right:0!important;
-      bottom:0!important;
+      position:fixed!important;right:0!important;left:auto!important;z-index:76000!important;
+      background:rgba(255,255,255,.78)!important;box-shadow:none!important;
     }
 
-    /* Старий блок Колір/Товщина/Стиль не займає місце у документі */
-    .v115-tool-float{
-      position:fixed!important;
-      left:94px!important;
-      top:calc(var(--v115-top) + 6px)!important;
-      width:260px!important;
-      max-width:260px!important;
-      max-height:230px!important;
-      overflow:auto!important;
-      z-index:81000!important;
-      margin:0!important;
-      padding:6px!important;
-      background:#fff!important;
-      border:1px solid #d7e1ed!important;
-      border-radius:10px!important;
-      box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
-      box-sizing:border-box!important;
+    /* Context settings float over the sheet and never create document height. */
+    #v68ToolPanel,#v66TextPanel,.tool-settings-panel,.context-tool-panel,
+    .drawing-settings-panel,.v114-floating-tools{
+      position:fixed!important;left:100px!important;z-index:81000!important;
+      width:310px!important;max-width:calc(100vw - 210px)!important;
+      max-height:260px!important;overflow:auto!important;margin:0!important;
+      background:rgba(255,255,255,.97)!important;border:1px solid #d7e1ed!important;
+      border-radius:10px!important;box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
     }
 
-    /* Робоче поле не має верхнього відступу */
-    .v115-work-host{
-      margin-top:0!important;
-      padding-top:0!important;
-    }
-
-    /* Один підпис */
-    #v102Signature,#v100Signature,#v109Signature{display:none!important}
-  `;
-  document.head.appendChild(st);
-}
-
-function metadataBottom(){
-  let bottom=0;
-  [...document.querySelectorAll("select,input")].forEach(el=>{
-    const r=el.getBoundingClientRect();
-    if(r.top>=0 && r.top<230 && r.bottom>bottom) bottom=r.bottom;
-  });
-  return Math.round((bottom||174)+4);
-}
-
-function findCanvas(){
-  return document.querySelector(".upper-canvas") ||
-         document.querySelector("canvas.upper-canvas") ||
-         document.querySelector("canvas");
-}
-
-function findWorkHost(){
-  const canvas=findCanvas();
-  if(!canvas) return null;
-
-  let el=canvas.parentElement;
-  let best=el;
-  for(let i=0;i<6 && el;i++,el=el.parentElement){
-    const r=el.getBoundingClientRect();
-    if(r.width>innerWidth*.65 && r.height>300){
-      best=el;
-      if(r.width>innerWidth*.85) break;
-    }
-  }
-  return best;
-}
-
-function floatLegacyToolBlock(){
-  const top=metadataBottom();
-
-  [...document.querySelectorAll("div,section")].forEach(el=>{
-    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock")) return;
-    if(el.classList.contains("v115-tool-float")) return;
-
-    const txt=(el.innerText||"").replace(/\s+/g," ").trim();
-    const r=el.getBoundingClientRect();
-
-    const looksLikeLegacy =
-      /Колір/.test(txt) &&
-      (/Товщина/.test(txt) || /Суцільна|Штрихова|Крапкова/.test(txt));
-
-    if(looksLikeLegacy && r.top>=top-20 && r.top<top+250 && r.width<450 && r.height<320){
-      el.classList.add("v115-tool-float");
-    }
-  });
-}
-
-function pullWorkspaceUp(){
-  const top=metadataBottom();
-  document.documentElement.style.setProperty("--v115-top",top+"px");
-
-  const host=findWorkHost();
-  if(!host) return;
-
-  host.classList.add("v115-work-host");
-
-  const r=host.getBoundingClientRect();
-  const desired=top+4;
-
-  if(r.top>desired+10){
-    const shift=r.top-desired;
-    host.style.setProperty("margin-top",(-shift)+"px","important");
-  }
-}
-
-function collapseEmptySpacers(){
-  const top=metadataBottom();
-  [...document.querySelectorAll("div,section,main")].forEach(el=>{
-    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock")) return;
-    if(el.classList.contains("v115-tool-float")) return;
-
-    const r=el.getBoundingClientRect();
-    const txt=(el.textContent||"").trim();
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-
-    if(
-      r.width>innerWidth*.7 &&
-      r.height>=20 && r.height<=320 &&
-      r.top>=top-4 && r.top<=top+330 &&
-      !txt && controls===0
-    ){
-      el.style.setProperty("height","0","important");
-      el.style.setProperty("min-height","0","important");
-      el.style.setProperty("max-height","0","important");
-      el.style.setProperty("margin","0","important");
-      el.style.setProperty("padding","0","important");
-      el.style.setProperty("border","0","important");
-      el.style.setProperty("overflow","hidden","important");
-    }
-  });
-}
-
-function oneSignature(){
-  const text="Sofia Notebook © Parasochka";
-  const nodes=[...document.querySelectorAll("body *")].filter(el=>(el.textContent||"").trim()===text);
-  let keep=document.getElementById("sofiaAuthorSignature") || nodes[0];
-  if(!keep){
-    keep=document.createElement("div");
-    keep.id="sofiaAuthorSignature";
-    keep.textContent=text;
-    document.body.appendChild(keep);
-  }
-  nodes.forEach(el=>{ if(el!==keep) el.remove(); });
-}
-
-function repair(){
-  floatLegacyToolBlock();
-  collapseEmptySpacers();
-  pullWorkspaceUp();
-  oneSignature();
-}
-
-function mark(){
-  const b=$115("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v115";
-  document.documentElement.dataset.sofiaVersion="115";
-}
-
-function init(){
-  addCss();
-  repair();
-  mark();
-
-  window.addEventListener("resize",()=>setTimeout(repair,80));
-  document.addEventListener("fullscreenchange",()=>setTimeout(repair,100));
-  document.addEventListener("webkitfullscreenchange",()=>setTimeout(repair,100));
-
-  [250,700,1400].forEach(ms=>setTimeout(repair,ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
-else
-  setTimeout(init,160);
-})();
-
-
-
-/* =========================================================
-   V116 — WORKSPACE REPAIR
-   Fixes the giant grey area and the loose Color/Thickness/Style block.
-   ========================================================= */
-(function(){
-"use strict";
-
-function addCss(){
-  if(document.getElementById("v116Css")) return;
-  const st=document.createElement("style");
-  st.id="v116Css";
-  st.textContent=`
-    :root{
-      --v116-top: 178px;
-      --v116-left: 88px;
-      --v116-right: 78px;
-    }
-
-    /* side rails stay fixed */
-    .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
-      position:fixed!important;
-      left:0!important;
-      top:var(--v116-top)!important;
-      bottom:0!important;
-      width:var(--v116-left)!important;
-      z-index:76000!important;
-    }
-    #v86Dock{
-      position:fixed!important;
-      right:0!important;
-      left:auto!important;
-      top:var(--v116-top)!important;
-      bottom:0!important;
-      width:var(--v116-right)!important;
-      z-index:76000!important;
-      background:transparent!important;
-      border:0!important;
-      box-shadow:none!important;
-    }
-
-    /* this is the only allowed floating contextual tools panel */
-    #v116ToolFloat{
-      position:fixed!important;
-      left:94px!important;
-      top:calc(var(--v116-top) + 6px)!important;
-      z-index:81500!important;
-      width:270px!important;
-      max-height:230px!important;
-      overflow:auto!important;
-      margin:0!important;
-      padding:8px!important;
-      background:#fff!important;
-      border:1px solid #d7e1ed!important;
-      border-radius:10px!important;
-      box-shadow:0 7px 24px rgba(15,23,42,.18)!important;
-      box-sizing:border-box!important;
-    }
-
-    /* workspace occupies available height immediately below metadata */
-    #v116WorkspaceHost{
-      position:fixed!important;
-      left:var(--v116-left)!important;
-      right:var(--v116-right)!important;
-      top:var(--v116-top)!important;
-      bottom:54px!important;
-      margin:0!important;
-      padding:0!important;
-      overflow:auto!important;
-      background:transparent!important;
-      z-index:100!important;
-      box-sizing:border-box!important;
-    }
-
-    #v116WorkspaceHost canvas{
-      max-width:none!important;
-    }
-
-    /* bottom page dock */
+    /* Bottom pages bar. */
     #v99PageDock{
-      position:fixed!important;
-      left:var(--v116-left)!important;
-      right:var(--v116-right)!important;
-      bottom:0!important;
-      top:auto!important;
-      z-index:79500!important;
-      background:transparent!important;
-      border:0!important;
-      box-shadow:none!important;
+      position:fixed!important;left:88px!important;right:78px!important;bottom:0!important;
+      top:auto!important;z-index:79500!important;background:rgba(255,255,255,.88)!important;
+      border:0!important;box-shadow:none!important;
     }
+    #addPageBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;
+      align-items:center!important;justify-content:center!important;min-width:170px!important;
+      white-space:nowrap!important}
 
-    /* one signature */
+    /* One author signature, at footer/help level. */
+    #sofiaAuthorSignature{position:fixed!important;right:92px!important;bottom:7px!important;
+      z-index:79600!important;background:transparent!important;pointer-events:none!important;
+      white-space:nowrap!important;margin:0!important}
     #v102Signature,#v100Signature,#v109Signature{display:none!important}
   `;
   document.head.appendChild(st);
 }
-
-function metadataBottom(){
-  let bottom=0;
-  [...document.querySelectorAll("select,input")].forEach(el=>{
+function topY(){
+  let b=0;
+  document.querySelectorAll('input,select').forEach(el=>{
     const r=el.getBoundingClientRect();
-    if(r.top>=0 && r.top<230 && r.bottom>bottom) bottom=r.bottom;
+    if(r.top>=0&&r.top<220) b=Math.max(b,r.bottom);
   });
-  return Math.round((bottom || 174) + 4);
+  return Math.round((b||158)+4);
 }
-
-function canvasEl(){
-  return document.querySelector(".upper-canvas") ||
-         document.querySelector("canvas.upper-canvas") ||
-         document.querySelector("canvas");
-}
-
-function findWorkspaceHost(){
-  const c=canvasEl();
-  if(!c) return null;
-
-  let el=c.parentElement;
-  let best=el;
-  for(let i=0;i<7 && el;i++,el=el.parentElement){
-    const r=el.getBoundingClientRect();
-    if(r.width>window.innerWidth*.65 && r.height>250){
-      best=el;
-      if(r.width>window.innerWidth*.82) break;
-    }
-  }
-  return best;
-}
-
-function installWorkspaceHost(){
-  const top=metadataBottom();
-  document.documentElement.style.setProperty("--v116-top", top+"px");
-
-  const host=findWorkspaceHost();
-  if(!host) return;
-
-  host.id="v116WorkspaceHost";
-
-  host.style.setProperty("position","fixed","important");
-  host.style.setProperty("left","88px","important");
-  host.style.setProperty("right","78px","important");
-  host.style.setProperty("top",top+"px","important");
-  host.style.setProperty("bottom","54px","important");
-  host.style.setProperty("margin","0","important");
-  host.style.setProperty("padding","0","important");
-  host.style.setProperty("overflow","auto","important");
-}
-
-function moveLooseToolControls(){
-  let float=document.getElementById("v116ToolFloat");
-
-  const candidates=[...document.querySelectorAll("div,section")].filter(el=>{
-    if(el.id==="v116ToolFloat") return false;
-    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock,#v116WorkspaceHost")) return false;
-
-    const txt=(el.innerText||"").replace(/\s+/g," ").trim();
-    return /Колір/.test(txt) &&
-           (/Товщина/.test(txt) || /Суцільна|Штрихова|Крапкова/.test(txt));
+function align(){
+  const y=topY();
+  document.querySelectorAll('.side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock').forEach(el=>{
+    el.style.setProperty('top',y+'px','important');
+    el.style.setProperty('bottom','0','important');
   });
-
-  if(!candidates.length) return;
-
-  // choose the smallest matching block, which is usually the contextual controls block
-  candidates.sort((a,b)=>a.getBoundingClientRect().height-b.getBoundingClientRect().height);
-  const block=candidates[0];
-
-  if(!float){
-    float=document.createElement("div");
-    float.id="v116ToolFloat";
-    document.body.appendChild(float);
-  }
-
-  // move children, not clone them, preserving button handlers
-  while(block.firstChild){
-    float.appendChild(block.firstChild);
-  }
-
-  block.style.setProperty("display","none","important");
-  block.style.setProperty("height","0","important");
-  block.style.setProperty("min-height","0","important");
-  block.style.setProperty("margin","0","important");
-  block.style.setProperty("padding","0","important");
-}
-
-function collapseGreyGap(){
-  const top=metadataBottom();
-
-  [...document.querySelectorAll("div,section,main")].forEach(el=>{
-    if(el.id==="v116WorkspaceHost" || el.id==="v116ToolFloat") return;
-    if(el.closest(".side-tools,.left-toolbar,.left-tools,.tool-sidebar,#v86Dock,#v99PageDock")) return;
-
-    const r=el.getBoundingClientRect();
-    const txt=(el.textContent||"").trim();
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-
-    if(
-      r.width>window.innerWidth*.70 &&
-      r.height>=30 && r.height<=500 &&
-      r.top>=top-5 && r.top<=top+500 &&
-      !txt && controls===0
-    ){
-      el.style.setProperty("display","none","important");
-      el.style.setProperty("height","0","important");
-      el.style.setProperty("min-height","0","important");
-      el.style.setProperty("margin","0","important");
-      el.style.setProperty("padding","0","important");
-    }
+  document.querySelectorAll('#v68ToolPanel,#v66TextPanel,.tool-settings-panel,.context-tool-panel,.drawing-settings-panel,.v114-floating-tools').forEach(el=>{
+    el.style.setProperty('top',(y+6)+'px','important');
   });
 }
-
-function removeDuplicateSignature(){
-  const text="Sofia Notebook © Parasochka";
-  const nodes=[...document.querySelectorAll("body *")].filter(el=>(el.textContent||"").trim()===text);
-  let keep=document.getElementById("sofiaAuthorSignature") || nodes[0] || null;
-  if(!keep){
-    keep=document.createElement("div");
-    keep.id="sofiaAuthorSignature";
-    keep.textContent=text;
-    document.body.appendChild(keep);
-  }
-  nodes.forEach(el=>{ if(el!==keep) el.remove(); });
+function labelNewPage(){
+  const b=$("addPageBtn");
+  if(b){b.textContent='+ Нова сторінка';b.title='Створити нову сторінку';}
 }
-
-function repair(){
-  moveLooseToolControls();
-  collapseGreyGap();
-  installWorkspaceHost();
-  removeDuplicateSignature();
+function signature(){
+  const text='Sofia Notebook © Parasochka';
+  const matches=[...document.querySelectorAll('body *')].filter(el=>(el.textContent||'').trim()===text);
+  let keep=$("sofiaAuthorSignature")||matches[0];
+  if(!keep){keep=document.createElement('div');keep.id='sofiaAuthorSignature';document.body.appendChild(keep);}
+  keep.textContent=text;
+  matches.forEach(el=>{if(el!==keep)el.remove();});
 }
-
 function mark(){
-  const b=document.getElementById("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v116";
-  document.documentElement.dataset.sofiaVersion="116";
+  const b=$("appVersionBadge")||[...document.querySelectorAll('span,small,b')].find(x=>/^v\d+$/i.test((x.textContent||'').trim()));
+  if(b)b.textContent='v118';
+  document.documentElement.dataset.sofiaVersion='118';
 }
-
-function init(){
-  addCss();
-  repair();
-  mark();
-
-  window.addEventListener("resize",()=>setTimeout(repair,80));
-  document.addEventListener("fullscreenchange",()=>setTimeout(repair,100));
-  document.addEventListener("webkitfullscreenchange",()=>setTimeout(repair,100));
-
+function repair(){align();labelNewPage();signature();}
+function init(){css();repair();mark();
+  window.addEventListener('resize',()=>setTimeout(repair,80));
+  document.addEventListener('fullscreenchange',()=>setTimeout(repair,100));
   [250,700,1400].forEach(ms=>setTimeout(repair,ms));
 }
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
-else
-  setTimeout(init,160);
-})();
-
-
-
-/* =========================================================
-   V117 — ПІДПИС КНОПКИ «+ НОВА СТОРІНКА» + ПІДПИС PARASOCHKA НИЖЧЕ
-   ========================================================= */
-(function(){
-"use strict";
-const $117=id=>document.getElementById(id);
-
-function addCss(){
-  if($117("v117Css")) return;
-  const st=document.createElement("style");
-  st.id="v117Css";
-  st.textContent=`
-    #addPageBtn{
-      display:inline-flex!important;
-      align-items:center!important;
-      justify-content:center!important;
-      min-width:150px!important;
-      height:36px!important;
-      padding:4px 12px!important;
-      color:#173b78!important;
-      background:rgba(255,255,255,.96)!important;
-      border:1px solid #173b78!important;
-      border-radius:8px!important;
-      font-weight:600!important;
-      opacity:1!important;
-      visibility:visible!important;
-      white-space:nowrap!important;
-    }
-
-    #sofiaAuthorSignature{
-      position:fixed!important;
-      right:92px!important;
-      bottom:8px!important;
-      z-index:70000!important;
-      background:transparent!important;
-      pointer-events:none!important;
-      margin:0!important;
-      white-space:nowrap!important;
-    }
-
-    body.v89-right-collapsed #sofiaAuthorSignature{
-      right:14px!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function fixNewPageButton(){
-  const b=$117("addPageBtn");
-  if(!b) return;
-
-  b.hidden=false;
-  b.style.removeProperty("display");
-  b.style.removeProperty("visibility");
-  b.style.removeProperty("opacity");
-
-  // Only restore the visible label; keep the original click handler untouched.
-  b.textContent="+ Нова сторінка";
-  b.title="Створити нову сторінку";
-  b.setAttribute("aria-label","Нова сторінка");
-}
-
-function oneSignature(){
-  const text="Sofia Notebook © Parasochka";
-
-  const nodes=[...document.querySelectorAll("body *")].filter(el =>
-    (el.textContent||"").trim()===text
-  );
-
-  let keep=$117("sofiaAuthorSignature") || nodes[0] || null;
-
-  if(!keep){
-    keep=document.createElement("div");
-    keep.id="sofiaAuthorSignature";
-    keep.textContent=text;
-    document.body.appendChild(keep);
-  }
-
-  keep.textContent=text;
-  nodes.forEach(el=>{
-    if(el!==keep) el.remove();
-  });
-}
-
-function repair(){
-  fixNewPageButton();
-  oneSignature();
-}
-
-function mark(){
-  const b=$117("appVersionBadge") ||
-    [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-
-  if(b) b.textContent="v117";
-  document.documentElement.dataset.sofiaVersion="117";
-}
-
-function init(){
-  addCss();
-  repair();
-  mark();
-
-  [250,700,1400,2200].forEach(ms=>setTimeout(repair,ms));
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v117);
-    mo.__v117=setTimeout(repair,120);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
-else
-  setTimeout(init,160);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,120),{once:true});
+else setTimeout(init,120);
 })();
