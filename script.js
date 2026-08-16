@@ -5386,113 +5386,6 @@ else
 
 
 /* =========================================================
-   V88 — НАВІГАЦІЯ СТОРІНОК ПОСТІЙНО ЗНИЗУ
-   ========================================================= */
-(function(){
-"use strict";
-const $88=id=>document.getElementById(id);
-
-function pageBar(){
-  return $88("sofiaPageTabs") ||
-         document.querySelector(".sofia-page-tabs,.page-tabs") ||
-         [...document.querySelectorAll("div")].find(el=>{
-           const t=(el.textContent||"").replace(/\s+/g," ");
-           return t.includes("Нова сторінка") && t.includes("Видалити сторінку");
-         });
-}
-
-function addCss(){
-  if($88("v88Css"))return;
-  const st=document.createElement("style");
-  st.id="v88Css";
-  st.textContent=`
-    /* Навігація сторінок більше не займає місце зверху */
-    .v88-page-bottom{
-      position:fixed!important;
-      left:86px!important;
-      right:78px!important;
-      bottom:0!important;
-      z-index:74000!important;
-      display:flex!important;
-      align-items:center!important;
-      flex-wrap:nowrap!important;
-      gap:4px!important;
-      min-height:42px!important;
-      max-height:48px!important;
-      margin:0!important;
-      padding:3px 7px!important;
-      background:rgba(245,249,253,.97)!important;
-      border-top:1px solid #d7e2ee!important;
-      border-radius:0!important;
-      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
-      overflow-x:auto!important;
-      overflow-y:hidden!important;
-      white-space:nowrap!important;
-    }
-    .v88-page-bottom button{
-      min-height:34px!important;
-      height:34px!important;
-      padding-top:3px!important;
-      padding-bottom:3px!important;
-      margin:0!important;
-    }
-
-    /* робоче поле не ховається під нижньою панеллю */
-    body{padding-bottom:46px!important}
-
-    :fullscreen .v88-page-bottom,
-    :-webkit-full-screen .v88-page-bottom{
-      left:78px!important;
-      right:70px!important;
-      bottom:0!important;
-    }
-    :fullscreen body,
-    :-webkit-full-screen body{
-      padding-bottom:46px!important;
-    }
-
-    @media(max-width:900px){
-      .v88-page-bottom{left:68px!important;right:68px!important}
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function install(){
-  const bar=pageBar();
-  if(!bar)return;
-  bar.classList.add("v88-page-bottom");
-
-  // прибираємо старі inline-відступи/позиціонування, які могли тягнути її нагору
-  ["top","marginTop","marginBottom","position"].forEach(k=>{
-    if(k!=="position") bar.style[k]="";
-  });
-}
-
-function markVersion(){
-  let b=$88("appVersionBadge");
-  if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v88";
-  document.documentElement.dataset.sofiaVersion="88";
-}
-
-function init(){
-  addCss();install();markVersion();
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v88);
-    mo.__v88=setTimeout(install,60);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-  [300,900,1600].forEach(ms=>setTimeout(install,ms));
-}
-if(document.readyState==="loading")
- document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
-else setTimeout(init,180);
-})();
-
-
-
-/* =========================================================
    V89 — ПРАВА ПАНЕЛЬ МОЖНА ЗГОРТАТИ / РОЗГОРТАТИ
    ========================================================= */
 (function(){
@@ -5646,522 +5539,6 @@ if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
 else
   setTimeout(init,180);
-})();
-
-
-
-/* =========================================================
-   V91 — FIX ПОМИЛКИ СТОРІНОК + FULLSCREEN МАКСИМУМ ПОЛЯ
-   ========================================================= */
-(function(){
-"use strict";
-const $91=id=>document.getElementById(id);
-
-function findPageBar(){
-  return $91("sofiaPageTabs") ||
-         document.querySelector(".sofia-page-tabs,.page-tabs") ||
-         [...document.querySelectorAll("div")].find(el=>{
-           const t=(el.textContent||"").replace(/\s+/g," ");
-           return t.includes("Сторінка 1") && (t.includes("Нова сторінка") || t.includes("Видалити сторінку"));
-         });
-}
-
-function findNewBtn(){
-  return $91("addPageBtn") ||
-    [...document.querySelectorAll("button")].find(b=>/Нова сторінка/i.test((b.textContent||"").trim()));
-}
-function findDeleteBtn(){
-  return $91("deletePageBtn") ||
-    [...document.querySelectorAll("button")].find(b=>/Видалити сторінку/i.test((b.textContent||"").trim()));
-}
-
-function addCss(){
-  if($91("v91Css")) return;
-  const st=document.createElement("style");
-  st.id="v91Css";
-  st.textContent=`
-    /* Єдина нижня панель сторінок */
-    .v91-pagebar{
-      position:fixed!important;
-      left:86px!important;
-      right:78px!important;
-      bottom:0!important;
-      top:auto!important;
-      z-index:74500!important;
-      display:flex!important;
-      align-items:center!important;
-      flex-wrap:nowrap!important;
-      gap:5px!important;
-      min-height:46px!important;
-      max-height:52px!important;
-      margin:0!important;
-      padding:4px 8px!important;
-      background:rgba(246,249,253,.98)!important;
-      border-top:1px solid #d4dfec!important;
-      border-bottom:0!important;
-      border-radius:0!important;
-      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
-      overflow-x:auto!important;
-      overflow-y:hidden!important;
-      white-space:nowrap!important;
-    }
-    .v91-pagebar button{
-      min-height:34px!important;
-      height:34px!important;
-      margin:0!important;
-      padding:3px 10px!important;
-      flex:0 0 auto!important;
-    }
-
-    /* Прибираємо старі верхні обгортки, які лишилися порожніми */
-    .v91-top-empty{
-      height:0!important;
-      min-height:0!important;
-      max-height:0!important;
-      margin:0!important;
-      padding:0!important;
-      border:0!important;
-      overflow:hidden!important;
-    }
-
-    body{padding-bottom:50px!important}
-
-    /* Fullscreen: робоче поле одразу під рядком Клас/Предмет/... */
-    :fullscreen .v91-fs-gap,
-    :-webkit-full-screen .v91-fs-gap{
-      height:0!important;
-      min-height:0!important;
-      max-height:0!important;
-      margin:0!important;
-      padding:0!important;
-      border:0!important;
-      overflow:hidden!important;
-    }
-
-    :fullscreen .v91-pagebar,
-    :-webkit-full-screen .v91-pagebar{
-      left:78px!important;
-      right:70px!important;
-      bottom:0!important;
-    }
-
-    body.v89-right-collapsed .v91-pagebar{right:4px!important}
-
-    @media(max-width:900px){
-      .v91-pagebar{left:68px!important;right:68px!important}
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-/* Safe DOM moving: no insertBefore, therefore no NotFoundError */
-function arrangeBottomBar(){
-  const bar=findPageBar();
-  if(!bar) return;
-
-  bar.classList.remove("v88-page-bottom");
-  bar.classList.add("v91-pagebar");
-
-  const newBtn=findNewBtn();
-  const delBtn=findDeleteBtn();
-
-  if(newBtn && newBtn.parentElement!==bar) bar.appendChild(newBtn);
-  if(delBtn && delBtn.parentElement!==bar) bar.appendChild(delBtn);
-
-  /* We reorder by appending existing children safely.
-     Native page nav buttons stay first; then New page; then page tabs; then Delete. */
-  const buttons=[...bar.querySelectorAll(":scope > button")];
-  const pageTabs=buttons.filter(b=>/^Сторінка\s+\d+/i.test((b.textContent||"").trim()));
-  const nav=buttons.filter(b=>{
-    const t=(b.textContent||"").trim();
-    return !/^Сторінка\s+\d+/i.test(t) &&
-           !/Нова сторінка/i.test(t) &&
-           !/Видалити сторінку/i.test(t);
-  });
-
-  nav.forEach(b=>bar.appendChild(b));
-  if(newBtn) bar.appendChild(newBtn);
-  pageTabs.forEach(b=>bar.appendChild(b));
-  if(delBtn) bar.appendChild(delBtn);
-
-  bar.style.removeProperty("top");
-  bar.style.removeProperty("margin-top");
-  bar.style.removeProperty("margin-bottom");
-}
-
-function removeTopGhosts(){
-  const bar=findPageBar();
-  if(!bar) return;
-
-  /* Only collapse empty blocks in the former top page-nav zone. */
-  const br=bar.getBoundingClientRect();
-  document.querySelectorAll("div,section").forEach(el=>{
-    if(el===bar || el.contains(bar) || bar.contains(el)) return;
-    const r=el.getBoundingClientRect();
-    const txt=(el.textContent||"").trim();
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-
-    if(r.width>innerWidth*.65 && r.height>=8 && r.height<=90 &&
-       r.top>130 && r.top<420 && !txt && controls===0){
-      el.classList.add("v91-top-empty");
-    }
-  });
-}
-
-function findMetaBottom(){
-  /* Find the row containing class/subject/date/background controls. */
-  const candidates=[...document.querySelectorAll("div,section")].filter(el=>{
-    const t=(el.textContent||"").replace(/\s+/g," ");
-    return t.includes("Клас") && t.includes("Предмет") &&
-           (t.includes("Класна робота") || t.includes("Навчальна")) &&
-           (t.includes("Лінійка") || t.includes("Розмір"));
-  });
-
-  let bottom=0;
-  candidates.forEach(el=>{
-    const r=el.getBoundingClientRect();
-    if(r.width>innerWidth*.7 && r.top<180 && r.bottom>bottom) bottom=r.bottom;
-  });
-
-  if(!bottom){
-    /* fallback by controls */
-    [...document.querySelectorAll("select,input")].forEach(el=>{
-      const r=el.getBoundingClientRect();
-      if(r.top<170 && r.bottom>bottom) bottom=r.bottom;
-    });
-  }
-  return bottom || 120;
-}
-
-function fullscreenCompact(){
-  const fs=document.fullscreenElement||document.webkitFullscreenElement;
-  if(!fs) return;
-
-  const metaBottom=findMetaBottom();
-
-  /* Collapse large empty horizontal bands between meta row and actual notebook area. */
-  document.querySelectorAll("div,section,main").forEach(el=>{
-    if(["v86Dock","v86Commands","v86Store","v87Help","v86HelpBox"].includes(el.id)) return;
-    const r=el.getBoundingClientRect();
-    const txt=(el.textContent||"").trim();
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-
-    if(r.width>innerWidth*.68 &&
-       r.height>=18 && r.height<=320 &&
-       r.top>=metaBottom-4 && r.top<=metaBottom+330 &&
-       !txt && controls===0){
-      el.classList.add("v91-fs-gap");
-    }
-  });
-
-  /* Pull the notebook/page wrapper itself up to just under the meta row.
-     We avoid the fixed bottom page bar. */
-  const pageCanvas =
-    document.querySelector(".canvas-wrap,.canvas-container-wrapper,.notebook-stage,.page-stage,.workspace") ||
-    document.querySelector("canvas")?.parentElement?.parentElement;
-
-  if(pageCanvas){
-    const r=pageCanvas.getBoundingClientRect();
-    const desired=metaBottom+4;
-    const gap=r.top-desired;
-    if(gap>20){
-      pageCanvas.style.setProperty("margin-top",(-Math.min(gap,320))+"px","important");
-    }
-  }
-}
-
-function resetFullscreen(){
-  if(document.fullscreenElement||document.webkitFullscreenElement) return;
-  document.querySelectorAll(".v91-fs-gap").forEach(el=>el.classList.remove("v91-fs-gap"));
-
-  const pageCanvas =
-    document.querySelector(".canvas-wrap,.canvas-container-wrapper,.notebook-stage,.page-stage,.workspace") ||
-    document.querySelector("canvas")?.parentElement?.parentElement;
-  if(pageCanvas) pageCanvas.style.removeProperty("margin-top");
-}
-
-function repair(){
-  arrangeBottomBar();
-  removeTopGhosts();
-}
-
-function markVersion(){
-  let b=$91("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  }
-  if(b) b.textContent="v91";
-  document.documentElement.dataset.sofiaVersion="91";
-}
-
-function init(){
-  addCss();
-  repair();
-  markVersion();
-
-  document.addEventListener("fullscreenchange",()=>{
-    setTimeout(()=>{resetFullscreen();repair();fullscreenCompact()},80);
-    setTimeout(fullscreenCompact,350);
-    setTimeout(fullscreenCompact,900);
-  });
-  document.addEventListener("webkitfullscreenchange",()=>{
-    setTimeout(()=>{resetFullscreen();repair();fullscreenCompact()},80);
-    setTimeout(fullscreenCompact,350);
-    setTimeout(fullscreenCompact,900);
-  });
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v91);
-    mo.__v91=setTimeout(()=>{
-      repair();
-      if(document.fullscreenElement||document.webkitFullscreenElement) fullscreenCompact();
-    },90);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,900,1600].forEach(ms=>setTimeout(()=>{repair();fullscreenCompact()},ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
-else
-  setTimeout(init,160);
-})();
-
-
-
-/* =========================================================
-   V92 — ОКРЕМИЙ ЗАКРІПЛЕНИЙ ДОК СТОРІНОК ЗНИЗУ
-   ========================================================= */
-(function(){
-"use strict";
-const $92=id=>document.getElementById(id);
-
-function addCss(){
-  if($92("v92Css")) return;
-  const st=document.createElement("style");
-  st.id="v92Css";
-  st.textContent=`
-    #v92PageDock{
-      position:fixed!important;
-      left:86px!important;
-      right:78px!important;
-      bottom:0!important;
-      top:auto!important;
-      z-index:79000!important;
-      display:flex!important;
-      align-items:center!important;
-      gap:6px!important;
-      min-height:48px!important;
-      max-height:54px!important;
-      padding:4px 8px!important;
-      margin:0!important;
-      background:rgba(247,250,253,.98)!important;
-      border-top:1px solid #d4dfec!important;
-      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
-      overflow-x:auto!important;
-      overflow-y:hidden!important;
-      white-space:nowrap!important;
-      box-sizing:border-box!important;
-    }
-
-    #v92PageDock > *{
-      flex:0 0 auto!important;
-    }
-
-    #v92PageDock button{
-      min-height:34px!important;
-      height:34px!important;
-      margin:0!important;
-      padding:3px 10px!important;
-    }
-
-    .v92-hidden-page-source{
-      display:none!important;
-      height:0!important;
-      min-height:0!important;
-      max-height:0!important;
-      margin:0!important;
-      padding:0!important;
-      border:0!important;
-      overflow:hidden!important;
-    }
-
-    body{padding-bottom:52px!important;}
-
-    :fullscreen #v92PageDock,
-    :-webkit-full-screen #v92PageDock{
-      left:78px!important;
-      right:70px!important;
-      bottom:0!important;
-    }
-
-    body.v89-right-collapsed #v92PageDock{
-      right:4px!important;
-    }
-
-    @media(max-width:900px){
-      #v92PageDock{
-        left:68px!important;
-        right:68px!important;
-      }
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-function ensureDock(){
-  let d=$92("v92PageDock");
-  if(!d){
-    d=document.createElement("div");
-    d.id="v92PageDock";
-    document.body.appendChild(d);
-  }
-  return d;
-}
-
-function visibleText(el){
-  return (el?.textContent||"").replace(/\s+/g," ").trim();
-}
-
-function findSource(){
-  const candidates=[...document.querySelectorAll("div,section")].filter(el=>{
-    if(el.id==="v92PageDock" || el.closest("#v92PageDock")) return false;
-    const t=visibleText(el);
-    return (
-      /Нова сторінка/i.test(t) ||
-      /Видалити сторінку/i.test(t) ||
-      /Сторінка\s+\d+/i.test(t)
-    );
-  });
-
-  // Prefer the smallest element that contains both page controls and page tabs.
-  candidates.sort((a,b)=>a.getBoundingClientRect().height-b.getBoundingClientRect().height);
-  return candidates.find(el=>{
-    const t=visibleText(el);
-    return /Сторінка\s+\d+/i.test(t) &&
-           (/Нова сторінка/i.test(t) || /Видалити сторінку/i.test(t));
-  }) || candidates[0] || null;
-}
-
-function stealControls(){
-  const dock=ensureDock();
-
-  // Known controls first.
-  const add=$92("addPageBtn") ||
-    [...document.querySelectorAll("button")].find(b=>/Нова сторінка/i.test(visibleText(b)));
-  const del=$92("deletePageBtn") ||
-    [...document.querySelectorAll("button")].find(b=>/Видалити сторінку/i.test(visibleText(b)));
-
-  // Find individual page-tab buttons wherever the app recreated them.
-  const pageTabs=[...document.querySelectorAll("button")].filter(b=>{
-    if(b.closest("#v92PageDock")) return false;
-    return /^Сторінка\s+\d+/i.test(visibleText(b));
-  });
-
-  // Find previous/next navigation + counter from the old page source.
-  const src=findSource();
-  let navNodes=[];
-  if(src){
-    navNodes=[...src.children].filter(ch=>{
-      const t=visibleText(ch);
-      return (
-        (ch.tagName==="BUTTON" && (t==="‹"||t==="›"||t==="←"||t==="→")) ||
-        /Сторінка\s+\d+\s*·/i.test(t) ||
-        /1 з \d+/i.test(t)
-      );
-    });
-  }
-
-  // Preserve an orderly bottom dock, without insertBefore.
-  navNodes.forEach(n=>dock.appendChild(n));
-  if(add) dock.appendChild(add);
-
-  // Include already-docked page tabs plus newly recreated ones.
-  const allTabs=[
-    ...[...dock.querySelectorAll("button")].filter(b=>/^Сторінка\s+\d+/i.test(visibleText(b))),
-    ...pageTabs
-  ];
-  const uniqueTabs=[...new Set(allTabs)];
-  uniqueTabs.sort((a,b)=>{
-    const na=parseInt((visibleText(a).match(/\d+/)||["999"])[0],10);
-    const nb=parseInt((visibleText(b).match(/\d+/)||["999"])[0],10);
-    return na-nb;
-  });
-  uniqueTabs.forEach(b=>dock.appendChild(b));
-
-  if(del) dock.appendChild(del);
-
-  // Hide only empty/obsolete upper page-navigation wrappers.
-  document.querySelectorAll("div,section").forEach(el=>{
-    if(el===dock || el.contains(dock) || dock.contains(el)) return;
-    const t=visibleText(el);
-    const r=el.getBoundingClientRect();
-
-    const looksLikePageNav =
-      /Сторінка\s+\d+/i.test(t) ||
-      /Нова сторінка/i.test(t) ||
-      /Видалити сторінку/i.test(t);
-
-    if(looksLikePageNav && r.top < innerHeight*0.65){
-      const remainingInteractive=[...el.querySelectorAll("button")].filter(b=>!b.closest("#v92PageDock"));
-      if(remainingInteractive.length===0 || !t){
-        el.classList.add("v92-hidden-page-source");
-      }
-    }
-  });
-}
-
-function removeTopGap(){
-  const dock=ensureDock();
-
-  // Collapse old empty strip where the page controls used to be.
-  document.querySelectorAll("div,section").forEach(el=>{
-    if(el===dock || el.contains(dock) || dock.contains(el)) return;
-    const r=el.getBoundingClientRect();
-    const t=visibleText(el);
-    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
-
-    if(r.width>innerWidth*.6 && r.height>=8 && r.height<=100 &&
-       r.top>130 && r.top<380 && !t && controls===0){
-      el.classList.add("v92-hidden-page-source");
-    }
-  });
-}
-
-function repair(){
-  stealControls();
-  removeTopGap();
-}
-
-function markVersion(){
-  let b=$92("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test(visibleText(x)));
-  }
-  if(b) b.textContent="v92";
-  document.documentElement.dataset.sofiaVersion="92";
-}
-
-function init(){
-  addCss();
-  ensureDock();
-  repair();
-  markVersion();
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v92);
-    mo.__v92=setTimeout(repair,60);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [250,600,1200,2200].forEach(ms=>setTimeout(repair,ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
-else
-  setTimeout(init,150);
 })();
 
 
@@ -6753,353 +6130,6 @@ else
 
 
 /* =========================================================
-   V96 — ВІДНОВЛЕННЯ НИЖНЬОЇ ПАНЕЛІ СТОРІНОК + РУКА/КУРСОР
-   ========================================================= */
-(function(){
-"use strict";
-const $96=id=>document.getElementById(id);
-
-function addCss(){
-  if($96("v96Css")) return;
-  const st=document.createElement("style");
-  st.id="v96Css";
-  st.textContent=`
-    /* Нижня панель сторінок — видима й стабільна */
-    #v96PageDock{
-      position:fixed!important;
-      left:86px!important;
-      right:78px!important;
-      bottom:0!important;
-      z-index:79500!important;
-      display:flex!important;
-      align-items:center!important;
-      gap:6px!important;
-      min-height:48px!important;
-      max-height:54px!important;
-      padding:4px 8px!important;
-      background:rgba(247,250,253,.98)!important;
-      border-top:1px solid #d4dfec!important;
-      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
-      overflow-x:auto!important;
-      overflow-y:hidden!important;
-      white-space:nowrap!important;
-      box-sizing:border-box!important;
-    }
-    #v96PageDock button{
-      min-height:34px!important;
-      height:34px!important;
-      padding:3px 10px!important;
-      margin:0!important;
-      flex:0 0 auto!important;
-      opacity:1!important;
-      visibility:visible!important;
-    }
-    #v96PageDock .v96-counter{
-      flex:0 0 auto!important;
-      color:#52606d;
-      font:14px/1.2 Arial,sans-serif;
-      padding:0 4px;
-    }
-
-    body{padding-bottom:54px!important;}
-
-    :fullscreen #v96PageDock,
-    :-webkit-full-screen #v96PageDock{
-      left:78px!important;
-      right:70px!important;
-      bottom:0!important;
-    }
-    body.v89-right-collapsed #v96PageDock{right:4px!important;}
-
-    /* Режим курсора / вибору */
-    body.v96-select-mode .upper-canvas,
-    body.v96-select-mode canvas{
-      cursor:default!important;
-    }
-
-    /* Режим "Рука" */
-    body.v96-hand-mode .upper-canvas,
-    body.v96-hand-mode canvas{
-      cursor:grab!important;
-    }
-    body.v96-hand-mode.v96-dragging .upper-canvas,
-    body.v96-hand-mode.v96-dragging canvas{
-      cursor:grabbing!important;
-    }
-
-    /* Кнопка Рука: активна/неактивна */
-    .side-tool[data-tool="select"].v96-hand-active,
-    .side-tool[data-tool="hand"].v96-hand-active,
-    #handBtn.v96-hand-active{
-      background:#173b78!important;
-      color:#fff!important;
-    }
-  `;
-  document.head.appendChild(st);
-}
-
-/* ---------- PAGE DOCK ---------- */
-function pageDock(){
-  let d=$96("v96PageDock");
-  if(!d){
-    d=document.createElement("div");
-    d.id="v96PageDock";
-    document.body.appendChild(d);
-  }
-  return d;
-}
-
-function text(el){ return (el?.textContent||"").replace(/\s+/g," ").trim(); }
-
-function findPageButtons(){
-  const buttons=[...document.querySelectorAll("button")].filter(b=>!b.closest("#v96PageDock"));
-  const add=buttons.find(b=>/Нова сторінка/i.test(text(b)));
-  const del=buttons.find(b=>/Видалити сторінку/i.test(text(b)));
-  const tabs=buttons.filter(b=>/^Сторінка\s+\d+/i.test(text(b)));
-  const prev=buttons.find(b=>["‹","←"].includes(text(b)));
-  const next=buttons.find(b=>["›","→"].includes(text(b)));
-  return {add,del,tabs,prev,next};
-}
-
-function rebuildPageDock(){
-  const dock=pageDock();
-  const {add,del,tabs,prev,next}=findPageButtons();
-
-  // If existing bottom-docked controls already exist, reuse them too.
-  const existing=[...dock.children];
-  const allButtons=[...new Set([
-    ...(prev?[prev]:[]),
-    ...(next?[next]:[]),
-    ...(add?[add]:[]),
-    ...tabs,
-    ...(del?[del]:[]),
-    ...existing.filter(x=>x.tagName==="BUTTON")
-  ])];
-
-  dock.innerHTML="";
-
-  if(prev) dock.appendChild(prev);
-
-  const counter=document.createElement("span");
-  counter.className="v96-counter";
-  const pageCount=Math.max(1, allButtons.filter(b=>/^Сторінка\s+\d+/i.test(text(b))).length);
-  let activeNum=1;
-  allButtons.forEach(b=>{
-    if(/^Сторінка\s+\d+/i.test(text(b)) && (b.classList.contains("active") || b.matches(".selected"))){
-      const m=text(b).match(/\d+/); if(m) activeNum=+m[0];
-    }
-  });
-  counter.textContent=`Сторінка ${activeNum} · 1 з ${pageCount}`;
-  dock.appendChild(counter);
-
-  if(next) dock.appendChild(next);
-  if(add) dock.appendChild(add);
-
-  const pageTabs=[...new Set(allButtons.filter(b=>/^Сторінка\s+\d+/i.test(text(b))))];
-  pageTabs.sort((a,b)=>{
-    const na=+(text(a).match(/\d+/)||["999"])[0];
-    const nb=+(text(b).match(/\d+/)||["999"])[0];
-    return na-nb;
-  });
-  pageTabs.forEach(b=>dock.appendChild(b));
-
-  if(del) dock.appendChild(del);
-
-  // Hide old page navigation wrappers that are now empty / obsolete.
-  document.querySelectorAll("div,section").forEach(el=>{
-    if(el===dock || el.contains(dock) || dock.contains(el)) return;
-    const t=text(el);
-    const r=el.getBoundingClientRect();
-    if(r.top<innerHeight*.7 && (
-      /Нова сторінка/i.test(t) ||
-      /Видалити сторінку/i.test(t) ||
-      /Сторінка\s+\d+/i.test(t)
-    )){
-      const interactive=[...el.querySelectorAll("button")].filter(b=>!b.closest("#v96PageDock"));
-      if(interactive.length===0){
-        el.style.setProperty("display","none","important");
-        el.style.setProperty("height","0","important");
-        el.style.setProperty("margin","0","important");
-        el.style.setProperty("padding","0","important");
-      }
-    }
-  });
-}
-
-/* ---------- HAND / CURSOR ---------- */
-let handMode=false;
-let dragging=false;
-let dragTarget=null;
-let lastX=0,lastY=0;
-
-function fabricCanvas(){
-  return (typeof fcanvas!=="undefined") ? fcanvas : null;
-}
-
-function handButton(){
-  return document.querySelector('.side-tool[data-tool="select"],.side-tool[data-tool="hand"],#handBtn');
-}
-
-function setHandMode(on){
-  handMode=!!on;
-  document.body.classList.toggle("v96-hand-mode",handMode);
-  document.body.classList.toggle("v96-select-mode",!handMode);
-
-  const hb=handButton();
-  hb?.classList.toggle("v96-hand-active",handMode);
-
-  const fc=fabricCanvas();
-  if(fc){
-    fc.selection=!handMode;
-    fc.skipTargetFind=false;
-    fc.defaultCursor=handMode?"grab":"default";
-    fc.hoverCursor=handMode?"grab":"move";
-    fc.requestRenderAll();
-  }
-
-  // When leaving hand mode, restore the visible Word-like insertion caret.
-  if(!handMode){
-    document.body.classList.add("v94-insert-ready");
-    const c=$96("v94InsertCaret");
-    if(c && window.innerWidth>0){
-      c.classList.add("show");
-    }
-  }else{
-    $96("v94InsertCaret")?.classList.remove("show");
-  }
-}
-
-function toggleHand(){
-  setHandMode(!handMode);
-}
-
-function bindHandButton(){
-  const hb=handButton();
-  if(!hb || hb.__v96Bound) return;
-  hb.__v96Bound=true;
-
-  hb.addEventListener("click",e=>{
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    toggleHand();
-  },true);
-}
-
-function bindCanvasHand(){
-  const c=document.querySelector(".upper-canvas") || document.querySelector("canvas");
-  if(!c || c.__v96HandBound) return;
-  c.__v96HandBound=true;
-
-  c.addEventListener("pointerdown",e=>{
-    if(!handMode || e.button!==0) return;
-
-    const fc=fabricCanvas();
-    if(!fc) return;
-
-    let target=null;
-    try{ target=fc.findTarget?.(e) || fc.getActiveObject?.(); }catch(_){}
-
-    if(!target) return;
-
-    dragging=true;
-    dragTarget=target;
-    lastX=e.clientX;
-    lastY=e.clientY;
-    document.body.classList.add("v96-dragging");
-
-    try{
-      fc.setActiveObject(target);
-      target.setCoords?.();
-      fc.requestRenderAll();
-    }catch(_){}
-
-    c.setPointerCapture?.(e.pointerId);
-    e.preventDefault();
-    e.stopPropagation();
-  },true);
-
-  c.addEventListener("pointermove",e=>{
-    if(!handMode || !dragging || !dragTarget) return;
-    const fc=fabricCanvas();
-    if(!fc) return;
-
-    const dx=e.clientX-lastX;
-    const dy=e.clientY-lastY;
-    lastX=e.clientX;
-    lastY=e.clientY;
-
-    const zoom=fc.getZoom?.() || 1;
-    dragTarget.set({
-      left:(dragTarget.left||0)+dx/zoom,
-      top:(dragTarget.top||0)+dy/zoom
-    });
-    dragTarget.setCoords?.();
-    fc.requestRenderAll();
-
-    e.preventDefault();
-    e.stopPropagation();
-  },true);
-
-  const stop=e=>{
-    if(!dragging) return;
-    dragging=false;
-    document.body.classList.remove("v96-dragging");
-    try{
-      dragTarget?.setCoords?.();
-      fabricCanvas()?.requestRenderAll?.();
-      autoSave?.();
-    }catch(_){}
-    dragTarget=null;
-  };
-
-  c.addEventListener("pointerup",stop,true);
-  c.addEventListener("pointercancel",stop,true);
-}
-
-function markVersion(){
-  let b=$96("appVersionBadge");
-  if(!b){
-    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test(text(x)));
-  }
-  if(b) b.textContent="v96";
-  document.documentElement.dataset.sofiaVersion="96";
-}
-
-function init(){
-  addCss();
-  pageDock();
-  rebuildPageDock();
-  bindHandButton();
-  bindCanvasHand();
-  setHandMode(false);
-  markVersion();
-
-  const mo=new MutationObserver(()=>{
-    clearTimeout(mo.__v96);
-    mo.__v96=setTimeout(()=>{
-      rebuildPageDock();
-      bindHandButton();
-      bindCanvasHand();
-    },80);
-  });
-  mo.observe(document.body,{childList:true,subtree:true});
-
-  [300,800,1500,2300].forEach(ms=>setTimeout(()=>{
-    rebuildPageDock();
-    bindHandButton();
-    bindCanvasHand();
-  },ms));
-}
-
-if(document.readyState==="loading")
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
-else
-  setTimeout(init,150);
-})();
-
-
-
-/* =========================================================
    V97 — УСІ ВСТАВЛЕНІ ОБ'ЄКТИ СТАВЛЯТЬСЯ САМЕ В КУРСОР
    ========================================================= */
 (function(){
@@ -7278,4 +6308,1017 @@ if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
 else
   setTimeout(init,150);
+})();
+
+
+
+/* =========================================================
+   V98 — ОДИН АКТИВНИЙ ІНСТРУМЕНТ + ПОВТОРНИЙ КЛІК ВИМИКАЄ
+   ========================================================= */
+(function(){
+"use strict";
+const $98=id=>document.getElementById(id);
+
+let activeTool98 = null;
+
+function toolButtons(){
+  return [...document.querySelectorAll('.side-tool[data-tool]')];
+}
+
+function clearVisualState(){
+  toolButtons().forEach(b=>{
+    b.classList.remove("active","selected","v96-hand-active");
+    b.setAttribute("aria-pressed","false");
+  });
+}
+
+function showInsertCursorAgain(){
+  document.body.classList.remove("v96-hand-mode","v96-dragging");
+  document.body.classList.add("v96-select-mode","v94-insert-ready");
+
+  try{
+    if(typeof fcanvas!=="undefined"){
+      fcanvas.selection=true;
+      fcanvas.defaultCursor="text";
+      fcanvas.hoverCursor="move";
+      fcanvas.isDrawingMode=false;
+      fcanvas.requestRenderAll();
+    }
+  }catch(_){}
+
+  const caret=$98("v94InsertCaret");
+  if(caret) caret.classList.add("show");
+}
+
+function deactivateAll(){
+  activeTool98=null;
+  clearVisualState();
+  showInsertCursorAgain();
+
+  try{
+    if(typeof setTool==="function") setTool("select");
+  }catch(_){}
+}
+
+function markOnly(btn){
+  clearVisualState();
+  btn.classList.add("active");
+  btn.setAttribute("aria-pressed","true");
+  activeTool98 = btn.dataset.tool || "";
+}
+
+function currentVisualActive(btn){
+  return btn.classList.contains("active") ||
+         btn.classList.contains("selected") ||
+         btn.classList.contains("v96-hand-active") ||
+         activeTool98 === (btn.dataset.tool||"");
+}
+
+function bindUnifiedToggle(){
+  if(document.__v98UnifiedBound) return;
+  document.__v98UnifiedBound=true;
+
+  // Capture on document runs BEFORE target listeners from older patches.
+  document.addEventListener("click", e=>{
+    const btn=e.target.closest?.('.side-tool[data-tool]');
+    if(!btn) return;
+
+    const sameWasActive=currentVisualActive(btn);
+
+    if(sameWasActive){
+      // Second click on the same tool = neutral cursor mode.
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      deactivateAll();
+      return;
+    }
+
+    // New tool: immediately remove all other highlights.
+    clearVisualState();
+    activeTool98=btn.dataset.tool||"";
+    btn.classList.add("active");
+    btn.setAttribute("aria-pressed","true");
+
+    // Let the original tool handler execute.
+    setTimeout(()=>{
+      // Some legacy handlers re-add active class to old buttons.
+      // Normalize again so only the clicked button remains highlighted.
+      if(activeTool98 === (btn.dataset.tool||"")){
+        clearVisualState();
+        btn.classList.add("active");
+        btn.setAttribute("aria-pressed","true");
+      }
+    },30);
+  }, true);
+}
+
+function normalizeLegacyMultiActive(){
+  const active=toolButtons().filter(b=>
+    b.classList.contains("active") ||
+    b.classList.contains("selected") ||
+    b.classList.contains("v96-hand-active")
+  );
+
+  if(active.length<=1) return;
+
+  // Prefer our tracked tool; otherwise keep the last visually active button.
+  let keep=active.find(b=>(b.dataset.tool||"")===activeTool98) || active[active.length-1];
+  clearVisualState();
+  keep.classList.add("active");
+  keep.setAttribute("aria-pressed","true");
+  activeTool98=keep.dataset.tool||"";
+}
+
+function addCss(){
+  if($98("v98Css")) return;
+  const st=document.createElement("style");
+  st.id="v98Css";
+  st.textContent=`
+    .side-tool[data-tool].active,
+    .side-tool[data-tool].selected,
+    .side-tool[data-tool].v96-hand-active{
+      background:#173b78!important;
+      color:#fff!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function markVersion(){
+  let b=$98("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b) b.textContent="v98";
+  document.documentElement.dataset.sofiaVersion="98";
+}
+
+function init(){
+  addCss();
+  bindUnifiedToggle();
+  normalizeLegacyMultiActive();
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v98);
+    mo.__v98=setTimeout(normalizeLegacyMultiActive,60);
+  });
+  mo.observe(document.body,{
+    subtree:true,
+    attributes:true,
+    attributeFilter:["class"]
+  });
+
+  [300,900,1600].forEach(ms=>setTimeout(normalizeLegacyMultiActive,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,140),{once:true});
+else
+  setTimeout(init,140);
+})();
+
+
+
+/* =========================================================
+   V99 — СТАБІЛЬНА НИЖНЯ ПАНЕЛЬ СТОРІНОК + РУКА
+   ========================================================= */
+(function(){
+"use strict";
+const $99=id=>document.getElementById(id);
+let handMode99=false;
+
+function addCss(){
+  if($99("v99StableCss")) return;
+  const st=document.createElement("style");
+  st.id="v99StableCss";
+  st.textContent=`
+    #v99PageDock{
+      position:fixed!important;
+      left:86px!important;
+      right:78px!important;
+      bottom:0!important;
+      top:auto!important;
+      z-index:79500!important;
+      display:flex!important;
+      align-items:center!important;
+      gap:6px!important;
+      min-height:48px!important;
+      max-height:54px!important;
+      padding:4px 8px!important;
+      margin:0!important;
+      background:rgba(247,250,253,.98)!important;
+      border-top:1px solid #d4dfec!important;
+      box-shadow:0 -3px 12px rgba(15,23,42,.10)!important;
+      overflow-x:auto!important;
+      overflow-y:hidden!important;
+      white-space:nowrap!important;
+      box-sizing:border-box!important;
+    }
+    #v99PageDock > *{flex:0 0 auto!important}
+    #v99PageDock button{
+      opacity:1!important;
+      visibility:visible!important;
+      min-height:34px!important;
+      height:34px!important;
+      margin:0!important;
+    }
+    #v99PageDock #pageTabsWrap{
+      display:flex!important;
+      margin:0!important;
+      max-width:none!important;
+      width:auto!important;
+    }
+    #v99PageDock #pageTabs{
+      display:flex!important;
+      gap:6px!important;
+      overflow-x:visible!important;
+      padding:0!important;
+      max-width:none!important;
+    }
+
+    body{padding-bottom:54px!important}
+
+    :fullscreen #v99PageDock,
+    :-webkit-full-screen #v99PageDock{
+      left:78px!important;
+      right:78px!important;
+      bottom:0!important;
+    }
+    body.v89-right-collapsed #v99PageDock{
+      right:4px!important;
+    }
+
+    body.v99-hand-mode .upper-canvas,
+    body.v99-hand-mode canvas{
+      cursor:grab!important;
+    }
+    body.v99-hand-mode.v99-dragging .upper-canvas,
+    body.v99-hand-mode.v99-dragging canvas{
+      cursor:grabbing!important;
+    }
+    .side-tool[data-tool="select"].v99-hand-active,
+    .side-tool[data-tool="hand"].v99-hand-active,
+    #handBtn.v99-hand-active{
+      background:#173b78!important;
+      color:#fff!important;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+function ensureDock(){
+  let d=$99("v99PageDock");
+  if(!d){
+    d=document.createElement("div");
+    d.id="v99PageDock";
+    document.body.appendChild(d);
+  }
+  return d;
+}
+
+function mountOriginalPageControls(){
+  const d=ensureDock();
+
+  const prev=$99("prevPageBtn");
+  const indicator=$99("pageIndicator");
+  const next=$99("nextPageBtn");
+  const add=$99("addPageBtn");
+  const tabs=$99("pageTabsWrap");
+  const del=$99("deletePageBtn");
+
+  [prev,indicator,next,add,tabs,del].forEach(el=>{
+    if(el && el.parentElement!==d) d.appendChild(el);
+  });
+
+  // The app may create pageTabsWrap slightly later.
+  if(!$99("pageTabsWrap") && typeof ensurePageTabsUI==="function"){
+    try{ ensurePageTabsUI(); }catch(_){}
+    const lateTabs=$99("pageTabsWrap");
+    if(lateTabs && lateTabs.parentElement!==d){
+      const del2=$99("deletePageBtn");
+      d.appendChild(lateTabs);
+      if(del2) d.appendChild(del2);
+    }
+  }
+
+  // Keep the intended order without insertBefore/insertAdjacentElement.
+  [prev,indicator,next,add,$99("pageTabsWrap"),del].forEach(el=>{
+    if(el) d.appendChild(el);
+  });
+}
+
+function removeOldEmptyPageRow(){
+  const d=ensureDock();
+  document.querySelectorAll("div,section").forEach(el=>{
+    if(el===d || el.contains(d) || d.contains(el)) return;
+    const r=el.getBoundingClientRect();
+    const txt=(el.textContent||"").trim();
+    const controls=el.querySelectorAll?.("button,input,select,textarea,canvas").length||0;
+    if(r.width>innerWidth*.6 && r.height>=8 && r.height<=90 &&
+       r.top>120 && r.top<420 && !txt && controls===0){
+      el.style.setProperty("height","0","important");
+      el.style.setProperty("min-height","0","important");
+      el.style.setProperty("margin","0","important");
+      el.style.setProperty("padding","0","important");
+      el.style.setProperty("border","0","important");
+      el.style.setProperty("overflow","hidden","important");
+    }
+  });
+}
+
+/* ---------- РУКА ---------- */
+function handButton(){
+  return document.querySelector('.side-tool[data-tool="select"],.side-tool[data-tool="hand"],#handBtn');
+}
+function canvas(){ return (typeof fcanvas!=="undefined") ? fcanvas : null; }
+
+function setHand(on){
+  handMode99=!!on;
+  document.body.classList.toggle("v99-hand-mode",handMode99);
+
+  const hb=handButton();
+  hb?.classList.toggle("v99-hand-active",handMode99);
+
+  const c=canvas();
+  if(c){
+    c.selection=!handMode99;
+    c.defaultCursor=handMode99?"grab":"text";
+    c.hoverCursor=handMode99?"grab":"move";
+    c.isDrawingMode=false;
+    c.requestRenderAll();
+  }
+
+  if(handMode99){
+    $99("v94InsertCaret")?.classList.remove("show");
+  }else{
+    document.body.classList.add("v94-insert-ready");
+    $99("v94InsertCaret")?.classList.add("show");
+  }
+}
+
+function bindHand(){
+  const hb=handButton();
+  if(!hb || hb.__v99StableHand) return;
+  hb.__v99StableHand=true;
+
+  hb.addEventListener("click",e=>{
+    // If V98 sees this click later, keep the same visual state after it.
+    setTimeout(()=>setHand(!handMode99),0);
+  },true);
+
+  const el=document.querySelector(".upper-canvas")||document.querySelector("canvas");
+  if(!el || el.__v99StableDrag) return;
+  el.__v99StableDrag=true;
+
+  let drag=null,lastX=0,lastY=0;
+
+  el.addEventListener("pointerdown",e=>{
+    if(!handMode99 || e.button!==0) return;
+    const c=canvas(); if(!c) return;
+
+    let target=null;
+    try{ target=c.findTarget?.(e); }catch(_){}
+    if(!target) return;
+
+    drag=target; lastX=e.clientX; lastY=e.clientY;
+    c.setActiveObject?.(target);
+    document.body.classList.add("v99-dragging");
+    e.preventDefault();
+  },true);
+
+  el.addEventListener("pointermove",e=>{
+    if(!handMode99 || !drag) return;
+    const c=canvas(); if(!c) return;
+    const zoom=c.getZoom?.()||1;
+    drag.set({
+      left:(drag.left||0)+(e.clientX-lastX)/zoom,
+      top:(drag.top||0)+(e.clientY-lastY)/zoom
+    });
+    lastX=e.clientX; lastY=e.clientY;
+    drag.setCoords?.(); c.requestRenderAll();
+    e.preventDefault();
+  },true);
+
+  const stop=()=>{
+    if(!drag) return;
+    drag.setCoords?.();
+    drag=null;
+    document.body.classList.remove("v99-dragging");
+    try{autoSave()}catch(_){}
+  };
+  el.addEventListener("pointerup",stop,true);
+  el.addEventListener("pointercancel",stop,true);
+}
+
+function repair(){
+  mountOriginalPageControls();
+  removeOldEmptyPageRow();
+  bindHand();
+}
+
+function markVersion(){
+  let b=$99("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b)b.textContent="v99";
+  document.documentElement.dataset.sofiaVersion="99";
+}
+
+function init(){
+  addCss();
+  repair();
+  setHand(false);
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v99stable);
+    mo.__v99stable=setTimeout(repair,100);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [250,700,1400,2400].forEach(ms=>setTimeout(repair,ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,150),{once:true});
+else
+  setTimeout(init,150);
+})();
+
+
+
+/* =========================================================
+   V100 — ПІДПИС + ВЛАСТИВОСТІ ВИДІЛЕНОГО ОБ'ЄКТА + НОВА ДОВІДКА
+   ========================================================= */
+(function(){
+"use strict";
+const $100=id=>document.getElementById(id);
+
+/* -------------------- CSS -------------------- */
+function addCss(){
+  if($100("v100Css")) return;
+  const st=document.createElement("style");
+  st.id="v100Css";
+  st.textContent=`
+    #v100Signature{
+      position:fixed;
+      right:92px;
+      bottom:58px;
+      z-index:73000;
+      pointer-events:none;
+      color:#6b7280;
+      font:600 12px/1.2 Arial,sans-serif;
+      opacity:.82;
+      white-space:nowrap;
+    }
+    body.v89-right-collapsed #v100Signature{right:14px}
+    :fullscreen #v100Signature,
+    :-webkit-full-screen #v100Signature{bottom:58px}
+
+    /* Панель властивостей вибраного об'єкта */
+    #v100ObjectPanel{
+      position:fixed;
+      right:86px;
+      top:158px;
+      z-index:80500;
+      width:282px;
+      max-height:calc(100vh - 220px);
+      overflow:auto;
+      display:none;
+      background:#fff;
+      border:1px solid #d6e0ec;
+      border-radius:12px;
+      box-shadow:0 8px 28px rgba(15,23,42,.22);
+      padding:8px;
+      box-sizing:border-box;
+      font:13px/1.3 Arial,sans-serif;
+    }
+    #v100ObjectPanel.show{display:block}
+    #v100ObjectPanel .v100-head{
+      display:flex;align-items:center;gap:6px;
+      font-weight:700;font-size:14px;
+      margin-bottom:7px;
+    }
+    #v100ObjectPanel .v100-head button{
+      margin-left:auto;width:27px;height:27px;
+      border:0;border-radius:7px;background:#eef2f7;cursor:pointer;
+    }
+    #v100ObjectPanel .v100-row{
+      display:flex;align-items:center;gap:5px;
+      margin:5px 0;flex-wrap:wrap;
+    }
+    #v100ObjectPanel label{
+      color:#52606d;font-size:12px;
+    }
+    #v100ObjectPanel select,
+    #v100ObjectPanel input[type="number"],
+    #v100ObjectPanel button.v100-btn{
+      height:29px;border:1px solid #cbd7e6;border-radius:6px;
+      background:#fff;padding:2px 6px;font-size:13px;
+      box-sizing:border-box;
+    }
+    #v100ObjectPanel input[type="color"]{
+      width:36px;height:29px;padding:1px;border:1px solid #cbd7e6;border-radius:6px;
+    }
+    #v100ObjectPanel input[type="range"]{width:120px}
+    #v100ObjectPanel .grow{flex:1;min-width:0}
+    #v100ObjectPanel .active{background:#e7efff!important;color:#173b78!important}
+    #v100ObjectPanel .danger{color:#c62828}
+    #v100ObjectPanel .muted{color:#6b7280;font-size:12px}
+    #v100ObjectPanel .sep{height:1px;background:#edf1f5;margin:7px 0}
+
+    /* Нова довідка */
+    #v100Help{
+      position:fixed;
+      right:86px;
+      top:82px;
+      z-index:82000;
+      width:min(720px,calc(100vw - 180px));
+      max-height:calc(100vh - 104px);
+      display:none;
+      flex-direction:column;
+      background:#fff;
+      border:1px solid #d6e0ec;
+      border-radius:14px;
+      box-shadow:0 10px 36px rgba(15,23,42,.25);
+      overflow:hidden;
+      font:14px/1.4 Arial,sans-serif;
+    }
+    #v100Help.show{display:flex}
+    #v100HelpHeader{
+      display:flex;align-items:center;gap:8px;
+      padding:11px 13px;background:#f8fafc;border-bottom:1px solid #e7edf4;
+    }
+    #v100HelpHeader strong{font-size:17px}
+    #v100HelpClose{
+      margin-left:auto;width:30px;height:30px;border:0;border-radius:7px;background:#eef2f7;cursor:pointer;
+    }
+    #v100HelpSearchWrap{
+      padding:10px 13px;border-bottom:1px solid #edf1f5;background:#fff;
+    }
+    #v100HelpSearch{
+      width:100%;height:36px;border:1px solid #bfcddd;border-radius:8px;
+      padding:5px 11px;font-size:14px;box-sizing:border-box;
+    }
+    #v100HelpResults{overflow:auto;padding:8px 13px 15px}
+    .v100-help-section{
+      font-weight:700;color:#173b78;margin:10px 0 4px;font-size:14px;
+    }
+    .v100-help-item{
+      padding:7px 3px;border-bottom:1px solid #eef2f7;
+    }
+    .v100-help-item b{display:block;margin-bottom:1px;color:#172033}
+    .v100-help-empty{padding:24px;text-align:center;color:#6b7280}
+
+    @media(max-width:900px){
+      #v100ObjectPanel{right:72px;top:130px;width:250px}
+      #v100Help{right:72px;top:70px;width:calc(100vw - 145px)}
+      #v100Signature{right:78px}
+    }
+  `;
+  document.head.appendChild(st);
+}
+
+/* -------------------- SIGNATURE -------------------- */
+function ensureSignature(){
+  let el=$100("v100Signature");
+  if(!el){
+    el=document.createElement("div");
+    el.id="v100Signature";
+    el.textContent="Sofia Notebook © Parasochka";
+    document.body.appendChild(el);
+  }
+}
+
+/* -------------------- OBJECT PANEL -------------------- */
+function fc(){ return (typeof fcanvas!=="undefined") ? fcanvas : null; }
+function activeObj(){ return fc()?.getActiveObject?.() || null; }
+function isText(o){ return !!o && ["text","i-text","textbox"].includes(o.type); }
+function isImage(o){ return !!o && o.type==="image"; }
+
+function toHex(c,fallback="#000000"){
+  if(!c || c==="transparent") return fallback;
+  if(/^#[0-9a-f]{6}$/i.test(c)) return c;
+  const m=String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if(m){
+    return "#"+[m[1],m[2],m[3]].map(v=>(+v).toString(16).padStart(2,"0")).join("");
+  }
+  return fallback;
+}
+
+function objectTypeName(o){
+  if(!o) return "";
+  const map={
+    "line":"Лінія","path":"Малюнок","rect":"Прямокутник","circle":"Коло",
+    "ellipse":"Еліпс","triangle":"Трикутник","polygon":"Багатокутник",
+    "polyline":"Ламана","textbox":"Текст","i-text":"Текст","text":"Текст",
+    "image":"Зображення","group":"Група"
+  };
+  return map[o.type] || o.type || "Об'єкт";
+}
+
+function makeObjectPanel(){
+  let p=$100("v100ObjectPanel");
+  if(p) return p;
+  p=document.createElement("div");
+  p.id="v100ObjectPanel";
+  p.innerHTML=`
+    <div class="v100-head">
+      <span id="v100ObjTitle">Властивості об'єкта</span>
+      <button type="button" id="v100ObjClose">×</button>
+    </div>
+    <div class="v100-row"><span class="muted">Тип:</span><b id="v100ObjType"></b></div>
+
+    <div id="v100TextBlock">
+      <div class="v100-row">
+        <label>Шрифт</label>
+        <select id="v100Font" class="grow">
+          <option>Segoe Script</option><option>Segoe Print</option><option>Arial</option>
+          <option>Calibri</option><option>Times New Roman</option><option>Georgia</option>
+          <option>Comic Sans MS</option>
+        </select>
+      </div>
+      <div class="v100-row">
+        <label>Розмір</label>
+        <input id="v100FontSize" type="number" min="8" max="160" step="1" value="26" style="width:66px">
+        <button class="v100-btn" id="v100Bold"><b>B</b></button>
+        <button class="v100-btn" id="v100Italic"><i>I</i></button>
+        <button class="v100-btn" id="v100Underline"><u>U</u></button>
+      </div>
+      <div class="v100-row">
+        <label>Текст</label><input id="v100TextColor" type="color">
+        <label>Фон</label><input id="v100TextBg" type="color">
+      </div>
+      <div class="v100-row">
+        <label>Вирівнювання</label>
+        <select id="v100Align" class="grow">
+          <option value="left">Ліворуч</option><option value="center">По центру</option><option value="right">Праворуч</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="v100ShapeBlock">
+      <div class="v100-row">
+        <label>Контур</label><input id="v100Stroke" type="color">
+        <label>Заливка</label><input id="v100Fill" type="color">
+      </div>
+      <div class="v100-row">
+        <label>Товщина</label>
+        <input id="v100StrokeWidth" type="number" min="0" max="40" step="1" style="width:66px">
+        <select id="v100LineStyle" class="grow">
+          <option value="solid">Суцільна</option>
+          <option value="dash">Штрихова</option>
+          <option value="dot">Крапкова</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="v100-row">
+      <label>Прозорість</label>
+      <input id="v100Opacity" type="range" min="10" max="100" value="100">
+      <span id="v100OpacityVal">100%</span>
+    </div>
+    <div class="v100-row">
+      <button class="v100-btn" id="v100Front">На передній план</button>
+      <button class="v100-btn" id="v100Back">На задній</button>
+    </div>
+    <div class="v100-row">
+      <button class="v100-btn" id="v100Duplicate">Копія</button>
+      <button class="v100-btn danger" id="v100Delete">Видалити</button>
+    </div>
+  `;
+  document.body.appendChild(p);
+  bindObjectPanel();
+  return p;
+}
+
+function applyProps(props){
+  const o=activeObj();
+  if(!o) return;
+  o.set(props);
+  o.setCoords?.();
+  fc()?.requestRenderAll?.();
+  try{autoSave()}catch(_){}
+}
+
+function dashFrom(v){
+  if(v==="dash") return [10,6];
+  if(v==="dot") return [2,5];
+  return null;
+}
+function dashName(v){
+  if(!v || !v.length) return "solid";
+  return v[0]<=3 ? "dot" : "dash";
+}
+
+function refreshObjectPanel(){
+  const p=makeObjectPanel(), o=activeObj();
+  if(!o){
+    p.classList.remove("show");
+    return;
+  }
+  p.classList.add("show");
+  $100("v100ObjType").textContent=objectTypeName(o);
+
+  const txt=isText(o), img=isImage(o);
+  $100("v100TextBlock").style.display=txt?"block":"none";
+  $100("v100ShapeBlock").style.display=(!txt&&!img)?"block":"none";
+
+  if(txt){
+    const f=$100("v100Font");
+    if(f && ![...f.options].some(x=>x.value===o.fontFamily)){
+      const op=document.createElement("option");op.value=o.fontFamily;op.textContent=o.fontFamily;f.appendChild(op);
+    }
+    f.value=o.fontFamily||"Segoe Script";
+    $100("v100FontSize").value=Math.round(o.fontSize||26);
+    $100("v100TextColor").value=toHex(o.fill,"#4a7fbd");
+    $100("v100TextBg").value=toHex(o.backgroundColor,"#ffffff");
+    $100("v100Align").value=o.textAlign||"left";
+    $100("v100Bold").classList.toggle("active",String(o.fontWeight)==="bold" || Number(o.fontWeight)>=600);
+    $100("v100Italic").classList.toggle("active",o.fontStyle==="italic");
+    $100("v100Underline").classList.toggle("active",!!o.underline);
+  } else if(!img){
+    $100("v100Stroke").value=toHex(o.stroke,"#173b78");
+    $100("v100Fill").value=toHex(o.fill,"#ffffff");
+    $100("v100StrokeWidth").value=Math.round(o.strokeWidth||0);
+    $100("v100LineStyle").value=dashName(o.strokeDashArray);
+  }
+
+  const op=Math.round((o.opacity==null?1:o.opacity)*100);
+  $100("v100Opacity").value=op;
+  $100("v100OpacityVal").textContent=op+"%";
+}
+
+function bindObjectPanel(){
+  $100("v100ObjClose").onclick=()=>makeObjectPanel().classList.remove("show");
+  $100("v100Font").onchange=e=>applyProps({fontFamily:e.target.value});
+  $100("v100FontSize").oninput=e=>applyProps({fontSize:+e.target.value||26});
+  $100("v100TextColor").oninput=e=>applyProps({fill:e.target.value});
+  $100("v100TextBg").oninput=e=>applyProps({backgroundColor:e.target.value});
+  $100("v100Align").onchange=e=>applyProps({textAlign:e.target.value});
+
+  $100("v100Bold").onclick=()=>{
+    const o=activeObj(); if(!o)return;
+    applyProps({fontWeight:(String(o.fontWeight)==="bold"||Number(o.fontWeight)>=600)?"normal":"bold"});
+    refreshObjectPanel();
+  };
+  $100("v100Italic").onclick=()=>{
+    const o=activeObj(); if(!o)return;
+    applyProps({fontStyle:o.fontStyle==="italic"?"normal":"italic"});
+    refreshObjectPanel();
+  };
+  $100("v100Underline").onclick=()=>{
+    const o=activeObj(); if(!o)return;
+    applyProps({underline:!o.underline});
+    refreshObjectPanel();
+  };
+
+  $100("v100Stroke").oninput=e=>applyProps({stroke:e.target.value});
+  $100("v100Fill").oninput=e=>applyProps({fill:e.target.value});
+  $100("v100StrokeWidth").oninput=e=>applyProps({strokeWidth:+e.target.value||0});
+  $100("v100LineStyle").onchange=e=>applyProps({strokeDashArray:dashFrom(e.target.value)});
+
+  $100("v100Opacity").oninput=e=>{
+    const v=(+e.target.value||100)/100;
+    $100("v100OpacityVal").textContent=Math.round(v*100)+"%";
+    applyProps({opacity:v});
+  };
+
+  $100("v100Front").onclick=()=>{
+    const o=activeObj(); if(!o)return;
+    fc()?.bringToFront?.(o); fc()?.requestRenderAll?.(); try{autoSave()}catch(_){}
+  };
+  $100("v100Back").onclick=()=>{
+    const o=activeObj(); if(!o)return;
+    fc()?.sendToBack?.(o); fc()?.requestRenderAll?.(); try{autoSave()}catch(_){}
+  };
+  $100("v100Duplicate").onclick=()=>{
+    const o=activeObj(); if(!o)return;
+    o.clone(cl=>{
+      cl.set({left:(o.left||0)+24,top:(o.top||0)+24});
+      fc()?.add?.(cl);fc()?.setActiveObject?.(cl);fc()?.requestRenderAll?.();
+      try{pushHistory();autoSave()}catch(_){}
+      refreshObjectPanel();
+    });
+  };
+  $100("v100Delete").onclick=()=>{
+    const o=activeObj(); if(!o)return;
+    fc()?.remove?.(o);fc()?.discardActiveObject?.();fc()?.requestRenderAll?.();
+    try{pushHistory();autoSave()}catch(_){}
+    refreshObjectPanel();
+  };
+}
+
+function bindCanvasSelection(){
+  const c=fc();
+  if(!c || c.__v100ObjPanelBound) return;
+  c.__v100ObjPanelBound=true;
+  c.on("selection:created",refreshObjectPanel);
+  c.on("selection:updated",refreshObjectPanel);
+  c.on("selection:cleared",refreshObjectPanel);
+  c.on("object:modified",refreshObjectPanel);
+}
+
+/* -------------------- HELP -------------------- */
+const helpData=[
+["Вкладки","Основне","Текст, збереження, скасування/повтор, видалення вибраного, клавіатура, голос, червоне поле."],
+["Вкладки","Вставка","Нотатки, таблиці, зображення, відео, посилання, файли та інші об'єкти."],
+["Вкладки","Малювання","Колір, товщина, стиль лінії, перевірка, групування, фігури та параметри малювання."],
+["Вкладки","Математика","Графіки, координатна площина, числова пряма, математичні символи, геометричні інструменти."],
+["Вкладки","Вчитель","Колесо, картки, тести, списки, перекладач, таймер, UA-розбір."],
+["Вкладки","AI","AI-чат, створення зображень та AI-матеріалів."],
+
+["Ліва панель","Рука","Переміщення та вибір об'єктів. Повторне натискання вимикає режим і повертає курсор вставки."],
+["Ліва панель","Ручка","Вільне малювання тонкою лінією."],
+["Ліва панель","Маркер","Вільне виділення напівпрозорою лінією."],
+["Ліва панель","Стирачка","Стирання намальованих елементів."],
+["Ліва панель","Лінія","Побудова прямого відрізка."],
+["Ліва панель","Крива","Побудова кривої."],
+["Ліва панель","Ламана","Побудова ламаної з кількох відрізків."],
+["Ліва панель","Хвиляста","Побудова хвилястої лінії."],
+["Ліва панель","Стрілка","Побудова стрілки."],
+["Ліва панель","Прямокутник","Вставка прямокутника."],
+["Ліва панель","Коло","Вставка кола або еліпса."],
+["Ліва панель","Трикутник","Вставка трикутника."],
+["Ліва панель","Текст","Поставте курсор у потрібне місце на аркуші й введіть текст."],
+
+["Верхня панель","Повний екран","Розгортає робочу область на весь екран."],
+["Верхня панель","Інструменти","Додаткові інструменти зошита."],
+["Верхня панель","Перекладач","Переклад тексту між мовами."],
+["Верхня панель","Перевірка","Інструменти перевірки роботи."],
+["Верхня панель","Очистити все","Очищує вміст зошита. Використовуйте обережно."],
+["Верхня панель","Панель","Відкриває додаткові елементи керування."],
+["Верхня панель","Встановити додаток","Встановлення Sofia Notebook як PWA."],
+
+["Параметри сторінки","Ім'я та прізвище","Введення імені учня або користувача."],
+["Параметри сторінки","Клас","Вибір класу."],
+["Параметри сторінки","Предмет","Вибір навчального предмета."],
+["Параметри сторінки","Навчальна","Тип навчальної роботи/режиму."],
+["Параметри сторінки","Класна робота","Вибір виду роботи."],
+["Параметри сторінки","Дата","Вибір дати."],
+["Параметри сторінки","Лінійка","Тип фону аркуша: лінія, клітинка тощо."],
+["Параметри сторінки","Розмір","Зміна відстані між лініями/клітинками."],
+["Параметри сторінки","Колір ліній","Зміна кольору ліній фону."],
+
+["Сторінки","Нова сторінка","Додає нову сторінку."],
+["Сторінки","Сторінка 1 / 2 / …","Перехід між сторінками. Олівець — перейменування, × — закриття сторінки."],
+["Сторінки","Видалити сторінку","Видаляє активну сторінку."],
+["Сторінки","← / →","Перехід на попередню або наступну сторінку."],
+
+["Вставка","Нотатка","Додає редагований стікер-нотаток у місце курсора."],
+["Вставка","Таблиця","Додає таблицю в місце курсора."],
+["Вставка","Зображення","Вставляє зображення в місце курсора."],
+["Вставка","Відео","Додає відео або посилання на відео."],
+["Вставка","Посилання","Додає гіперпосилання."],
+["Вставка","Файл","Додає файл або посилання на нього."],
+["Вставка","Клавіатура","Відкриває екранну клавіатуру."],
+["Вставка","Голос","Голосове введення."],
+
+["Малювання","Колір","Змінює колір активного інструмента або виділеного об'єкта."],
+["Малювання","Товщина","Змінює товщину лінії."],
+["Малювання","Суцільна / штрихова / крапкова","Змінює стиль контуру."],
+["Малювання","Групувати","Об'єднує вибрані об'єкти."],
+["Малювання","Розгрупувати","Розділяє групу на об'єкти."],
+["Малювання","Фігури","Відкриває набір 2D/3D фігур."],
+
+["Вчитель","Колесо","Колесо фортуни для випадкового вибору."],
+["Вчитель","Картки","Створення навчальних карток."],
+["Вчитель","Тест","Створення тестів."],
+["Вчитель","Списки","Створення списків."],
+["Вчитель","Перекладач","Швидкий переклад."],
+["Вчитель","Таймер","Таймер для роботи на уроці."],
+["Вчитель","UA Розбір","Мовний розбір українською."],
+
+["AI","AI чат","Відкриває AI-помічника."],
+["AI","Зображення","Генерує AI-зображення, якщо провайдер доступний."],
+
+["Робота з об'єктами","Виділення об'єкта","Клацніть об'єкт. Відкриється панель властивостей для зміни кольору, стилю, шрифту, прозорості тощо."],
+["Робота з об'єктами","Копія","Створює копію вибраного об'єкта."],
+["Робота з об'єктами","На передній / На задній","Змінює порядок накладання об'єктів."],
+["Робота з об'єктами","Видалити","Видаляє вибраний об'єкт."],
+["Робота з об'єктами","Курсор вставки","Клацніть порожнє місце аркуша — там з'явиться курсор, і новий об'єкт вставиться саме туди."]
+];
+
+function makeHelp(){
+  let h=$100("v100Help");
+  if(h) return h;
+  h=document.createElement("div");
+  h.id="v100Help";
+  h.innerHTML=`
+    <div id="v100HelpHeader">
+      <strong>Довідка Sofia Notebook</strong>
+      <button type="button" id="v100HelpClose">×</button>
+    </div>
+    <div id="v100HelpSearchWrap">
+      <input id="v100HelpSearch" type="search" placeholder="Пошук: математика, текст, сторінка, AI, колір…">
+    </div>
+    <div id="v100HelpResults"></div>
+  `;
+  document.body.appendChild(h);
+  $100("v100HelpClose").onclick=()=>h.classList.remove("show");
+  $100("v100HelpSearch").addEventListener("input",renderHelp);
+  renderHelp();
+  return h;
+}
+
+function dynamicHelp(){
+  const items=[];
+  document.querySelectorAll("button").forEach(b=>{
+    if(b.closest("#v100Help") || b.closest("#v100ObjectPanel")) return;
+    const name=(b.textContent||"").replace(/\s+/g," ").trim();
+    if(!name || name.length>60) return;
+    if(!helpData.some(x=>x[1].toLowerCase()===name.toLowerCase())){
+      const title=b.title || b.getAttribute("aria-label") || "";
+      if(title) items.push(["Інші кнопки",name,title]);
+    }
+  });
+  return items;
+}
+
+function renderHelp(){
+  const out=$100("v100HelpResults");
+  if(!out) return;
+  const q=($100("v100HelpSearch")?.value||"").trim().toLowerCase();
+  const data=[...helpData,...dynamicHelp()];
+  const filtered=data.filter(([sec,name,desc])=>{
+    if(!q) return true;
+    return (sec+" "+name+" "+desc).toLowerCase().includes(q);
+  });
+
+  if(!filtered.length){
+    out.innerHTML=`<div class="v100-help-empty">За запитом нічого не знайдено</div>`;
+    return;
+  }
+
+  let last="";
+  out.innerHTML=filtered.map(([sec,name,desc])=>{
+    const head=sec!==last ? `<div class="v100-help-section">${sec}</div>` : "";
+    last=sec;
+    return `${head}<div class="v100-help-item"><b>${name}</b><span>${desc}</span></div>`;
+  }).join("");
+}
+
+function wireHelp(){
+  // Hide old help windows so only one help system remains.
+  [$100("v86HelpBox"),$100("v87Help")].forEach(x=>{ if(x) x.style.display="none"; });
+
+  const btn=$100("v86Help") ||
+    [...document.querySelectorAll("button")].find(b=>/Довідка/i.test((b.textContent||"").trim()));
+
+  if(!btn || btn.__v100HelpBound) return;
+  btn.__v100HelpBound=true;
+  btn.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const h=makeHelp();
+    renderHelp();
+    h.classList.toggle("show");
+    if(h.classList.contains("show")){
+      const inp=$100("v100HelpSearch");
+      if(inp){ inp.value=""; renderHelp(); setTimeout(()=>inp.focus(),20); }
+    }
+  };
+}
+
+function markVersion(){
+  let b=$100("appVersionBadge");
+  if(!b){
+    b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
+  }
+  if(b)b.textContent="v100";
+  document.documentElement.dataset.sofiaVersion="100";
+}
+
+function init(){
+  addCss();
+  ensureSignature();
+  makeObjectPanel();
+  makeHelp();
+  wireHelp();
+  bindCanvasSelection();
+  markVersion();
+
+  const mo=new MutationObserver(()=>{
+    clearTimeout(mo.__v100);
+    mo.__v100=setTimeout(()=>{
+      ensureSignature();
+      wireHelp();
+      bindCanvasSelection();
+    },100);
+  });
+  mo.observe(document.body,{childList:true,subtree:true});
+
+  [300,900,1600].forEach(ms=>setTimeout(()=>{
+    wireHelp();
+    bindCanvasSelection();
+  },ms));
+}
+
+if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(init,160),{once:true});
+else
+  setTimeout(init,160);
 })();
