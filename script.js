@@ -86,12 +86,20 @@ function ensureHeadingObjects(){
     return;
   }
 
-  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,48,"normal");
-  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",78,50,"normal");
+  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,24,"normal");
+  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",62,26,"normal");
 
-  // При зміні селектора оновлюємо лише сам текст, але об'єкт лишається редагованим
-  dateObj.set({text:headingDate()});
-  workObj.set({text:$("workType").value});
+  // v121: кожна нова/відкрита сторінка отримує однакове акуратне оформлення.
+  // Скидаємо випадковий масштаб/координати, які могли зберегтися у старій сторінці.
+  const centerX=fcanvas.getWidth()/2;
+  dateObj.set({
+    text:headingDate(),left:centerX,top:24,originX:"center",originY:"top",
+    scaleX:1,scaleY:1,angle:0,fontSize:24,fontWeight:"normal",textAlign:"center"
+  });
+  workObj.set({
+    text:$("workType").value,left:centerX,top:62,originX:"center",originY:"top",
+    scaleX:1,scaleY:1,angle:0,fontSize:26,fontWeight:"normal",textAlign:"center"
+  });
   dateObj.setCoords();workObj.setCoords();
   fcanvas.requestRenderAll();
 }
@@ -1447,6 +1455,12 @@ function savePage(){
 function ensurePageTabsUI(){
   if(document.getElementById("pageTabs"))return;
   const addBtn=$("addPageBtn");if(!addBtn)return;
+  // v121: зрозумілий підпис і більша зона натискання для інтерактивної дошки.
+  addBtn.textContent="＋ Створити нову сторінку";
+  addBtn.title="Створити нову чисту сторінку";
+  addBtn.style.minWidth="210px";
+  addBtn.style.minHeight="42px";
+  addBtn.style.fontWeight="700";
   const wrap=document.createElement("div");wrap.id="pageTabsWrap";wrap.className="page-tabs-wrap";
   const tabs=document.createElement("div");tabs.id="pageTabs";tabs.className="page-tabs";tabs.setAttribute("aria-label","Сторінки зошита");
   wrap.appendChild(tabs);addBtn.insertAdjacentElement("afterend",wrap);
@@ -1502,7 +1516,56 @@ function updatePageIndicator(){
   $("pageIndicator").textContent=`${pageTitleAt(currentPage)} · ${currentPage+1} з ${pages.length}`;
   $("prevPageBtn").disabled=currentPage===0;$("nextPageBtn").disabled=currentPage===pages.length-1;renderPageTabs();
 }
-$("addPageBtn").onclick=()=>{savePage();pages.push(blankPage());loadPage(pages.length-1);autoSave()};
+function createNewPageV121(){
+  const btn=$("addPageBtn");
+  if(btn?.dataset.busy==="1")return;
+  if(btn){
+    btn.dataset.busy="1";
+    btn.disabled=true;
+    btn.textContent="Створюю…";
+  }
+  try{
+    savePage();
+
+    // Успадковуємо поточний тип паперу, але сторінка залишається чистою.
+    const p=blankPage();
+    p.paper=$("paperType").value||"grid";
+    p.paperSize=Number($("paperSize").value)||25;
+    p.paperColor=$("paperLineColor").value||"#9fd5ff";
+    pages.push(p);
+    currentPage=pages.length-1;
+
+    // Швидке очищення без зайвого JSON load — саме він створював відчуття зависання.
+    suppressHistory=true;
+    fcanvas.discardActiveObject();
+    fcanvas.clear();
+    suppressHistory=false;
+
+    $("paperType").value=p.paper;
+    $("paperSize").value=String(p.paperSize);
+    $("paperSizeValue").textContent=String(p.paperSize);
+    $("paperLineColor").value=p.paperColor;
+    applyPaper();
+
+    ensureHeadingObjects();
+    history=[];redoHistory=[];pushHistory();
+    setTool("select");
+    updatePageIndicator();
+    fcanvas.requestRenderAll();
+
+    // Автозбереження після промальовування інтерфейсу.
+    setTimeout(()=>{try{autoSave()}catch(e){}},40);
+  }finally{
+    setTimeout(()=>{
+      if(btn){
+        btn.dataset.busy="0";
+        btn.disabled=false;
+        btn.textContent="＋ Створити нову сторінку";
+      }
+    },60);
+  }
+}
+$("addPageBtn").onclick=createNewPageV121;
 $("deletePageBtn").onclick=()=>closePage(currentPage);
 $("prevPageBtn").onclick=()=>{if(currentPage>0)goToPage(currentPage-1)};
 $("nextPageBtn").onclick=()=>{if(currentPage<pages.length-1)goToPage(currentPage+1)};
@@ -10114,7 +10177,7 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v120";
+  if(b)b.textContent="v121";
   document.documentElement.dataset.sofiaVersion="120-exact119-left-only";
 }
 
