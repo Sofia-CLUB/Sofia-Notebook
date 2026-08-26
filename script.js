@@ -1,6 +1,7 @@
 const $=id=>document.getElementById(id);
 const notebook=$("notebook");
 const fcanvas=new fabric.Canvas("fabricCanvas",{selection:true,preserveObjectStacking:true});
+window.fcanvas=fcanvas; // v126: доступ для модулів карток, таблиць та інших інструментів
 
 
 
@@ -54,25 +55,33 @@ function headingDate(){
 function findSystemText(role){
   return fcanvas.getObjects().find(o=>o.systemRole===role);
 }
+const HEADING_DEFAULTS_KEY="sofiaNotebookHeadingDefaultsV1";
+function getHeadingDefaults(){
+  try{return JSON.parse(localStorage.getItem(HEADING_DEFAULTS_KEY)||"{}")||{}}catch(e){return{}}
+}
+function headingDefaultFor(role){return getHeadingDefaults()[role]||null}
+function saveHeadingDefault(obj){
+  if(!obj?.systemRole)return false;
+  const all=getHeadingDefaults();
+  all[obj.systemRole]={
+    left:obj.left,top:obj.top,originX:obj.originX||"center",originY:obj.originY||"top",
+    fontFamily:obj.fontFamily||"Segoe Script",fontSize:obj.fontSize||48,
+    fontWeight:obj.fontWeight||"normal",fontStyle:obj.fontStyle||"normal",
+    underline:!!obj.underline,linethrough:!!obj.linethrough,
+    fill:obj.fill||"#4a7fbd",backgroundColor:obj.backgroundColor||"",
+    textAlign:obj.textAlign||"center",scaleX:obj.scaleX||1,scaleY:obj.scaleY||1,angle:obj.angle||0
+  };
+  localStorage.setItem(HEADING_DEFAULTS_KEY,JSON.stringify(all));return true;
+}
+function resetHeadingDefault(role){const all=getHeadingDefaults();delete all[role];localStorage.setItem(HEADING_DEFAULTS_KEY,JSON.stringify(all))}
 function makeHeadingText(text,role,top,fontSize=24,fontWeight="normal"){
+  const saved=headingDefaultFor(role);
   const t=new fabric.IText(text,{
-    left:fcanvas.getWidth()/2,
-    top,
-    originX:"center",
-    fontFamily:"Segoe Script",
-    fontStyle:"normal",
-    fontSize,
-    fontWeight,
-    fill:"#4a7fbd",
-    textAlign:"center",
-    editable:true,
-    selectable:true,
-    evented:true,
-    systemRole:role,
-    isHeadingText:true
+    left:fcanvas.getWidth()/2,top,originX:"center",fontFamily:"Segoe Script",fontStyle:"normal",
+    fontSize,fontWeight,fill:"#4a7fbd",textAlign:"center",editable:true,selectable:true,evented:true,
+    systemRole:role,isHeadingText:true,...(saved||{})
   });
-  fcanvas.add(t);
-  return t;
+  fcanvas.add(t);return t;
 }
 function ensureHeadingObjects(){
   const free=$("pageMode").value==="free";
@@ -180,20 +189,98 @@ $("paperSizePlus").onclick=()=>{
 $("paperSizeValue").textContent=$("paperSize").value;
 applyPaper();
 
-/* ---------- Fabric delete control: червоний × на кожному виділеному об'єкті ---------- */
-function deleteObject(_eventData,transform){
-  const target=transform.target;
-  const canvas=target.canvas;
-  if(target.type==="activeSelection")target.forEachObject(o=>canvas.remove(o));
-  canvas.remove(target);canvas.requestRenderAll();pushHistory();autoSave();return true;
+/* ---------- v123: надійний червоний × для видалення об'єкта ---------- */
+function deleteObject(eventData,transform){
+  const target=transform?.target;
+  if(!target)return false;
+  const canvas=target.canvas||fcanvas;
+
+  // Не дозволяємо події одразу перейти у перетягування/масштабування.
+  if(eventData?.e){
+    eventData.e.preventDefault?.();
+    eventData.e.stopPropagation?.();
+  }
+
+  if(target.type==="activeSelection" && typeof target.getObjects==="function"){
+    target.getObjects().slice().forEach(o=>canvas.remove(o));
+    canvas.discardActiveObject();
+  }else{
+    canvas.remove(target);
+    canvas.discardActiveObject();
+  }
+
+  canvas.requestRenderAll();
+  pushHistory();
+  autoSave();
+  return true;
 }
+
 function renderDeleteIcon(ctx,left,top,_styleOverride,fabricObject){
-  const size=24;
-  ctx.save();ctx.translate(left,top);ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-  ctx.beginPath();ctx.arc(0,0,size/2,0,Math.PI*2);ctx.fillStyle="#d43b3b";ctx.fill();
-  ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-5,-5);ctx.lineTo(5,5);ctx.moveTo(5,-5);ctx.lineTo(-5,5);ctx.stroke();ctx.restore();
+  const size=34;
+  ctx.save();
+  ctx.translate(left,top);
+  ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle||0));
+
+  // Білий обідок робить кнопку добре помітною на клітинці.
+  ctx.beginPath();
+  ctx.arc(0,0,size/2+2,0,Math.PI*2);
+  ctx.fillStyle="#ffffff";
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(0,0,size/2,0,Math.PI*2);
+  ctx.fillStyle="#dc3b3b";
+  ctx.fill();
+
+  ctx.strokeStyle="#ffffff";
+  ctx.lineWidth=3;
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(-7,-7);ctx.lineTo(7,7);
+  ctx.moveTo(7,-7);ctx.lineTo(-7,7);
+  ctx.stroke();
+  ctx.restore();
 }
-fabric.Object.prototype.controls.deleteControl=new fabric.Control({x:.5,y:-.5,offsetY:-15,offsetX:15,cursorStyle:"pointer",mouseUpHandler:deleteObject,render:renderDeleteIcon,cornerSize:26});
+
+fabric.Object.prototype.controls.deleteControl=new fabric.Control({
+  x:.5,
+  y:-.5,
+  offsetX:20,
+  offsetY:-20,
+  cursorStyle:"pointer",
+  render:renderDeleteIcon,
+
+  // На інтерактивній дошці видаляємо вже по натисканню, а не чекаємо mouseup.
+  mouseDownHandler:deleteObject,
+  mouseUpHandler:()=>true,
+
+  // Збільшена невидима зона натискання навколо ×.
+  cornerSize:44,
+  touchSizeX:54,
+  touchSizeY:54
+});
+
+/* Додаткова страховка для різних версій Fabric:
+   якщо користувач натиснув прямо в область ×, видаляємо активний об'єкт. */
+fcanvas.on("mouse:down",opt=>{
+  const active=fcanvas.getActiveObject();
+  if(!active || !active.oCoords?.deleteControl)return;
+
+  const ev=opt.e;
+  const rect=fcanvas.upperCanvasEl.getBoundingClientRect();
+  const sx=fcanvas.getWidth()/rect.width;
+  const sy=fcanvas.getHeight()/rect.height;
+  const px=(ev.clientX-rect.left)*sx;
+  const py=(ev.clientY-rect.top)*sy;
+  const c=active.oCoords.deleteControl;
+
+  const hitRadius=30;
+  if(Math.hypot(px-c.x,py-c.y)<=hitRadius){
+    ev.preventDefault?.();
+    ev.stopPropagation?.();
+    deleteObject({e:ev},{target:active});
+  }
+});
 
 /* ---------- Стиль ---------- */
 function lineDash(){
@@ -3474,6 +3561,14 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     syncV57TextControls();
   }
 
+  function loadSofiaHandwritingFonts(){
+    if(document.getElementById("sofiaHandwritingFonts"))return;
+    const link=document.createElement("link");link.id="sofiaHandwritingFonts";link.rel="stylesheet";
+    link.href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@400;500;600;700&family=Comforter&family=Kurale&family=Lobster&family=Marck+Script&family=Neucha&family=Pacifico&family=Pangolin&display=swap&subset=cyrillic";
+    document.head.appendChild(link);
+  }
+  loadSofiaHandwritingFonts();
+
   function addTextFormatControls(){
     const home=document.querySelector('.v56-panel[data-v56-panel="home"]');
     if(!home || $57("v57TextFormat"))return;
@@ -3490,16 +3585,16 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       <button id="v57InsertTextBtn" type="button" title="Додати текст">T Текст</button>
 
       <select id="v57TextFont" title="Шрифт">
-        <option>Segoe Script</option>
-        <option>Times New Roman</option>
-        <option>Arial</option>
-        <option>Calibri</option>
-        <option>Georgia</option>
-        <option>Verdana</option>
-        <option>Tahoma</option>
-        <option>Trebuchet MS</option>
-        <option>Segoe Print</option>
-        <option>Comic Sans MS</option>
+        <optgroup label="✍ Рукописні / прописні">
+          <option>Segoe Script</option><option>Segoe Print</option><option>Marck Script</option>
+          <option>Bad Script</option><option>Caveat</option><option>Neucha</option><option>Pangolin</option>
+          <option>Comforter</option><option>Pacifico</option><option>Lobster</option><option>Kurale</option>
+          <option>Comic Sans MS</option>
+        </optgroup>
+        <optgroup label="▤ Класичні">
+          <option>Times New Roman</option><option>Georgia</option><option>Arial</option><option>Calibri</option>
+          <option>Verdana</option><option>Tahoma</option><option>Trebuchet MS</option>
+        </optgroup>
       </select>
 
       <input id="v57TextSize" type="number" min="8" max="120" value="38"
@@ -3528,6 +3623,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       </select>
 
       <button id="v57DuplicateText" type="button" title="Дублювати текст">⧉ Копія</button>
+      <button id="v121SaveHeadingDefault" type="button" title="Для дати або назви роботи: зберегти шрифт, розмір, колір і поточне місце як стандарт для нових сторінок">★ Зберегти як стандарт</button>
+      <button id="v121ResetHeadingDefault" type="button" title="Скинути стандарт вибраної дати або назви роботи">↺ Скинути стандарт</button>
     `;
 
     home.appendChild(wrap);
@@ -3568,6 +3665,17 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     };
 
+    $57("v121SaveHeadingDefault").onclick=()=>{
+      const o=activeText();
+      if(!o?.systemRole){alert("Спочатку виберіть на сторінці дату або назву роботи (наприклад «Класна робота»), налаштуйте її та розташуйте як потрібно.");return}
+      saveHeadingDefault(o);autoSave();
+      alert(o.systemRole==="dateHeading"?"Стандарт дати збережено. Нові сторінки матимуть таке саме оформлення і розташування.":"Стандарт назви роботи збережено. Нові сторінки матимуть таке саме оформлення і розташування.");
+    };
+    $57("v121ResetHeadingDefault").onclick=()=>{
+      const o=activeText();if(!o?.systemRole){alert("Спочатку виберіть дату або назву роботи.");return}
+      resetHeadingDefault(o.systemRole);alert("Стандарт скинуто. На наступній новій сторінці буде початкове оформлення.");
+    };
+
     // Old separate text format bar is no longer needed: one text toolbar only.
     const old=$57("textFormatBar");
     if(old)old.style.display="none";
@@ -3598,7 +3706,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     "pointBtn","vertexLabelBtn",
     "v57InsertTextBtn","v57TextFont","v57TextSize","v57TextSmaller","v57TextLarger",
     "v57Bold","v57Italic","v57Underline","v57Strike","v57TextColor","v57TextBg",
-    "v57TextAlign","v57DuplicateText"
+    "v57TextAlign","v57DuplicateText","v121SaveHeadingDefault","v121ResetHeadingDefault"
   ]);
 
   function buttonWorks(btn){
@@ -10148,3 +10256,860 @@ if(document.readyState==="loading"){
   setTimeout(init,180);
 }
 })();
+
+/* =========================================================
+   V122 — FIX: saved heading defaults are authoritative
+   Prevent older V56/V63 routines from resetting font/position
+   on a newly created/loaded page.
+   ========================================================= */
+(function(){
+  "use strict";
+  const KEY="sofiaNotebookHeadingDefaultsV1";
+  function read(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){return{}}}
+  function applyOne(o){
+    if(!o || (o.systemRole!=="dateHeading" && o.systemRole!=="workHeading"))return;
+    const d=read()[o.systemRole]; if(!d)return;
+    o.set({
+      left:d.left, top:d.top,
+      originX:d.originX||"center", originY:d.originY||"top",
+      fontFamily:d.fontFamily||"Segoe Script", fontSize:d.fontSize||48,
+      fontWeight:d.fontWeight||"normal", fontStyle:d.fontStyle||"normal",
+      underline:!!d.underline, linethrough:!!d.linethrough,
+      fill:d.fill||"#4a7fbd", backgroundColor:d.backgroundColor||"",
+      textAlign:d.textAlign||"center",
+      scaleX:d.scaleX||1, scaleY:d.scaleY||1, angle:d.angle||0
+    });
+    o.setCoords?.();
+  }
+  function applyAll(){
+    if(typeof fcanvas==="undefined")return;
+    fcanvas.getObjects().forEach(applyOne);
+    fcanvas.requestRenderAll?.();
+  }
+  function settle(){[0,30,100,250,600].forEach(ms=>setTimeout(applyAll,ms));}
+
+  function init(){
+    settle();
+    if(typeof fcanvas!=="undefined" && !fcanvas.__v122HeadingDefaults){
+      fcanvas.__v122HeadingDefaults=true;
+      fcanvas.on("object:added",e=>{
+        if(e?.target?.systemRole==="dateHeading"||e?.target?.systemRole==="workHeading") settle();
+      });
+    }
+    const add=document.getElementById("addPageBtn");
+    if(add && !add.dataset.v122defaults){
+      add.dataset.v122defaults="1";
+      add.addEventListener("click",settle,true);
+    }
+    document.addEventListener("click",e=>{
+      if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
+    },true);
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v124";
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
+  else setTimeout(init,250);
+})();
+
+
+/* =========================================================
+   v124 — ВСТАВЛЕННЯ З БУФЕРА ОБМІНУ
+   Підтримує:
+   - Ctrl+V / Вставити
+   - скріншоти
+   - картинки
+   - текст
+   Не втручається у звичайне вставлення всередині INPUT/TEXTAREA.
+   ========================================================= */
+
+function sofiaInsertClipboardImage(blob){
+  if(!blob || !blob.type?.startsWith("image/")) return false;
+
+  const reader=new FileReader();
+  reader.onload=()=>{
+    fabric.Image.fromURL(reader.result,img=>{
+      if(!img)return;
+
+      const maxW=Math.max(320,fcanvas.getWidth()*0.62);
+      const maxH=Math.max(260,fcanvas.getHeight()*0.62);
+      const scale=Math.min(maxW/img.width,maxH/img.height,1);
+
+      img.set({
+        left:fcanvas.getWidth()/2,
+        top:Math.max(135,fcanvas.getHeight()/2),
+        originX:"center",
+        originY:"center",
+        scaleX:scale,
+        scaleY:scale,
+        selectable:true,
+        evented:true,
+        erasable:true,
+        clipboardObject:true
+      });
+
+      fcanvas.add(img);
+      fcanvas.setActiveObject(img);
+      fcanvas.requestRenderAll();
+      pushHistory();
+      autoSave();
+      setTool("select");
+    });
+  };
+  reader.readAsDataURL(blob);
+  return true;
+}
+
+function sofiaInsertClipboardText(text){
+  text=String(text||"").replace(/\r\n/g,"\n").trim();
+  if(!text)return false;
+
+  const tb=new fabric.Textbox(text,{
+    left:fcanvas.getWidth()/2,
+    top:Math.max(135,fcanvas.getHeight()/2),
+    originX:"center",
+    originY:"center",
+    width:Math.min(760,fcanvas.getWidth()*0.70),
+    fontFamily:window.sofiaTextDefaults?.fontFamily || "Arial",
+    fontSize:window.sofiaTextDefaults?.fontSize || 28,
+    fill:window.sofiaTextDefaults?.fill || "#17315f",
+    lineHeight:1.25,
+    editable:true,
+    selectable:true,
+    evented:true,
+    erasable:false,
+    clipboardObject:true
+  });
+
+  fcanvas.add(tb);
+  fcanvas.setActiveObject(tb);
+  fcanvas.requestRenderAll();
+  pushHistory();
+  autoSave();
+  setTool("select");
+  return true;
+}
+
+async function sofiaPasteFromClipboard(){
+  // Clipboard API works only on HTTPS/localhost and after a user gesture.
+  if(!navigator.clipboard){
+    alert("Буфер обміну недоступний у цьому браузері. Спробуйте Ctrl+V.");
+    return;
+  }
+
+  try{
+    // First try rich clipboard content (images/screenshots).
+    if(navigator.clipboard.read){
+      const items=await navigator.clipboard.read();
+      for(const item of items){
+        const imageType=item.types.find(t=>t.startsWith("image/"));
+        if(imageType){
+          const blob=await item.getType(imageType);
+          sofiaInsertClipboardImage(blob);
+          return;
+        }
+      }
+    }
+
+    // Then try text.
+    if(navigator.clipboard.readText){
+      const text=await navigator.clipboard.readText();
+      if(sofiaInsertClipboardText(text))return;
+    }
+
+    alert("У буфері немає картинки, скріншота або тексту.");
+  }catch(err){
+    console.warn("Clipboard read blocked:",err);
+    alert("Браузер не дав доступ до буфера. Натисніть Ctrl+V прямо на дошці.");
+  }
+}
+
+// Standard paste event — this is the most reliable path for screenshots copied with Win+Shift+S.
+document.addEventListener("paste",e=>{
+  const active=document.activeElement;
+  const tag=active?.tagName;
+
+  // Let browser paste normally when teacher is typing in a form/editor.
+  if(tag==="INPUT" || tag==="TEXTAREA" || active?.isContentEditable)return;
+
+  const dt=e.clipboardData;
+  if(!dt)return;
+
+  // Prefer image/screenshot.
+  const imageItem=[...dt.items].find(i=>i.kind==="file" && i.type.startsWith("image/"));
+  if(imageItem){
+    const blob=imageItem.getAsFile();
+    if(blob){
+      e.preventDefault();
+      sofiaInsertClipboardImage(blob);
+      return;
+    }
+  }
+
+  // Otherwise insert text as a movable/editable board object.
+  const text=dt.getData("text/plain");
+  if(text){
+    e.preventDefault();
+    sofiaInsertClipboardText(text);
+  }
+});
+
+// Add a visible button without requiring index.html changes.
+// It is placed near the existing media/insert buttons when possible.
+(function ensureClipboardPasteButton(){
+  if(document.getElementById("clipboardPasteBtn"))return;
+
+  const btn=document.createElement("button");
+  btn.id="clipboardPasteBtn";
+  btn.type="button";
+  btn.className="top-btn mini";
+  btn.textContent="📋 Вставити з буфера";
+  btn.title="Вставити текст, картинку або скріншот з буфера обміну";
+  btn.onclick=sofiaPasteFromClipboard;
+
+  const anchor=
+    document.getElementById("mediaBtn") ||
+    document.getElementById("insertBtn") ||
+    document.getElementById("saveBtn");
+
+  if(anchor?.parentElement){
+    anchor.insertAdjacentElement("afterend",btn);
+  }else{
+    btn.style.cssText="position:fixed;right:16px;top:72px;z-index:9990";
+    document.body.appendChild(btn);
+  }
+})();
+
+
+
+
+/* =========================================================
+   v125 FULL
+   1) GitHub Pages -> Vercel API proxy for ALL /api/* calls
+   2) Interactive cards on board: question -> click -> answer
+   ========================================================= */
+(function(){
+  /* ---------- API routing ---------- */
+  const VERCEL_ORIGIN = "https://sofia-notebook.vercel.app";
+  const nativeFetch = window.fetch.bind(window);
+
+  window.fetch = function(input, init){
+    try{
+      let url = typeof input === "string" ? input : input?.url;
+      if(url && /^\/api\//.test(url) && location.hostname.endsWith("github.io")){
+        const routed = VERCEL_ORIGIN + url;
+        if(typeof input === "string"){
+          input = routed;
+        }else if(input instanceof Request){
+          input = new Request(routed, input);
+        }
+      }
+    }catch(e){
+      console.warn("v125 API routing:", e);
+    }
+    return nativeFetch(input, init);
+  };
+
+  /* ---------- Interactive board cards ---------- */
+  const byId=id=>document.getElementById(id);
+
+  function parseCards(text){
+    return String(text||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(line=>{
+      const parts=line.split("|");
+      return {front:(parts.shift()||"").trim(), back:parts.join("|").trim()};
+    }).filter(x=>x.front);
+  }
+
+  function fitText(t,maxH){
+    let fs=t.fontSize||24;
+    t.initDimensions?.();
+    while(fs>14 && t.height>maxH){
+      fs--;
+      t.set({fontSize:fs});
+      t.initDimensions?.();
+    }
+  }
+
+  function addInteractiveCard(card,index){
+    if(!window.fabric || !window.fcanvas) return;
+    const c=window.fcanvas, W=320, H=190, gap=24;
+    const cols=Math.max(1,Math.floor((c.getWidth()-80)/(W+gap)));
+    const left=40+(index%cols)*(W+gap);
+    const top=150+Math.floor(index/cols)*(H+gap);
+
+    const bg=new fabric.Rect({
+      left:0,top:0,width:W,height:H,rx:16,ry:16,
+      fill:"#fff",stroke:"#17315f",strokeWidth:2
+    });
+    const txt=new fabric.Textbox(card.front,{
+      left:20,top:28,width:W-40,fontFamily:"Arial",fontSize:24,
+      fontWeight:"bold",fill:"#17315f",textAlign:"center",
+      selectable:false,evented:false
+    });
+    fitText(txt,105);
+    const hint=new fabric.Text("Натисніть, щоб побачити відповідь",{
+      left:W/2,top:H-28,originX:"center",originY:"center",
+      fontFamily:"Arial",fontSize:13,fill:"#6b7280",
+      selectable:false,evented:false
+    });
+
+    const g=new fabric.Group([bg,txt,hint],{
+      left,top,selectable:true,evented:true,
+      sofiaInteractiveCard:true,
+      sofiaCardFront:card.front,
+      sofiaCardBack:card.back||"Відповідь",
+      sofiaCardFlipped:false
+    });
+
+    function flip(){
+      const on=!g.sofiaCardFlipped;
+      g.sofiaCardFlipped=on;
+      txt.set({
+        text:on?(card.back||"Відповідь"):card.front,
+        fontWeight:on?"normal":"bold",
+        fill:on?"#0f5132":"#17315f",
+        fontSize:24
+      });
+      txt.initDimensions?.(); fitText(txt,105);
+      bg.set({fill:on?"#edf9f1":"#fff",stroke:on?"#198754":"#17315f"});
+      hint.set({
+        text:on?"Відповідь • натисніть, щоб повернути":"Натисніть, щоб побачити відповідь",
+        fill:on?"#198754":"#6b7280"
+      });
+      g.dirty=true; c.requestRenderAll();
+      try{ autoSave?.(); }catch(e){}
+    }
+
+    g.on("mousedown",opt=>{
+      const e=opt?.e;
+      g.__v125down={x:e?.clientX||0,y:e?.clientY||0,t:Date.now()};
+    });
+    g.on("mouseup",opt=>{
+      const d=g.__v125down, e=opt?.e; g.__v125down=null;
+      if(!d)return;
+      const dx=Math.abs((e?.clientX||0)-d.x), dy=Math.abs((e?.clientY||0)-d.y);
+      if(dx<8 && dy<8 && Date.now()-d.t<700) flip();
+    });
+
+    c.add(g);
+  }
+
+  function bindCards(){
+    const btn=byId("tt31CardsToBoard");
+    if(!btn || btn.dataset.v125full==="1") return false;
+    btn.dataset.v125full="1";
+    btn.textContent="🃏 Вставити інтерактивні картки";
+    btn.title="Питання на лицьовій стороні; натискання показує відповідь";
+    btn.onclick=function(e){
+      e?.preventDefault?.(); e?.stopPropagation?.();
+      const cards=parseCards(byId("tt31CardsInput")?.value);
+      if(!cards.length){ alert("Спочатку введіть або створіть картки у форматі «Питання | Відповідь»."); return; }
+      cards.forEach(addInteractiveCard);
+      try{
+        fcanvas.discardActiveObject(); fcanvas.requestRenderAll();
+        pushHistory?.(); autoSave?.(); setTool?.("select");
+      }catch(err){}
+    };
+    return true;
+  }
+
+  let n=0;
+  const timer=setInterval(()=>{ n++; if(bindCards()||n>80)clearInterval(timer); },250);
+  window.addEventListener("load",()=>setTimeout(bindCards,400));
+})();
+
+
+
+/* =========================================================
+   v126 — КАРТКИ + ПЕРЕВІРКА КНОПОК
+   - робоча кнопка «Вставити інтерактивні картки»
+   - кнопка «│ Питання | Відповідь» біля поля карток
+   - один клік вставляє роздільник | у позицію курсора
+   - обробник карток перехоплюється на рівні document,
+     тому його не може перезаписати teacher-tools.js
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function insertCardSeparator(){
+    const ta=q("tt31CardsInput");
+    if(!ta)return;
+    ta.focus();
+    const start=Number.isInteger(ta.selectionStart)?ta.selectionStart:ta.value.length;
+    const end=Number.isInteger(ta.selectionEnd)?ta.selectionEnd:start;
+    const token=" | ";
+    ta.value=ta.value.slice(0,start)+token+ta.value.slice(end);
+    const pos=start+token.length;
+    ta.setSelectionRange?.(pos,pos);
+    ta.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+
+  function ensureSeparatorButton(){
+    const ta=q("tt31CardsInput");
+    if(!ta || q("tt126CardSeparatorBtn"))return false;
+
+    const btn=document.createElement("button");
+    btn.id="tt126CardSeparatorBtn";
+    btn.type="button";
+    btn.textContent="│ Додати роздільник  |";
+    btn.title="Поставити між питанням і відповіддю. Формат: Питання | Відповідь";
+    btn.style.cssText=[
+      "margin:6px 6px 6px 0",
+      "padding:7px 10px",
+      "border:1px solid #cbd5e1",
+      "border-radius:8px",
+      "background:#fff",
+      "color:#17315f",
+      "font-weight:700",
+      "cursor:pointer"
+    ].join(";");
+
+    const helper=document.createElement("span");
+    helper.id="tt126CardFormatHint";
+    helper.textContent=" Формат: Питання | Відповідь";
+    helper.style.cssText="font-size:11px;color:#64748b;margin-left:4px";
+
+    ta.insertAdjacentElement("beforebegin",btn);
+    btn.insertAdjacentElement("afterend",helper);
+    btn.onclick=insertCardSeparator;
+    return true;
+  }
+
+  function parseCardsV126(text){
+    return String(text||"")
+      .split(/\r?\n/)
+      .map(s=>s.trim())
+      .filter(Boolean)
+      .map(line=>{
+        const p=line.indexOf("|");
+        if(p<0)return {front:line,back:""};
+        return {
+          front:line.slice(0,p).trim(),
+          back:line.slice(p+1).trim()
+        };
+      })
+      .filter(c=>c.front);
+  }
+
+  function fitCardTextV126(t,maxH){
+    let fs=t.fontSize||24;
+    t.initDimensions?.();
+    while(fs>14 && t.height>maxH){
+      fs-=1;
+      t.set({fontSize:fs});
+      t.initDimensions?.();
+    }
+  }
+
+  function addInteractiveCardV126(card,index){
+    const c=window.fcanvas;
+    if(!c || !window.fabric)return;
+
+    const W=320,H=190,gap=24;
+    const cols=Math.max(1,Math.floor((c.getWidth()-80)/(W+gap)));
+    const left=40+(index%cols)*(W+gap);
+    const top=150+Math.floor(index/cols)*(H+gap);
+
+    const bg=new fabric.Rect({
+      left:0,top:0,width:W,height:H,rx:16,ry:16,
+      fill:"#ffffff",stroke:"#17315f",strokeWidth:2
+    });
+    const txt=new fabric.Textbox(card.front,{
+      left:20,top:28,width:W-40,
+      fontFamily:"Arial",fontSize:24,fontWeight:"bold",
+      fill:"#17315f",textAlign:"center",
+      selectable:false,evented:false,erasable:false
+    });
+    fitCardTextV126(txt,108);
+
+    const hint=new fabric.Text("Натисніть, щоб побачити відповідь",{
+      left:W/2,top:H-28,originX:"center",originY:"center",
+      fontFamily:"Arial",fontSize:13,fill:"#64748b",
+      selectable:false,evented:false,erasable:false
+    });
+
+    const g=new fabric.Group([bg,txt,hint],{
+      left,top,selectable:true,evented:true,
+      sofiaInteractiveCard:true,
+      sofiaCardFront:card.front,
+      sofiaCardBack:card.back||"Відповідь не вказана",
+      sofiaCardFlipped:false
+    });
+
+    const renderSide=()=>{
+      const on=!!g.sofiaCardFlipped;
+      txt.set({
+        text:on?(card.back||"Відповідь не вказана"):card.front,
+        fontWeight:on?"normal":"bold",
+        fill:on?"#0f5132":"#17315f",
+        fontSize:24
+      });
+      txt.initDimensions?.();
+      fitCardTextV126(txt,108);
+      bg.set({
+        fill:on?"#edf9f1":"#ffffff",
+        stroke:on?"#198754":"#17315f"
+      });
+      hint.set({
+        text:on?"Відповідь • натисніть, щоб повернути":"Натисніть, щоб побачити відповідь",
+        fill:on?"#198754":"#64748b"
+      });
+      g.dirty=true;
+      c.requestRenderAll();
+    };
+
+    g.on("mousedown",opt=>{
+      const e=opt?.e;
+      g.__cardDown={x:e?.clientX||0,y:e?.clientY||0,t:Date.now()};
+    });
+    g.on("mouseup",opt=>{
+      const d=g.__cardDown,e=opt?.e;
+      g.__cardDown=null;
+      if(!d)return;
+      const dx=Math.abs((e?.clientX||0)-d.x);
+      const dy=Math.abs((e?.clientY||0)-d.y);
+      if(dx<8 && dy<8 && Date.now()-d.t<700){
+        g.sofiaCardFlipped=!g.sofiaCardFlipped;
+        renderSide();
+        try{autoSave()}catch(_){}
+      }
+    });
+
+    c.add(g);
+  }
+
+  function insertCardsToBoardV126(){
+    const ta=q("tt31CardsInput");
+    if(!ta)return alert("Не знайдено поле карток.");
+    const cards=parseCardsV126(ta.value);
+    if(!cards.length){
+      return alert("Введіть картки. Один рядок = одна картка. Формат: Питання | Відповідь");
+    }
+    if(!window.fcanvas || !window.fabric){
+      return alert("Полотно ще не готове. Оновіть сторінку та спробуйте ще раз.");
+    }
+
+    cards.forEach(addInteractiveCardV126);
+    window.fcanvas.discardActiveObject();
+    window.fcanvas.requestRenderAll();
+    try{pushHistory()}catch(_){}
+    try{autoSave()}catch(_){}
+    try{setTool("select")}catch(_){}
+  }
+
+  function decorateCardsButton(){
+    const btn=q("tt31CardsToBoard");
+    if(!btn)return false;
+    btn.textContent="🃏 Вставити інтерактивні картки";
+    btn.title="На картці видно питання. Натискання показує відповідь.";
+    btn.dataset.v126Ready="1";
+    return true;
+  }
+
+  // Надійно перехоплюємо натискання, навіть якщо інший JS перепише onclick.
+  document.addEventListener("click",e=>{
+    const sep=e.target?.closest?.("#tt126CardSeparatorBtn");
+    if(sep){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      insertCardSeparator();
+      return;
+    }
+
+    const cards=e.target?.closest?.("#tt31CardsToBoard");
+    if(cards){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      insertCardsToBoardV126();
+    }
+  },true);
+
+  // Teacher tools можуть створюватися пізніше.
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    ensureSeparatorButton();
+    decorateCardsButton();
+    if(tries>120)clearInterval(timer);
+  },250);
+
+  /* Розширена діагностика важливих кнопок.
+     Результат видно в Console і в існуючій панелі «Перевірка», якщо вона є. */
+  function v126ButtonAudit(){
+    const important=[
+      ["fullscreenBtn","Повний екран"],
+      ["mediaBtn","Фото / відео / файл"],
+      ["clipboardPasteBtn","Вставити з буфера"],
+      ["keyboardBtn","Клавіатура"],
+      ["timerBtn","Таймер"],
+      ["aiBtn","AI чат"],
+      ["saveBtn","Зберегти"],
+      ["clearAllBtn","Очистити все"],
+      ["addPageBtn","Створити нову сторінку"],
+      ["deletePageBtn","Видалити сторінку"],
+      ["diagnosticsBtn","Перевірка"],
+      ["tt31CardsToBoard","Інтерактивні картки"],
+      ["tt31CardsGenerate","Створити картки"],
+      ["tt31CardsAiBtn","Створити картки з AI"],
+      ["tt31TranslateBtn","Перекладач"],
+      ["tt31ImageGenerate","AI-зображення"],
+      ["tt36InsertTable","Таблиця"]
+    ];
+    const report=important.map(([id,name])=>({id,name,found:!!q(id)}));
+    console.table(report);
+    window.sofiaV126ButtonAudit=report;
+    return report;
+  }
+  window.sofiaRunButtonAudit=v126ButtonAudit;
+  window.addEventListener("load",()=>setTimeout(v126ButtonAudit,1200));
+})();
+
+
+
+/* =========================================================
+   v127 — КАРТКИ: ВИПРАВЛЕНО ОСТАТОЧНО
+   Причина v126: поле карток у teacher-tools не завжди має
+   очікуваний ID. Тепер шукаємо поле відносно самої кнопки.
+   ========================================================= */
+(function(){
+  const byId=id=>document.getElementById(id);
+
+  function getCardsButton(){
+    return byId("tt31CardsToBoard")
+      || [...document.querySelectorAll("button")].find(b=>/Вставити.*картк/i.test(b.textContent||""));
+  }
+
+  function getCardsTextarea(){
+    const btn=getCardsButton();
+    if(!btn)return null;
+
+    // 1) Найближча секція інструментів
+    const section=btn.closest("section, .tt31-section, .panel, .tool-panel, div");
+    if(section){
+      const ta=[...section.querySelectorAll("textarea")].find(x=>{
+        const ph=(x.placeholder||"").toLowerCase();
+        return ph.includes("питання") || ph.includes("карт") || ph.includes("відповід");
+      });
+      if(ta)return ta;
+
+      const all=section.querySelectorAll("textarea");
+      if(all.length)return all[0];
+    }
+
+    // 2) Пошук по всій панелі teacher tools
+    const panel=btn.closest("#teacherToolsPanel, .teacher-tools-panel, [class*='teacher']");
+    if(panel){
+      const all=panel.querySelectorAll("textarea");
+      if(all.length)return all[0];
+    }
+
+    // 3) Фолбек — найближче textarea перед кнопкою
+    const all=[...document.querySelectorAll("textarea")];
+    return all.find(t=>{
+      const r1=t.getBoundingClientRect(), r2=btn.getBoundingClientRect();
+      return Math.abs(r1.left-r2.left)<500 && r1.bottom<=r2.top+120;
+    }) || null;
+  }
+
+  function ensureSeparatorButtonV127(){
+    const ta=getCardsTextarea();
+    if(!ta)return false;
+    if(document.getElementById("tt127SeparatorBtn"))return true;
+
+    const row=document.createElement("div");
+    row.id="tt127SeparatorRow";
+    row.style.cssText="display:flex;align-items:center;gap:7px;margin:7px 0 6px;flex-wrap:wrap";
+
+    const btn=document.createElement("button");
+    btn.id="tt127SeparatorBtn";
+    btn.type="button";
+    btn.textContent="│ Вставити роздільник |";
+    btn.title="Поставте курсор між питанням і відповіддю";
+    btn.style.cssText="padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#17315f;font-weight:700;cursor:pointer";
+
+    const hint=document.createElement("span");
+    hint.textContent="Питання | Відповідь";
+    hint.style.cssText="font-size:11px;color:#64748b";
+
+    row.append(btn,hint);
+    ta.insertAdjacentElement("afterend",row);
+
+    btn.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      ta.focus();
+      const start=Number.isInteger(ta.selectionStart)?ta.selectionStart:ta.value.length;
+      const end=Number.isInteger(ta.selectionEnd)?ta.selectionEnd:start;
+      const token=" | ";
+      ta.value=ta.value.slice(0,start)+token+ta.value.slice(end);
+      const pos=start+token.length;
+      ta.setSelectionRange?.(pos,pos);
+      ta.dispatchEvent(new Event("input",{bubbles:true}));
+    });
+    return true;
+  }
+
+  function parseCardsV127(text){
+    const lines=String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    return lines.map(line=>{
+      const i=line.indexOf("|");
+      if(i<0)return {front:line,back:""};
+      return {
+        front:line.slice(0,i).trim(),
+        back:line.slice(i+1).trim()
+      };
+    }).filter(x=>x.front);
+  }
+
+  function fitTextV127(obj,maxH){
+    let fs=obj.fontSize||24;
+    obj.initDimensions?.();
+    while(fs>13 && obj.height>maxH){
+      fs--;
+      obj.set({fontSize:fs});
+      obj.initDimensions?.();
+    }
+  }
+
+  function addInteractiveCardV127(card,index){
+    const c=window.fcanvas;
+    if(!c || !window.fabric)throw new Error("Полотно ще не готове");
+
+    const W=320,H=185,G=22;
+    const cols=Math.max(1,Math.floor((c.getWidth()-70)/(W+G)));
+    const left=35+(index%cols)*(W+G);
+    const top=145+Math.floor(index/cols)*(H+G);
+
+    const bg=new fabric.Rect({
+      left:0,top:0,width:W,height:H,rx:16,ry:16,
+      fill:"#ffffff",stroke:"#17315f",strokeWidth:2
+    });
+
+    const txt=new fabric.Textbox(card.front,{
+      left:18,top:30,width:W-36,
+      fontFamily:"Arial",fontSize:24,fontWeight:"bold",
+      fill:"#17315f",textAlign:"center",
+      selectable:false,evented:false,erasable:false
+    });
+    fitTextV127(txt,100);
+
+    const foot=new fabric.Text("Натисніть, щоб перевернути",{
+      left:W/2,top:H-25,originX:"center",originY:"center",
+      fontFamily:"Arial",fontSize:13,fill:"#64748b",
+      selectable:false,evented:false,erasable:false
+    });
+
+    const group=new fabric.Group([bg,txt,foot],{
+      left,top,
+      selectable:true,evented:true,
+      hasControls:true,hasBorders:true,
+      sofiaInteractiveCard:true,
+      sofiaCardFront:card.front,
+      sofiaCardBack:card.back||"Відповідь не вказана",
+      sofiaCardFlipped:false
+    });
+
+    function redraw(){
+      const flipped=!!group.sofiaCardFlipped;
+      txt.set({
+        text:flipped?(card.back||"Відповідь не вказана"):card.front,
+        fontWeight:flipped?"normal":"bold",
+        fill:flipped?"#0f5132":"#17315f",
+        fontSize:24
+      });
+      txt.initDimensions?.();
+      fitTextV127(txt,100);
+      bg.set({
+        fill:flipped?"#edf9f1":"#ffffff",
+        stroke:flipped?"#198754":"#17315f"
+      });
+      foot.set({
+        text:flipped?"Відповідь • натисніть, щоб повернути":"Натисніть, щоб перевернути",
+        fill:flipped?"#198754":"#64748b"
+      });
+      group.dirty=true;
+      c.requestRenderAll();
+    }
+
+    group.on("mousedown",o=>{
+      const e=o?.e;
+      group.__down={x:e?.clientX||0,y:e?.clientY||0,t:Date.now()};
+    });
+
+    group.on("mouseup",o=>{
+      const d=group.__down,e=o?.e;
+      group.__down=null;
+      if(!d)return;
+      const dx=Math.abs((e?.clientX||0)-d.x);
+      const dy=Math.abs((e?.clientY||0)-d.y);
+      if(dx<10 && dy<10 && Date.now()-d.t<800){
+        group.sofiaCardFlipped=!group.sofiaCardFlipped;
+        redraw();
+        try{autoSave()}catch(_){}
+      }
+    });
+
+    c.add(group);
+  }
+
+  function insertInteractiveCardsV127(){
+    const ta=getCardsTextarea();
+    if(!ta){
+      alert("Не знайшла поле карток. Закрийте й знову відкрийте «Інструменти вчителя».");
+      return;
+    }
+
+    const cards=parseCardsV127(ta.value);
+    if(!cards.length){
+      alert("Введіть картки у форматі: Питання | Відповідь");
+      return;
+    }
+
+    if(cards.some(c=>!c.back)){
+      const ok=confirm("У деяких рядках немає символу | та відповіді. Вставити їх як картки без відповіді?");
+      if(!ok)return;
+    }
+
+    try{
+      cards.forEach(addInteractiveCardV127);
+      window.fcanvas.discardActiveObject();
+      window.fcanvas.requestRenderAll();
+      try{pushHistory()}catch(_){}
+      try{autoSave()}catch(_){}
+      try{setTool("select")}catch(_){}
+    }catch(err){
+      alert("Не вдалося вставити картки: "+err.message);
+    }
+  }
+
+  function bindCardsButtonV127(){
+    const btn=getCardsButton();
+    if(!btn)return false;
+
+    btn.textContent="🃏 Вставити інтерактивні картки";
+    btn.title="На дошці буде питання; натискання покаже відповідь";
+
+    // Прибираємо старий onclick і ставимо надійний.
+    btn.onclick=null;
+    if(btn.dataset.v127Bound==="1")return true;
+    btn.dataset.v127Bound="1";
+
+    btn.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      insertInteractiveCardsV127();
+    },true);
+    return true;
+  }
+
+  function repair(){
+    ensureSeparatorButtonV127();
+    bindCardsButtonV127();
+  }
+
+  // Панель може відкриватися/перемальовуватися — слідкуємо за DOM.
+  const observer=new MutationObserver(()=>repair());
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+
+  setInterval(repair,800);
+  window.addEventListener("load",()=>setTimeout(repair,300));
+})();
+
