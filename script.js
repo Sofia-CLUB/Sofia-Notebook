@@ -10177,3 +10177,56 @@ if(document.readyState==="loading"){
   setTimeout(init,180);
 }
 })();
+
+/* =========================================================
+   V122 — FIX: saved heading defaults are authoritative
+   Prevent older V56/V63 routines from resetting font/position
+   on a newly created/loaded page.
+   ========================================================= */
+(function(){
+  "use strict";
+  const KEY="sofiaNotebookHeadingDefaultsV1";
+  function read(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){return{}}}
+  function applyOne(o){
+    if(!o || (o.systemRole!=="dateHeading" && o.systemRole!=="workHeading"))return;
+    const d=read()[o.systemRole]; if(!d)return;
+    o.set({
+      left:d.left, top:d.top,
+      originX:d.originX||"center", originY:d.originY||"top",
+      fontFamily:d.fontFamily||"Segoe Script", fontSize:d.fontSize||48,
+      fontWeight:d.fontWeight||"normal", fontStyle:d.fontStyle||"normal",
+      underline:!!d.underline, linethrough:!!d.linethrough,
+      fill:d.fill||"#4a7fbd", backgroundColor:d.backgroundColor||"",
+      textAlign:d.textAlign||"center",
+      scaleX:d.scaleX||1, scaleY:d.scaleY||1, angle:d.angle||0
+    });
+    o.setCoords?.();
+  }
+  function applyAll(){
+    if(typeof fcanvas==="undefined")return;
+    fcanvas.getObjects().forEach(applyOne);
+    fcanvas.requestRenderAll?.();
+  }
+  function settle(){[0,30,100,250,600].forEach(ms=>setTimeout(applyAll,ms));}
+
+  function init(){
+    settle();
+    if(typeof fcanvas!=="undefined" && !fcanvas.__v122HeadingDefaults){
+      fcanvas.__v122HeadingDefaults=true;
+      fcanvas.on("object:added",e=>{
+        if(e?.target?.systemRole==="dateHeading"||e?.target?.systemRole==="workHeading") settle();
+      });
+    }
+    const add=document.getElementById("addPageBtn");
+    if(add && !add.dataset.v122defaults){
+      add.dataset.v122defaults="1";
+      add.addEventListener("click",settle,true);
+    }
+    document.addEventListener("click",e=>{
+      if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
+    },true);
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v122";
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
+  else setTimeout(init,250);
+})();
