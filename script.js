@@ -54,25 +54,33 @@ function headingDate(){
 function findSystemText(role){
   return fcanvas.getObjects().find(o=>o.systemRole===role);
 }
+const HEADING_DEFAULTS_KEY="sofiaNotebookHeadingDefaultsV1";
+function getHeadingDefaults(){
+  try{return JSON.parse(localStorage.getItem(HEADING_DEFAULTS_KEY)||"{}")||{}}catch(e){return{}}
+}
+function headingDefaultFor(role){return getHeadingDefaults()[role]||null}
+function saveHeadingDefault(obj){
+  if(!obj?.systemRole)return false;
+  const all=getHeadingDefaults();
+  all[obj.systemRole]={
+    left:obj.left,top:obj.top,originX:obj.originX||"center",originY:obj.originY||"top",
+    fontFamily:obj.fontFamily||"Segoe Script",fontSize:obj.fontSize||48,
+    fontWeight:obj.fontWeight||"normal",fontStyle:obj.fontStyle||"normal",
+    underline:!!obj.underline,linethrough:!!obj.linethrough,
+    fill:obj.fill||"#4a7fbd",backgroundColor:obj.backgroundColor||"",
+    textAlign:obj.textAlign||"center",scaleX:obj.scaleX||1,scaleY:obj.scaleY||1,angle:obj.angle||0
+  };
+  localStorage.setItem(HEADING_DEFAULTS_KEY,JSON.stringify(all));return true;
+}
+function resetHeadingDefault(role){const all=getHeadingDefaults();delete all[role];localStorage.setItem(HEADING_DEFAULTS_KEY,JSON.stringify(all))}
 function makeHeadingText(text,role,top,fontSize=24,fontWeight="normal"){
+  const saved=headingDefaultFor(role);
   const t=new fabric.IText(text,{
-    left:fcanvas.getWidth()/2,
-    top,
-    originX:"center",
-    fontFamily:"Segoe Script",
-    fontStyle:"normal",
-    fontSize,
-    fontWeight,
-    fill:"#4a7fbd",
-    textAlign:"center",
-    editable:true,
-    selectable:true,
-    evented:true,
-    systemRole:role,
-    isHeadingText:true
+    left:fcanvas.getWidth()/2,top,originX:"center",fontFamily:"Segoe Script",fontStyle:"normal",
+    fontSize,fontWeight,fill:"#4a7fbd",textAlign:"center",editable:true,selectable:true,evented:true,
+    systemRole:role,isHeadingText:true,...(saved||{})
   });
-  fcanvas.add(t);
-  return t;
+  fcanvas.add(t);return t;
 }
 function ensureHeadingObjects(){
   const free=$("pageMode").value==="free";
@@ -86,20 +94,12 @@ function ensureHeadingObjects(){
     return;
   }
 
-  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,24,"normal");
-  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",62,26,"normal");
+  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,48,"normal");
+  if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",78,50,"normal");
 
-  // v121: кожна нова/відкрита сторінка отримує однакове акуратне оформлення.
-  // Скидаємо випадковий масштаб/координати, які могли зберегтися у старій сторінці.
-  const centerX=fcanvas.getWidth()/2;
-  dateObj.set({
-    text:headingDate(),left:centerX,top:24,originX:"center",originY:"top",
-    scaleX:1,scaleY:1,angle:0,fontSize:24,fontWeight:"normal",textAlign:"center"
-  });
-  workObj.set({
-    text:$("workType").value,left:centerX,top:62,originX:"center",originY:"top",
-    scaleX:1,scaleY:1,angle:0,fontSize:26,fontWeight:"normal",textAlign:"center"
-  });
+  // При зміні селектора оновлюємо лише сам текст, але об'єкт лишається редагованим
+  dateObj.set({text:headingDate()});
+  workObj.set({text:$("workType").value});
   dateObj.setCoords();workObj.setCoords();
   fcanvas.requestRenderAll();
 }
@@ -1455,12 +1455,6 @@ function savePage(){
 function ensurePageTabsUI(){
   if(document.getElementById("pageTabs"))return;
   const addBtn=$("addPageBtn");if(!addBtn)return;
-  // v121: зрозумілий підпис і більша зона натискання для інтерактивної дошки.
-  addBtn.textContent="＋ Створити нову сторінку";
-  addBtn.title="Створити нову чисту сторінку";
-  addBtn.style.minWidth="210px";
-  addBtn.style.minHeight="42px";
-  addBtn.style.fontWeight="700";
   const wrap=document.createElement("div");wrap.id="pageTabsWrap";wrap.className="page-tabs-wrap";
   const tabs=document.createElement("div");tabs.id="pageTabs";tabs.className="page-tabs";tabs.setAttribute("aria-label","Сторінки зошита");
   wrap.appendChild(tabs);addBtn.insertAdjacentElement("afterend",wrap);
@@ -1516,56 +1510,7 @@ function updatePageIndicator(){
   $("pageIndicator").textContent=`${pageTitleAt(currentPage)} · ${currentPage+1} з ${pages.length}`;
   $("prevPageBtn").disabled=currentPage===0;$("nextPageBtn").disabled=currentPage===pages.length-1;renderPageTabs();
 }
-function createNewPageV121(){
-  const btn=$("addPageBtn");
-  if(btn?.dataset.busy==="1")return;
-  if(btn){
-    btn.dataset.busy="1";
-    btn.disabled=true;
-    btn.textContent="Створюю…";
-  }
-  try{
-    savePage();
-
-    // Успадковуємо поточний тип паперу, але сторінка залишається чистою.
-    const p=blankPage();
-    p.paper=$("paperType").value||"grid";
-    p.paperSize=Number($("paperSize").value)||25;
-    p.paperColor=$("paperLineColor").value||"#9fd5ff";
-    pages.push(p);
-    currentPage=pages.length-1;
-
-    // Швидке очищення без зайвого JSON load — саме він створював відчуття зависання.
-    suppressHistory=true;
-    fcanvas.discardActiveObject();
-    fcanvas.clear();
-    suppressHistory=false;
-
-    $("paperType").value=p.paper;
-    $("paperSize").value=String(p.paperSize);
-    $("paperSizeValue").textContent=String(p.paperSize);
-    $("paperLineColor").value=p.paperColor;
-    applyPaper();
-
-    ensureHeadingObjects();
-    history=[];redoHistory=[];pushHistory();
-    setTool("select");
-    updatePageIndicator();
-    fcanvas.requestRenderAll();
-
-    // Автозбереження після промальовування інтерфейсу.
-    setTimeout(()=>{try{autoSave()}catch(e){}},40);
-  }finally{
-    setTimeout(()=>{
-      if(btn){
-        btn.dataset.busy="0";
-        btn.disabled=false;
-        btn.textContent="＋ Створити нову сторінку";
-      }
-    },60);
-  }
-}
-$("addPageBtn").onclick=createNewPageV121;
+$("addPageBtn").onclick=()=>{savePage();pages.push(blankPage());loadPage(pages.length-1);autoSave()};
 $("deletePageBtn").onclick=()=>closePage(currentPage);
 $("prevPageBtn").onclick=()=>{if(currentPage>0)goToPage(currentPage-1)};
 $("nextPageBtn").onclick=()=>{if(currentPage<pages.length-1)goToPage(currentPage+1)};
@@ -3537,6 +3482,14 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     syncV57TextControls();
   }
 
+  function loadSofiaHandwritingFonts(){
+    if(document.getElementById("sofiaHandwritingFonts"))return;
+    const link=document.createElement("link");link.id="sofiaHandwritingFonts";link.rel="stylesheet";
+    link.href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@400;500;600;700&family=Comforter&family=Kurale&family=Lobster&family=Marck+Script&family=Neucha&family=Pacifico&family=Pangolin&display=swap&subset=cyrillic";
+    document.head.appendChild(link);
+  }
+  loadSofiaHandwritingFonts();
+
   function addTextFormatControls(){
     const home=document.querySelector('.v56-panel[data-v56-panel="home"]');
     if(!home || $57("v57TextFormat"))return;
@@ -3553,16 +3506,16 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       <button id="v57InsertTextBtn" type="button" title="Додати текст">T Текст</button>
 
       <select id="v57TextFont" title="Шрифт">
-        <option>Segoe Script</option>
-        <option>Times New Roman</option>
-        <option>Arial</option>
-        <option>Calibri</option>
-        <option>Georgia</option>
-        <option>Verdana</option>
-        <option>Tahoma</option>
-        <option>Trebuchet MS</option>
-        <option>Segoe Print</option>
-        <option>Comic Sans MS</option>
+        <optgroup label="✍ Рукописні / прописні">
+          <option>Segoe Script</option><option>Segoe Print</option><option>Marck Script</option>
+          <option>Bad Script</option><option>Caveat</option><option>Neucha</option><option>Pangolin</option>
+          <option>Comforter</option><option>Pacifico</option><option>Lobster</option><option>Kurale</option>
+          <option>Comic Sans MS</option>
+        </optgroup>
+        <optgroup label="▤ Класичні">
+          <option>Times New Roman</option><option>Georgia</option><option>Arial</option><option>Calibri</option>
+          <option>Verdana</option><option>Tahoma</option><option>Trebuchet MS</option>
+        </optgroup>
       </select>
 
       <input id="v57TextSize" type="number" min="8" max="120" value="38"
@@ -3591,6 +3544,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       </select>
 
       <button id="v57DuplicateText" type="button" title="Дублювати текст">⧉ Копія</button>
+      <button id="v121SaveHeadingDefault" type="button" title="Для дати або назви роботи: зберегти шрифт, розмір, колір і поточне місце як стандарт для нових сторінок">★ Зберегти як стандарт</button>
+      <button id="v121ResetHeadingDefault" type="button" title="Скинути стандарт вибраної дати або назви роботи">↺ Скинути стандарт</button>
     `;
 
     home.appendChild(wrap);
@@ -3631,6 +3586,17 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     };
 
+    $57("v121SaveHeadingDefault").onclick=()=>{
+      const o=activeText();
+      if(!o?.systemRole){alert("Спочатку виберіть на сторінці дату або назву роботи (наприклад «Класна робота»), налаштуйте її та розташуйте як потрібно.");return}
+      saveHeadingDefault(o);autoSave();
+      alert(o.systemRole==="dateHeading"?"Стандарт дати збережено. Нові сторінки матимуть таке саме оформлення і розташування.":"Стандарт назви роботи збережено. Нові сторінки матимуть таке саме оформлення і розташування.");
+    };
+    $57("v121ResetHeadingDefault").onclick=()=>{
+      const o=activeText();if(!o?.systemRole){alert("Спочатку виберіть дату або назву роботи.");return}
+      resetHeadingDefault(o.systemRole);alert("Стандарт скинуто. На наступній новій сторінці буде початкове оформлення.");
+    };
+
     // Old separate text format bar is no longer needed: one text toolbar only.
     const old=$57("textFormatBar");
     if(old)old.style.display="none";
@@ -3661,7 +3627,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     "pointBtn","vertexLabelBtn",
     "v57InsertTextBtn","v57TextFont","v57TextSize","v57TextSmaller","v57TextLarger",
     "v57Bold","v57Italic","v57Underline","v57Strike","v57TextColor","v57TextBg",
-    "v57TextAlign","v57DuplicateText"
+    "v57TextAlign","v57DuplicateText","v121SaveHeadingDefault","v121ResetHeadingDefault"
   ]);
 
   function buttonWorks(btn){
@@ -10177,7 +10143,7 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v121";
+  if(b)b.textContent="v120";
   document.documentElement.dataset.sofiaVersion="120-exact119-left-only";
 }
 
