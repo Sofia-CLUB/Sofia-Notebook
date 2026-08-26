@@ -22,6 +22,12 @@ export default async function handler(req, res) {
       });
     }
 
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({
+        error: "У Vercel не знайдено GROQ_API_KEY"
+      });
+    }
+
     const subject = context?.subject || "не вказано";
     const grade = context?.grade || "не вказано";
     const workType = context?.workType || "не вказано";
@@ -54,7 +60,7 @@ export default async function handler(req, res) {
           "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: process.env.GROQ_TEXT_MODEL || "llama-3.1-8b-instant",
           messages: [
             {
               role: "system",

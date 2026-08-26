@@ -68,3 +68,9 @@ AI IMAGE:
    GEMINI_API_KEY = ваш ключ Google AI Studio.
 3. POLLINATIONS_KEY можна залишити — він використовується як резервний.
 4. Після зміни Environment Variables зробіть Redeploy.
+ОНОВЛЕННЯ v127 — ВИПРАВЛЕННЯ ШІ
+================================
+- Збережено всі функції робочої версії v126.
+- Недоступну модель llama-3.3-70b-versatile замінено на llama-3.1-8b-instant.
+- Додано зрозумілу перевірку змінної GROQ_API_KEY у Vercel.
+- За потреби модель можна змінити змінною GROQ_TEXT_MODEL.
