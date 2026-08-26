@@ -1,41 +1,40 @@
+const DEFAULT_TEXT_MODEL = "gemini-2.5-flash";
+
+function readGeminiText(data) {
+  return (data?.candidates?.[0]?.content?.parts || [])
+    .map(part => typeof part?.text === "string" ? part.text : "")
+    .join("")
+    .trim();
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "no-store");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
+  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Дозволено лише POST-запити"
-    });
+    return res.status(405).json({ error: "Дозволено лише POST-запити" });
   }
 
   try {
     const { message, context } = req.body || {};
-
-    if (!message || !message.trim()) {
-      return res.status(400).json({
-        error: "Введіть запит"
-      });
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({ error: "Введіть запит" });
     }
 
-    if (!process.env.GROQ_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       return res.status(500).json({
-        error: "У Vercel не знайдено GROQ_API_KEY"
+        error: "У Vercel не знайдено GEMINI_API_KEY"
       });
     }
 
     const subject = context?.subject || "не вказано";
     const grade = context?.grade || "не вказано";
     const workType = context?.workType || "не вказано";
-
-    const systemPrompt = `
-Ти — освітній AI-помічник Sofia Notebook PRO.
-
-Допомагай учителям та учням у навчанні.
+    const systemPrompt = `Ти — освітній AI-помічник Sofia Notebook PRO.
 
 Предмет: ${subject}
 Клас: ${grade}
@@ -45,63 +44,62 @@ export default async function handler(req, res) {
 - відповідай українською мовою, якщо користувач не попросив іншу;
 - пояснюй відповідно до віку учня;
 - математичні задачі розв'язуй покроково;
-- допомагай з математикою, українською та англійською мовами,
-  інформатикою, природничими та іншими шкільними предметами;
-- можеш створювати вправи, тести, приклади та пояснення;
-- відповідай чітко й без зайвої води.
-`;
+- допомагай з усіма шкільними предметами;
+- можеш створювати вправи, картки, тести, приклади, переклади та пояснення;
+- точно виконуй указаний користувачем формат відповіді;
+- якщо попросять повернути лише JSON або рядки певного формату, не додавай markdown, пояснень чи вступу;
+- відповідай чітко й без зайвої води.`;
 
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+    const model = process.env.GEMINI_TEXT_MODEL || DEFAULT_TEXT_MODEL;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: {
+          role: "system",
+          parts: [{ text: systemPrompt }]
         },
-        body: JSON.stringify({
-          model: process.env.GROQ_TEXT_MODEL || "llama-3.1-8b-instant",
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            },
-            {
-              role: "user",
-              content: message
-            }
-          ],
-          temperature: 0.4,
-          max_tokens: 1200
-        })
-      }
-    );
+        contents: [{
+          role: "user",
+          parts: [{ text: String(message).trim() }]
+        }],
+        generationConfig: {
+          temperature: 0.35,
+          maxOutputTokens: 2048
+        }
+      })
+    });
 
-    const data = await response.json();
+    const raw = await response.text();
+    let data = {};
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch (_) {
+      return res.status(502).json({ error: "Gemini повернув некоректну відповідь" });
+    }
 
     if (!response.ok) {
-      console.error("Groq API error:", data);
-
+      console.error("Gemini text API error:", response.status, data);
       return res.status(response.status).json({
-        error:
-          data?.error?.message ||
-          "Помилка підключення до Groq"
+        error: data?.error?.message || `Gemini: помилка ${response.status}`
       });
     }
 
-    const answer =
-      data?.choices?.[0]?.message?.content ||
-      "AI не повернув текстову відповідь.";
+    const reply = readGeminiText(data);
+    if (!reply) {
+      return res.status(502).json({ error: "Gemini не повернув текстову відповідь" });
+    }
 
     return res.status(200).json({
-      reply: answer
+      reply,
+      provider: "gemini",
+      model
     });
-
   } catch (error) {
-    console.error(error);
-
+    console.error("Gemini handler error:", error);
     return res.status(500).json({
-      error: "Не вдалося отримати відповідь від AI"
+      error: error?.message || "Не вдалося отримати відповідь від ШІ"
     });
   }
 }

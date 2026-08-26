@@ -2335,17 +2335,59 @@ $("insertCalcResultBtn").onclick=()=>{
 
 /* ---------- Встановлення як окремого додатка / офлайн ---------- */
 let deferredInstallPrompt=null;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;$("installAppBtn")?.classList.add("primary")});
-$("installAppBtn")?.addEventListener("click",async()=>{
+const installAppBtn=$("installAppBtn");
+const isStandaloneApp=()=>window.matchMedia?.("(display-mode: standalone)")?.matches===true || window.navigator.standalone===true;
+function updateInstallButton(){
+  if(!installAppBtn)return;
+  if(isStandaloneApp()){
+    installAppBtn.textContent="✓ Додаток встановлено";
+    installAppBtn.classList.add("primary");
+    installAppBtn.title="Sofia Notebook відкрито як встановлений додаток";
+  }else if(deferredInstallPrompt){
+    installAppBtn.textContent="⬇ Встановити додаток";
+    installAppBtn.classList.add("primary");
+    installAppBtn.title="Натисніть, щоб встановити Sofia Notebook";
+  }else{
+    installAppBtn.textContent="⬇ Встановити додаток";
+    installAppBtn.title="Встановити Sofia Notebook або переглянути інструкцію";
+  }
+}
+window.addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  updateInstallButton();
+});
+window.addEventListener("appinstalled",()=>{
+  deferredInstallPrompt=null;
+  updateInstallButton();
+  alert("Sofia Notebook PRO успішно встановлено. Ярлик з’явився серед ваших програм.");
+});
+installAppBtn?.addEventListener("click",async()=>{
+  if(isStandaloneApp()){
+    alert("Sofia Notebook уже відкрито як встановлений додаток.");
+    return;
+  }
   if(deferredInstallPrompt){
     deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
+    const choice=await deferredInstallPrompt.userChoice;
     deferredInstallPrompt=null;
+    updateInstallButton();
+    if(choice?.outcome!=="accepted")alert("Встановлення скасовано. Ви можете повторити його цією кнопкою пізніше.");
   }else{
-    alert("У Chrome або Edge відкрийте меню ⋮ → «Встановити Sofia Notebook PRO» / «Встановити цей сайт як програму». Після першого онлайн-відкриття основні файли зберігаються для офлайн-роботи.");
+    const ua=navigator.userAgent||"";
+    const ios=/iPad|iPhone|iPod/.test(ua);
+    const android=/Android/.test(ua);
+    if(ios){
+      alert("На iPhone або iPad: натисніть кнопку «Поділитися» □↑ внизу Safari → «На початковий екран» → «Додати». Встановлення потрібно виконувати саме у Safari.");
+    }else if(android){
+      alert("У Chrome натисніть меню ⋮ → «Встановити додаток» або «Додати на головний екран». Якщо такого пункту ще немає, оновіть сторінку та зачекайте кілька секунд.");
+    }else{
+      alert("У Chrome або Edge натисніть значок встановлення у правій частині адресного рядка або меню ⋮ → «Встановити Sofia Notebook PRO». Якщо вгорі видно «Відкрити в додатку», програма вже встановлена — натисніть цю кнопку.");
+    }
   }
 });
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=38",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
+updateInstallButton();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=129",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
@@ -2762,7 +2804,6 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   document.documentElement.dataset.sofiaVersion="28";
   if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
 })();
-
 
 /* =========================================================
    V56 CLEAN — ОДНА СТАБІЛЬНА СТРІЧКА БЕЗ ДУБЛІКАТІВ
@@ -10862,3 +10903,9 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(v126ButtonAudit,1200));
 })();
 
+/* v129 — Gemini AI + надійне встановлення PWA */
+(()=>{
+  const badge=document.getElementById("appVersionBadge");
+  if(badge)badge.textContent="v129";
+  document.documentElement.dataset.sofiaVersion="129";
+})();
