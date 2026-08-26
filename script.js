@@ -2407,7 +2407,7 @@ installAppBtn?.addEventListener("click",async()=>{
   }
 });
 updateInstallButton();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=131",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=132",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
@@ -10926,6 +10926,6 @@ document.addEventListener("paste",e=>{
 /* v131 — відновлення заголовків + Gemini auto-model + PWA */
 (()=>{
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v131";
-  document.documentElement.dataset.sofiaVersion="131";
+  if(badge)badge.textContent="v132";
+  document.documentElement.dataset.sofiaVersion="132";
 })();

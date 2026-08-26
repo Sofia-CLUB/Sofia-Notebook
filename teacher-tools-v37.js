@@ -76,6 +76,8 @@ panel.innerHTML=`
       <button id="tt31MakeCards" class="tt31-primary">Створити картки</button>
       <button id="tt31CardsAI">✨ Створити з AI</button>
       <button id="tt31CardsToBoard">Вставити всі на дошку</button>
+      <button id="tt31CardsFullscreen" title="Показати картки на весь екран">⛶ На весь екран</button>
+      <button id="tt31CardsMove" title="Перенести панель на інший край екрана">↔ Перенести вліво</button>
     </div>
     <div id="tt31CardsGrid" class="tt31-card-grid"></div>
   </section>
@@ -198,9 +200,10 @@ panel.innerHTML=`
 document.body.appendChild(panel);
 
 btn.onclick=()=>panel.classList.toggle("hidden");
-q("teacherToolsClose").onclick=()=>panel.classList.add("hidden");
+q("teacherToolsClose").onclick=()=>{setCardsFullscreen(false);panel.classList.add("hidden")};
 
 document.querySelectorAll("[data-tt31]").forEach(b=>b.onclick=()=>{
+  if(b.dataset.tt31!=="cards")setCardsFullscreen(false);
   document.querySelectorAll("[data-tt31]").forEach(x=>x.classList.toggle("active",x===b));
   document.querySelectorAll("[data-tt31-section]").forEach(s=>show(s,s.dataset.tt31Section===b.dataset.tt31));
 });
@@ -270,6 +273,28 @@ function renderCards(){
   });
 }
 q("tt31MakeCards").onclick=renderCards;
+
+/* v132: cards can fill the screen or move to either side. */
+const cardsFullscreenBtn=q("tt31CardsFullscreen");
+const cardsMoveBtn=q("tt31CardsMove");
+function setCardsFullscreen(on){
+  panel.classList.toggle("tt31-cards-fullscreen",on);
+  cardsFullscreenBtn.textContent=on?"⊙ Повернути в панель":"⛶ На весь екран";
+  cardsFullscreenBtn.setAttribute("aria-pressed",String(on));
+}
+cardsFullscreenBtn.onclick=()=>setCardsFullscreen(!panel.classList.contains("tt31-cards-fullscreen"));
+cardsMoveBtn.onclick=()=>{
+  if(panel.classList.contains("tt31-cards-fullscreen"))setCardsFullscreen(false);
+  const moveLeft=!panel.classList.contains("tt31-panel-left");
+  panel.classList.toggle("tt31-panel-left",moveLeft);
+  cardsMoveBtn.textContent=moveLeft?"↔ Перенести вправо":"↔ Перенести вліво";
+};
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape" && panel.classList.contains("tt31-cards-fullscreen")){
+    setCardsFullscreen(false);
+    e.stopPropagation();
+  }
+},true);
 q("tt31CardsToBoard").onclick=()=>{
   if(!currentCards.length)renderCards();
   const text=currentCards.map((c,i)=>`${i+1}. ${c.front}\n   ${c.back}`).join("\n\n");
