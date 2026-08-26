@@ -95,13 +95,19 @@ function ensureHeadingObjects(){
     return;
   }
 
-  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,48,"normal");
+  const wantedDate=headingDate();
+  if($("dateMode").value==="none"){
+    if(dateObj)fcanvas.remove(dateObj);
+    dateObj=null;
+  }else if(!dateObj){
+    dateObj=makeHeadingText(wantedDate,"dateHeading",24,48,"normal");
+  }
   if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",78,50,"normal");
 
   // При зміні селектора оновлюємо лише сам текст, але об'єкт лишається редагованим
-  dateObj.set({text:headingDate()});
+  if(dateObj)dateObj.set({text:wantedDate});
   workObj.set({text:$("workType").value});
-  dateObj.setCoords();workObj.setCoords();
+  dateObj?.setCoords();workObj.setCoords();
   fcanvas.requestRenderAll();
 }
 function updateHeading(){
@@ -113,6 +119,20 @@ function updateHeading(){
   if(typeof fcanvas!=="undefined") ensureHeadingObjects();
 }
 ["dateMode","workType","pageMode"].forEach(id=>$(id).addEventListener("change",()=>{updateHeading();autoSave()}));
+// Повторний вибір уже активного пункту теж відновлює видалений напис.
+["dateMode","workType"].forEach(id=>{
+  const menu=$(id);
+  const restore=()=>setTimeout(()=>{
+    if($("pageMode").value!=="free"){
+      updateHeading();
+      autoSave();
+    }
+  },0);
+  menu.addEventListener("click",restore);
+  menu.addEventListener("keyup",event=>{
+    if(["Enter"," ","ArrowUp","ArrowDown"].includes(event.key))restore();
+  });
+});
 $("customDate").addEventListener("change",()=>{updateHeading();autoSave()});
 $("manualDate").addEventListener("input",()=>{updateHeading();autoSave()});
 updateHeading();
@@ -2387,7 +2407,7 @@ installAppBtn?.addEventListener("click",async()=>{
   }
 });
 updateInstallButton();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=129",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=131",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
@@ -10903,9 +10923,9 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(v126ButtonAudit,1200));
 })();
 
-/* v129 — Gemini AI + надійне встановлення PWA */
+/* v131 — відновлення заголовків + Gemini auto-model + PWA */
 (()=>{
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v129";
-  document.documentElement.dataset.sofiaVersion="129";
+  if(badge)badge.textContent="v131";
+  document.documentElement.dataset.sofiaVersion="131";
 })();

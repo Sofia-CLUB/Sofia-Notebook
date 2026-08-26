@@ -1,4 +1,8 @@
-const DEFAULT_TEXT_MODEL = "gemini-2.5-flash";
+const TEXT_MODELS = [
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-2.5-flash-lite"
+];
 
 function readGeminiText(data) {
   return (data?.candidates?.[0]?.content?.parts || [])
@@ -50,51 +54,64 @@ export default async function handler(req, res) {
 - якщо попросять повернути лише JSON або рядки певного формату, не додавай markdown, пояснень чи вступу;
 - відповідай чітко й без зайвої води.`;
 
-    const model = process.env.GEMINI_TEXT_MODEL || DEFAULT_TEXT_MODEL;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: {
-          role: "system",
-          parts: [{ text: systemPrompt }]
-        },
-        contents: [{
-          role: "user",
-          parts: [{ text: String(message).trim() }]
-        }],
-        generationConfig: {
-          temperature: 0.35,
-          maxOutputTokens: 2048
+    const configuredModel = process.env.GEMINI_TEXT_MODEL;
+    const models = configuredModel
+      ? [configuredModel, ...TEXT_MODELS.filter(model => model !== configuredModel)]
+      : TEXT_MODELS;
+    const failures = [];
+
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemInstruction: {
+              role: "system",
+              parts: [{ text: systemPrompt }]
+            },
+            contents: [{
+              role: "user",
+              parts: [{ text: String(message).trim() }]
+            }],
+            generationConfig: {
+              temperature: 0.35,
+              maxOutputTokens: 2048
+            }
+          })
+        });
+
+        const raw = await response.text();
+        let data = {};
+        try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+
+        if (!response.ok) {
+          const reason = data?.error?.message || `помилка ${response.status}`;
+          failures.push(`${model}: ${reason}`);
+          console.error("Gemini text API error:", model, response.status, data);
+          continue;
         }
-      })
-    });
 
-    const raw = await response.text();
-    let data = {};
-    try {
-      data = raw ? JSON.parse(raw) : {};
-    } catch (_) {
-      return res.status(502).json({ error: "Gemini повернув некоректну відповідь" });
+        const reply = readGeminiText(data);
+        if (!reply) {
+          failures.push(`${model}: порожня відповідь`);
+          continue;
+        }
+
+        return res.status(200).json({
+          reply,
+          provider: "gemini",
+          model
+        });
+      } catch (error) {
+        failures.push(`${model}: ${error?.message || "помилка мережі"}`);
+      }
     }
 
-    if (!response.ok) {
-      console.error("Gemini text API error:", response.status, data);
-      return res.status(response.status).json({
-        error: data?.error?.message || `Gemini: помилка ${response.status}`
-      });
-    }
-
-    const reply = readGeminiText(data);
-    if (!reply) {
-      return res.status(502).json({ error: "Gemini не повернув текстову відповідь" });
-    }
-
-    return res.status(200).json({
-      reply,
-      provider: "gemini",
-      model
+    return res.status(503).json({
+      error: "Gemini тимчасово не зміг відповісти. Спробуйте ще раз через хвилину.",
+      details: failures
     });
   } catch (error) {
     console.error("Gemini handler error:", error);
