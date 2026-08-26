@@ -10862,3 +10862,254 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(v126ButtonAudit,1200));
 })();
 
+
+
+/* =========================================================
+   v127 — КАРТКИ: ВИПРАВЛЕНО ОСТАТОЧНО
+   Причина v126: поле карток у teacher-tools не завжди має
+   очікуваний ID. Тепер шукаємо поле відносно самої кнопки.
+   ========================================================= */
+(function(){
+  const byId=id=>document.getElementById(id);
+
+  function getCardsButton(){
+    return byId("tt31CardsToBoard")
+      || [...document.querySelectorAll("button")].find(b=>/Вставити.*картк/i.test(b.textContent||""));
+  }
+
+  function getCardsTextarea(){
+    const btn=getCardsButton();
+    if(!btn)return null;
+
+    // 1) Найближча секція інструментів
+    const section=btn.closest("section, .tt31-section, .panel, .tool-panel, div");
+    if(section){
+      const ta=[...section.querySelectorAll("textarea")].find(x=>{
+        const ph=(x.placeholder||"").toLowerCase();
+        return ph.includes("питання") || ph.includes("карт") || ph.includes("відповід");
+      });
+      if(ta)return ta;
+
+      const all=section.querySelectorAll("textarea");
+      if(all.length)return all[0];
+    }
+
+    // 2) Пошук по всій панелі teacher tools
+    const panel=btn.closest("#teacherToolsPanel, .teacher-tools-panel, [class*='teacher']");
+    if(panel){
+      const all=panel.querySelectorAll("textarea");
+      if(all.length)return all[0];
+    }
+
+    // 3) Фолбек — найближче textarea перед кнопкою
+    const all=[...document.querySelectorAll("textarea")];
+    return all.find(t=>{
+      const r1=t.getBoundingClientRect(), r2=btn.getBoundingClientRect();
+      return Math.abs(r1.left-r2.left)<500 && r1.bottom<=r2.top+120;
+    }) || null;
+  }
+
+  function ensureSeparatorButtonV127(){
+    const ta=getCardsTextarea();
+    if(!ta)return false;
+    if(document.getElementById("tt127SeparatorBtn"))return true;
+
+    const row=document.createElement("div");
+    row.id="tt127SeparatorRow";
+    row.style.cssText="display:flex;align-items:center;gap:7px;margin:7px 0 6px;flex-wrap:wrap";
+
+    const btn=document.createElement("button");
+    btn.id="tt127SeparatorBtn";
+    btn.type="button";
+    btn.textContent="│ Вставити роздільник |";
+    btn.title="Поставте курсор між питанням і відповіддю";
+    btn.style.cssText="padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#17315f;font-weight:700;cursor:pointer";
+
+    const hint=document.createElement("span");
+    hint.textContent="Питання | Відповідь";
+    hint.style.cssText="font-size:11px;color:#64748b";
+
+    row.append(btn,hint);
+    ta.insertAdjacentElement("afterend",row);
+
+    btn.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      ta.focus();
+      const start=Number.isInteger(ta.selectionStart)?ta.selectionStart:ta.value.length;
+      const end=Number.isInteger(ta.selectionEnd)?ta.selectionEnd:start;
+      const token=" | ";
+      ta.value=ta.value.slice(0,start)+token+ta.value.slice(end);
+      const pos=start+token.length;
+      ta.setSelectionRange?.(pos,pos);
+      ta.dispatchEvent(new Event("input",{bubbles:true}));
+    });
+    return true;
+  }
+
+  function parseCardsV127(text){
+    const lines=String(text||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    return lines.map(line=>{
+      const i=line.indexOf("|");
+      if(i<0)return {front:line,back:""};
+      return {
+        front:line.slice(0,i).trim(),
+        back:line.slice(i+1).trim()
+      };
+    }).filter(x=>x.front);
+  }
+
+  function fitTextV127(obj,maxH){
+    let fs=obj.fontSize||24;
+    obj.initDimensions?.();
+    while(fs>13 && obj.height>maxH){
+      fs--;
+      obj.set({fontSize:fs});
+      obj.initDimensions?.();
+    }
+  }
+
+  function addInteractiveCardV127(card,index){
+    const c=window.fcanvas;
+    if(!c || !window.fabric)throw new Error("Полотно ще не готове");
+
+    const W=320,H=185,G=22;
+    const cols=Math.max(1,Math.floor((c.getWidth()-70)/(W+G)));
+    const left=35+(index%cols)*(W+G);
+    const top=145+Math.floor(index/cols)*(H+G);
+
+    const bg=new fabric.Rect({
+      left:0,top:0,width:W,height:H,rx:16,ry:16,
+      fill:"#ffffff",stroke:"#17315f",strokeWidth:2
+    });
+
+    const txt=new fabric.Textbox(card.front,{
+      left:18,top:30,width:W-36,
+      fontFamily:"Arial",fontSize:24,fontWeight:"bold",
+      fill:"#17315f",textAlign:"center",
+      selectable:false,evented:false,erasable:false
+    });
+    fitTextV127(txt,100);
+
+    const foot=new fabric.Text("Натисніть, щоб перевернути",{
+      left:W/2,top:H-25,originX:"center",originY:"center",
+      fontFamily:"Arial",fontSize:13,fill:"#64748b",
+      selectable:false,evented:false,erasable:false
+    });
+
+    const group=new fabric.Group([bg,txt,foot],{
+      left,top,
+      selectable:true,evented:true,
+      hasControls:true,hasBorders:true,
+      sofiaInteractiveCard:true,
+      sofiaCardFront:card.front,
+      sofiaCardBack:card.back||"Відповідь не вказана",
+      sofiaCardFlipped:false
+    });
+
+    function redraw(){
+      const flipped=!!group.sofiaCardFlipped;
+      txt.set({
+        text:flipped?(card.back||"Відповідь не вказана"):card.front,
+        fontWeight:flipped?"normal":"bold",
+        fill:flipped?"#0f5132":"#17315f",
+        fontSize:24
+      });
+      txt.initDimensions?.();
+      fitTextV127(txt,100);
+      bg.set({
+        fill:flipped?"#edf9f1":"#ffffff",
+        stroke:flipped?"#198754":"#17315f"
+      });
+      foot.set({
+        text:flipped?"Відповідь • натисніть, щоб повернути":"Натисніть, щоб перевернути",
+        fill:flipped?"#198754":"#64748b"
+      });
+      group.dirty=true;
+      c.requestRenderAll();
+    }
+
+    group.on("mousedown",o=>{
+      const e=o?.e;
+      group.__down={x:e?.clientX||0,y:e?.clientY||0,t:Date.now()};
+    });
+
+    group.on("mouseup",o=>{
+      const d=group.__down,e=o?.e;
+      group.__down=null;
+      if(!d)return;
+      const dx=Math.abs((e?.clientX||0)-d.x);
+      const dy=Math.abs((e?.clientY||0)-d.y);
+      if(dx<10 && dy<10 && Date.now()-d.t<800){
+        group.sofiaCardFlipped=!group.sofiaCardFlipped;
+        redraw();
+        try{autoSave()}catch(_){}
+      }
+    });
+
+    c.add(group);
+  }
+
+  function insertInteractiveCardsV127(){
+    const ta=getCardsTextarea();
+    if(!ta){
+      alert("Не знайшла поле карток. Закрийте й знову відкрийте «Інструменти вчителя».");
+      return;
+    }
+
+    const cards=parseCardsV127(ta.value);
+    if(!cards.length){
+      alert("Введіть картки у форматі: Питання | Відповідь");
+      return;
+    }
+
+    if(cards.some(c=>!c.back)){
+      const ok=confirm("У деяких рядках немає символу | та відповіді. Вставити їх як картки без відповіді?");
+      if(!ok)return;
+    }
+
+    try{
+      cards.forEach(addInteractiveCardV127);
+      window.fcanvas.discardActiveObject();
+      window.fcanvas.requestRenderAll();
+      try{pushHistory()}catch(_){}
+      try{autoSave()}catch(_){}
+      try{setTool("select")}catch(_){}
+    }catch(err){
+      alert("Не вдалося вставити картки: "+err.message);
+    }
+  }
+
+  function bindCardsButtonV127(){
+    const btn=getCardsButton();
+    if(!btn)return false;
+
+    btn.textContent="🃏 Вставити інтерактивні картки";
+    btn.title="На дошці буде питання; натискання покаже відповідь";
+
+    // Прибираємо старий onclick і ставимо надійний.
+    btn.onclick=null;
+    if(btn.dataset.v127Bound==="1")return true;
+    btn.dataset.v127Bound="1";
+
+    btn.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      insertInteractiveCardsV127();
+    },true);
+    return true;
+  }
+
+  function repair(){
+    ensureSeparatorButtonV127();
+    bindCardsButtonV127();
+  }
+
+  // Панель може відкриватися/перемальовуватися — слідкуємо за DOM.
+  const observer=new MutationObserver(()=>repair());
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+
+  setInterval(repair,800);
+  window.addEventListener("load",()=>setTimeout(repair,300));
+})();
+
