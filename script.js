@@ -1,6 +1,7 @@
 const $=id=>document.getElementById(id);
 const notebook=$("notebook");
 const fcanvas=new fabric.Canvas("fabricCanvas",{selection:true,preserveObjectStacking:true});
+window.fcanvas=fcanvas; // v126: доступ для модулів карток, таблиць та інших інструментів
 
 
 
@@ -10613,5 +10614,251 @@ document.addEventListener("paste",e=>{
   let n=0;
   const timer=setInterval(()=>{ n++; if(bindCards()||n>80)clearInterval(timer); },250);
   window.addEventListener("load",()=>setTimeout(bindCards,400));
+})();
+
+
+
+/* =========================================================
+   v126 — КАРТКИ + ПЕРЕВІРКА КНОПОК
+   - робоча кнопка «Вставити інтерактивні картки»
+   - кнопка «│ Питання | Відповідь» біля поля карток
+   - один клік вставляє роздільник | у позицію курсора
+   - обробник карток перехоплюється на рівні document,
+     тому його не може перезаписати teacher-tools.js
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function insertCardSeparator(){
+    const ta=q("tt31CardsInput");
+    if(!ta)return;
+    ta.focus();
+    const start=Number.isInteger(ta.selectionStart)?ta.selectionStart:ta.value.length;
+    const end=Number.isInteger(ta.selectionEnd)?ta.selectionEnd:start;
+    const token=" | ";
+    ta.value=ta.value.slice(0,start)+token+ta.value.slice(end);
+    const pos=start+token.length;
+    ta.setSelectionRange?.(pos,pos);
+    ta.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+
+  function ensureSeparatorButton(){
+    const ta=q("tt31CardsInput");
+    if(!ta || q("tt126CardSeparatorBtn"))return false;
+
+    const btn=document.createElement("button");
+    btn.id="tt126CardSeparatorBtn";
+    btn.type="button";
+    btn.textContent="│ Додати роздільник  |";
+    btn.title="Поставити між питанням і відповіддю. Формат: Питання | Відповідь";
+    btn.style.cssText=[
+      "margin:6px 6px 6px 0",
+      "padding:7px 10px",
+      "border:1px solid #cbd5e1",
+      "border-radius:8px",
+      "background:#fff",
+      "color:#17315f",
+      "font-weight:700",
+      "cursor:pointer"
+    ].join(";");
+
+    const helper=document.createElement("span");
+    helper.id="tt126CardFormatHint";
+    helper.textContent=" Формат: Питання | Відповідь";
+    helper.style.cssText="font-size:11px;color:#64748b;margin-left:4px";
+
+    ta.insertAdjacentElement("beforebegin",btn);
+    btn.insertAdjacentElement("afterend",helper);
+    btn.onclick=insertCardSeparator;
+    return true;
+  }
+
+  function parseCardsV126(text){
+    return String(text||"")
+      .split(/\r?\n/)
+      .map(s=>s.trim())
+      .filter(Boolean)
+      .map(line=>{
+        const p=line.indexOf("|");
+        if(p<0)return {front:line,back:""};
+        return {
+          front:line.slice(0,p).trim(),
+          back:line.slice(p+1).trim()
+        };
+      })
+      .filter(c=>c.front);
+  }
+
+  function fitCardTextV126(t,maxH){
+    let fs=t.fontSize||24;
+    t.initDimensions?.();
+    while(fs>14 && t.height>maxH){
+      fs-=1;
+      t.set({fontSize:fs});
+      t.initDimensions?.();
+    }
+  }
+
+  function addInteractiveCardV126(card,index){
+    const c=window.fcanvas;
+    if(!c || !window.fabric)return;
+
+    const W=320,H=190,gap=24;
+    const cols=Math.max(1,Math.floor((c.getWidth()-80)/(W+gap)));
+    const left=40+(index%cols)*(W+gap);
+    const top=150+Math.floor(index/cols)*(H+gap);
+
+    const bg=new fabric.Rect({
+      left:0,top:0,width:W,height:H,rx:16,ry:16,
+      fill:"#ffffff",stroke:"#17315f",strokeWidth:2
+    });
+    const txt=new fabric.Textbox(card.front,{
+      left:20,top:28,width:W-40,
+      fontFamily:"Arial",fontSize:24,fontWeight:"bold",
+      fill:"#17315f",textAlign:"center",
+      selectable:false,evented:false,erasable:false
+    });
+    fitCardTextV126(txt,108);
+
+    const hint=new fabric.Text("Натисніть, щоб побачити відповідь",{
+      left:W/2,top:H-28,originX:"center",originY:"center",
+      fontFamily:"Arial",fontSize:13,fill:"#64748b",
+      selectable:false,evented:false,erasable:false
+    });
+
+    const g=new fabric.Group([bg,txt,hint],{
+      left,top,selectable:true,evented:true,
+      sofiaInteractiveCard:true,
+      sofiaCardFront:card.front,
+      sofiaCardBack:card.back||"Відповідь не вказана",
+      sofiaCardFlipped:false
+    });
+
+    const renderSide=()=>{
+      const on=!!g.sofiaCardFlipped;
+      txt.set({
+        text:on?(card.back||"Відповідь не вказана"):card.front,
+        fontWeight:on?"normal":"bold",
+        fill:on?"#0f5132":"#17315f",
+        fontSize:24
+      });
+      txt.initDimensions?.();
+      fitCardTextV126(txt,108);
+      bg.set({
+        fill:on?"#edf9f1":"#ffffff",
+        stroke:on?"#198754":"#17315f"
+      });
+      hint.set({
+        text:on?"Відповідь • натисніть, щоб повернути":"Натисніть, щоб побачити відповідь",
+        fill:on?"#198754":"#64748b"
+      });
+      g.dirty=true;
+      c.requestRenderAll();
+    };
+
+    g.on("mousedown",opt=>{
+      const e=opt?.e;
+      g.__cardDown={x:e?.clientX||0,y:e?.clientY||0,t:Date.now()};
+    });
+    g.on("mouseup",opt=>{
+      const d=g.__cardDown,e=opt?.e;
+      g.__cardDown=null;
+      if(!d)return;
+      const dx=Math.abs((e?.clientX||0)-d.x);
+      const dy=Math.abs((e?.clientY||0)-d.y);
+      if(dx<8 && dy<8 && Date.now()-d.t<700){
+        g.sofiaCardFlipped=!g.sofiaCardFlipped;
+        renderSide();
+        try{autoSave()}catch(_){}
+      }
+    });
+
+    c.add(g);
+  }
+
+  function insertCardsToBoardV126(){
+    const ta=q("tt31CardsInput");
+    if(!ta)return alert("Не знайдено поле карток.");
+    const cards=parseCardsV126(ta.value);
+    if(!cards.length){
+      return alert("Введіть картки. Один рядок = одна картка. Формат: Питання | Відповідь");
+    }
+    if(!window.fcanvas || !window.fabric){
+      return alert("Полотно ще не готове. Оновіть сторінку та спробуйте ще раз.");
+    }
+
+    cards.forEach(addInteractiveCardV126);
+    window.fcanvas.discardActiveObject();
+    window.fcanvas.requestRenderAll();
+    try{pushHistory()}catch(_){}
+    try{autoSave()}catch(_){}
+    try{setTool("select")}catch(_){}
+  }
+
+  function decorateCardsButton(){
+    const btn=q("tt31CardsToBoard");
+    if(!btn)return false;
+    btn.textContent="🃏 Вставити інтерактивні картки";
+    btn.title="На картці видно питання. Натискання показує відповідь.";
+    btn.dataset.v126Ready="1";
+    return true;
+  }
+
+  // Надійно перехоплюємо натискання, навіть якщо інший JS перепише onclick.
+  document.addEventListener("click",e=>{
+    const sep=e.target?.closest?.("#tt126CardSeparatorBtn");
+    if(sep){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      insertCardSeparator();
+      return;
+    }
+
+    const cards=e.target?.closest?.("#tt31CardsToBoard");
+    if(cards){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      insertCardsToBoardV126();
+    }
+  },true);
+
+  // Teacher tools можуть створюватися пізніше.
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    ensureSeparatorButton();
+    decorateCardsButton();
+    if(tries>120)clearInterval(timer);
+  },250);
+
+  /* Розширена діагностика важливих кнопок.
+     Результат видно в Console і в існуючій панелі «Перевірка», якщо вона є. */
+  function v126ButtonAudit(){
+    const important=[
+      ["fullscreenBtn","Повний екран"],
+      ["mediaBtn","Фото / відео / файл"],
+      ["clipboardPasteBtn","Вставити з буфера"],
+      ["keyboardBtn","Клавіатура"],
+      ["timerBtn","Таймер"],
+      ["aiBtn","AI чат"],
+      ["saveBtn","Зберегти"],
+      ["clearAllBtn","Очистити все"],
+      ["addPageBtn","Створити нову сторінку"],
+      ["deletePageBtn","Видалити сторінку"],
+      ["diagnosticsBtn","Перевірка"],
+      ["tt31CardsToBoard","Інтерактивні картки"],
+      ["tt31CardsGenerate","Створити картки"],
+      ["tt31CardsAiBtn","Створити картки з AI"],
+      ["tt31TranslateBtn","Перекладач"],
+      ["tt31ImageGenerate","AI-зображення"],
+      ["tt36InsertTable","Таблиця"]
+    ];
+    const report=important.map(([id,name])=>({id,name,found:!!q(id)}));
+    console.table(report);
+    window.sofiaV126ButtonAudit=report;
+    return report;
+  }
+  window.sofiaRunButtonAudit=v126ButtonAudit;
+  window.addEventListener("load",()=>setTimeout(v126ButtonAudit,1200));
 })();
 
