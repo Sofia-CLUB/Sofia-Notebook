@@ -76,8 +76,6 @@ panel.innerHTML=`
       <button id="tt31MakeCards" class="tt31-primary">Створити картки</button>
       <button id="tt31CardsAI">✨ Створити з AI</button>
       <button id="tt31CardsToBoard">Вставити всі на дошку</button>
-      <button id="tt31CardsFullscreen" title="Показати картки на весь екран">⛶ На весь екран</button>
-      <button id="tt31CardsMove" title="Перенести панель на інший край екрана">↔ Перенести вліво</button>
     </div>
     <div id="tt31CardsGrid" class="tt31-card-grid"></div>
   </section>
@@ -193,17 +191,16 @@ panel.innerHTML=`
       <button id="tt31GenerateImage" class="tt31-primary">🖼 Згенерувати</button>
       <button id="tt31InsertImage" disabled>Вставити на дошку</button>
     </div>
-    <div id="tt31ImageStatus" class="tt31-muted">Генерація: Gemini. Pollinations використовується як резервний сервіс.</div><div class="tt37-provider-note">Для Gemini у Vercel потрібна змінна <b>GEMINI_API_KEY</b>.</div>
+    <div id="tt31ImageStatus" class="tt31-muted">Для генерації використовується окремий endpoint /api/image.</div>
     <div id="tt31ImagePreview" class="tt31-image-preview">Попередній перегляд</div>
   </section>
 `;
 document.body.appendChild(panel);
 
 btn.onclick=()=>panel.classList.toggle("hidden");
-q("teacherToolsClose").onclick=()=>{setCardsFullscreen(false);panel.classList.add("hidden")};
+q("teacherToolsClose").onclick=()=>panel.classList.add("hidden");
 
 document.querySelectorAll("[data-tt31]").forEach(b=>b.onclick=()=>{
-  if(b.dataset.tt31!=="cards")setCardsFullscreen(false);
   document.querySelectorAll("[data-tt31]").forEach(x=>x.classList.toggle("active",x===b));
   document.querySelectorAll("[data-tt31-section]").forEach(s=>show(s,s.dataset.tt31Section===b.dataset.tt31));
 });
@@ -273,28 +270,6 @@ function renderCards(){
   });
 }
 q("tt31MakeCards").onclick=renderCards;
-
-/* v132: cards can fill the screen or move to either side. */
-const cardsFullscreenBtn=q("tt31CardsFullscreen");
-const cardsMoveBtn=q("tt31CardsMove");
-function setCardsFullscreen(on){
-  panel.classList.toggle("tt31-cards-fullscreen",on);
-  cardsFullscreenBtn.textContent=on?"⊙ Повернути в панель":"⛶ На весь екран";
-  cardsFullscreenBtn.setAttribute("aria-pressed",String(on));
-}
-cardsFullscreenBtn.onclick=()=>setCardsFullscreen(!panel.classList.contains("tt31-cards-fullscreen"));
-cardsMoveBtn.onclick=()=>{
-  if(panel.classList.contains("tt31-cards-fullscreen"))setCardsFullscreen(false);
-  const moveLeft=!panel.classList.contains("tt31-panel-left");
-  panel.classList.toggle("tt31-panel-left",moveLeft);
-  cardsMoveBtn.textContent=moveLeft?"↔ Перенести вправо":"↔ Перенести вліво";
-};
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape" && panel.classList.contains("tt31-cards-fullscreen")){
-    setCardsFullscreen(false);
-    e.stopPropagation();
-  }
-},true);
 q("tt31CardsToBoard").onclick=()=>{
   if(!currentCards.length)renderCards();
   const text=currentCards.map((c,i)=>`${i+1}. ${c.front}\n   ${c.back}`).join("\n\n");
@@ -581,9 +556,9 @@ q("tt31GenerateImage").onclick=async()=>{
     lastImageSrc=data.url || (data.b64_json?`data:image/png;base64,${data.b64_json}`:"");
     if(!lastImageSrc)throw new Error("Зображення не отримано");
     q("tt31ImagePreview").innerHTML=`<img src="${lastImageSrc}" alt="AI image">`;
-    q("tt31InsertImage").disabled=false;q("tt31ImageStatus").textContent="Готово · "+(data.provider==="gemini"?"Gemini":"резервний сервіс");
+    q("tt31InsertImage").disabled=false;q("tt31ImageStatus").textContent="Готово.";
   }catch(e){
-    q("tt31ImageStatus").textContent="Не вдалося згенерувати: "+e.message+" Перевірте api/image.js і змінну GEMINI_API_KEY у Vercel.";
+    q("tt31ImageStatus").textContent="Не вдалося згенерувати: "+e.message+" Перевірте, що api/image.js завантажений у Vercel та додано POLLINATIONS_KEY.";
   }finally{
     q("tt31GenerateImage").disabled=false;q("tt31GenerateImage").textContent="🖼 Згенерувати";
   }

@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Sofia Notebook PRO</title>
-  <link rel="stylesheet" href="style.css?v=132">
-  <link rel="stylesheet" href="teacher-tools-v37.css?v=132">
-  <link rel="manifest" href="manifest.webmanifest?v=132">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@400;500;600&family=Marck+Script&family=Neucha&family=Pangolin&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=138">
+  <link rel="stylesheet" href="teacher-tools-v37.css?v=138">
+  <link rel="manifest" href="manifest.webmanifest?v=138">
   <meta name="theme-color" content="#17315f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Sofia Notebook">
@@ -22,7 +25,7 @@
   <div class="brand">
     <img src="sofia-logo.jpg" class="brand-logo" alt="Sofia Global Education">
     <div>
-      <h1>Sofia Notebook PRO <span id="appVersionBadge" class="version-badge">v37</span></h1>
+      <h1>Sofia Notebook PRO <span id="appVersionBadge" class="version-badge">v138</span></h1>
       <span>інтерактивний зошит • Sofia Global Education</span>
     </div>
   </div>
@@ -106,7 +109,7 @@
   <label class="paper-size-slider" title="Розмір клітинки / відстань між лініями">
     <span>Розмір</span>
     <button type="button" id="paperSizeMinus">−</button>
-    <input id="paperSize" type="range" min="16" max="50" step="1" value="25">
+    <input id="paperSize" type="range" min="16" max="160" step="2" value="25">
     <button type="button" id="paperSizePlus">＋</button>
     <b><span id="paperSizeValue">25</span> px</b>
   </label>
@@ -192,14 +195,25 @@
         <div class="text-format-title">Формат тексту</div>
 
         <select id="textFontFamily" title="Шрифт">
-          <option value="Arial">Arial</option>
-          <option value="Georgia">Georgia</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Calibri">Calibri</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Trebuchet MS">Trebuchet MS</option>
-          <option value="Courier New">Courier New</option>
-          <option value="Comic Sans MS">Comic Sans</option>
+          <optgroup label="Прописні / рукописні">
+            <option value="Marck Script" selected>Marck Script — прописний</option>
+            <option value="Bad Script">Bad Script — рукописний</option>
+            <option value="Caveat">Caveat — рукописний</option>
+            <option value="Neucha">Neucha — шкільний</option>
+            <option value="Pangolin">Pangolin — рукописний</option>
+            <option value="Segoe Script">Segoe Script</option>
+            <option value="Segoe Print">Segoe Print</option>
+          </optgroup>
+          <optgroup label="Друковані">
+            <option value="Georgia">Georgia</option>
+            <option value="Arial">Arial</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Calibri">Calibri</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Comic Sans MS">Comic Sans</option>
+          </optgroup>
         </select>
 
         <button id="fontSizeDown" class="mini" title="Зменшити шрифт">A−</button>
@@ -236,7 +250,7 @@
         <button id="prevPageBtn" class="nav-btn">‹</button>
         <span id="pageIndicator">Сторінка 1 з 1</span>
         <button id="nextPageBtn" class="nav-btn">›</button>
-        <button id="addPageBtn" class="nav-btn primary">＋ Нова сторінка</button>
+        <button id="addPageBtn" class="nav-btn primary add-page-main" title="Створити нову чисту сторінку">＋ Створити нову сторінку</button>
         <button id="deletePageBtn" class="nav-btn danger-soft">Видалити сторінку</button>
       </div>
     </div>
@@ -748,8 +762,8 @@ window.addEventListener("load", function(){
   <button type="button" id="runtimeReloadBtn">Оновити програму</button>
 </div>
 
-<script src="script.js?v=132"></script>
-<script src="controls-v37.js?v=132"></script>
-<script src="teacher-tools-v37.js?v=132"></script>
+<script src="script.js?v=138"></script>
+<script src="controls-v37.js?v=138"></script>
+<script src="teacher-tools-v37.js?v=138"></script>
 </body>
 </html>

@@ -43,23 +43,6 @@
   display:grid;place-items:center;text-align:center;cursor:pointer;perspective:800px
 }
 .tt31-card b{color:#17315f}.tt31-card small{display:block;color:#6b7688;margin-top:6px}
-
-/* v132 — wide card workspace and left/right placement */
-.tt31-panel.tt31-panel-left{left:18px;right:auto}
-.tt31-panel.tt31-cards-fullscreen{
-  inset:12px!important;width:auto!important;max-width:none!important;max-height:none!important;
-  border-radius:14px;padding:16px 18px;overflow:auto;z-index:1200
-}
-.tt31-panel.tt31-cards-fullscreen .tt31-tabs{grid-template-columns:repeat(7,minmax(90px,1fr))}
-.tt31-panel.tt31-cards-fullscreen [data-tt31-section="cards"]{max-width:1500px;width:100%;margin:0 auto}
-.tt31-panel.tt31-cards-fullscreen #tt31CardsInput{max-height:120px}
-.tt31-panel.tt31-cards-fullscreen .tt31-card-grid{
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px
-}
-.tt31-panel.tt31-cards-fullscreen .tt31-card{
-  min-height:180px;padding:20px;font-size:clamp(18px,2vw,28px);box-shadow:0 4px 15px rgba(23,49,95,.09)
-}
-.tt31-panel.tt31-cards-fullscreen .tt31-card small{font-size:14px}
 .tt31-test-box{border:1px solid #dce5ef;border-radius:10px;padding:10px;background:#fbfcfe}
 .tt31-test-q{font-weight:700;margin-bottom:7px}
 .tt31-options{display:grid;gap:5px}
@@ -74,9 +57,6 @@
 @media(max-width:720px){
   .tt31-tabs{grid-template-columns:repeat(2,1fr)}
   .tt31-card-grid{grid-template-columns:1fr}
-  .tt31-panel.tt31-cards-fullscreen{inset:4px!important;padding:10px}
-  .tt31-panel.tt31-cards-fullscreen .tt31-tabs{grid-template-columns:repeat(2,1fr)}
-  .tt31-panel.tt31-cards-fullscreen .tt31-card-grid{grid-template-columns:1fr}
 }
 
 .tt32-translate-result{
@@ -224,9 +204,3 @@ body.tb35-icons-only #toolbarSettingsBtn::before{
 .tt36-table-grid input{width:100%;padding:8px;border:1px solid #d6dfeb;border-radius:8px}
 .tt36-check{display:flex!important;flex-direction:row!important;align-items:center;gap:8px}
 .tt36-check input{width:auto!important}
-
-/* v37 image provider note */
-.tt37-provider-note{
-  margin-top:8px;padding:8px 10px;border-radius:9px;
-  background:#f3f7ff;border:1px solid #dbe6f5;color:#52627a;font-size:11px
-}

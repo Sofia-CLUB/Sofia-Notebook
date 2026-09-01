@@ -909,3 +909,88 @@ body.board-fullscreen-v37 .leftbar::-webkit-scrollbar-thumb{
 .table-builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
 .table-builder-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#667386}
 .table-builder-grid input{padding:7px;border:1px solid #d6dfeb;border-radius:7px}
+
+/* v37 — чітка та швидка кнопка нової сторінки */
+.page-controls .add-page-main{
+  min-width:220px;
+  min-height:42px;
+  padding:9px 16px;
+  font-weight:800;
+  font-size:14px;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(23,49,95,.14);
+}
+.page-controls .add-page-main:disabled{
+  opacity:.72;
+  cursor:wait;
+}
+@media (pointer:coarse){
+  .page-controls .add-page-main{
+    min-height:50px;
+    font-size:16px;
+    padding:11px 18px;
+  }
+}
+
+/* =========================================================
+   v128 — шкільний папір і чіткість
+   ========================================================= */
+.notebook{
+  --paper-step:25px;
+  --paper-line-color:#9fcaff;
+  --slant-gap:120px;
+  background-color:#fff;
+  image-rendering:auto;
+}
+
+.paper-grid{
+  background-color:#fff !important;
+  background-image:
+    linear-gradient(to bottom, color-mix(in srgb,var(--paper-line-color) 82%,transparent) 1px, transparent 1px),
+    linear-gradient(to right,  color-mix(in srgb,var(--paper-line-color) 82%,transparent) 1px, transparent 1px) !important;
+  background-size:var(--paper-step) var(--paper-step), var(--paper-step) var(--paper-step) !important;
+  background-position:0 0,0 0 !important;
+}
+
+.paper-lines{
+  background-color:#fff !important;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--paper-step) - 1px),
+      color-mix(in srgb,var(--paper-line-color) 84%,transparent) calc(var(--paper-step) - 1px),
+      color-mix(in srgb,var(--paper-line-color) 84%,transparent) var(--paper-step)
+    ) !important;
+}
+
+/* Коса — суцільна, без розривів: горизонталі + рівні похилі. */
+.paper-slant{
+  background-color:#fff !important;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--paper-step) - 1px),
+      color-mix(in srgb,var(--paper-line-color) 82%,transparent) calc(var(--paper-step) - 1px),
+      color-mix(in srgb,var(--paper-line-color) 82%,transparent) var(--paper-step)
+    ),
+    repeating-linear-gradient(
+      105deg,
+      transparent 0,
+      transparent calc(var(--slant-gap) - 1px),
+      color-mix(in srgb,var(--paper-line-color) 82%,transparent) calc(var(--slant-gap) - 1px),
+      color-mix(in srgb,var(--paper-line-color) 82%,transparent) var(--slant-gap)
+    ) !important;
+}
+
+.canvas-container,.upper-canvas,.lower-canvas{
+  filter:none !important;
+  image-rendering:auto !important;
+  -webkit-font-smoothing:antialiased;
+}
+#textFontFamily{min-width:178px}
+
+/* v129 — локальний український шрифт прописів Propysy */
+@font-face{font-family:'Propysy';src:url('./fonts/Propysy-Regular.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Propysy';src:url('./fonts/Propysy-Bold.otf') format('opentype');font-weight:700;font-style:normal;font-display:swap}

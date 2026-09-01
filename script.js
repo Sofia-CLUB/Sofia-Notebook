@@ -65,7 +65,7 @@ function saveHeadingDefault(obj){
   const all=getHeadingDefaults();
   all[obj.systemRole]={
     left:obj.left,top:obj.top,originX:obj.originX||"center",originY:obj.originY||"top",
-    fontFamily:obj.fontFamily||"Segoe Script",fontSize:obj.fontSize||48,
+    fontFamily:obj.fontFamily||"Marck Script",fontSize:obj.fontSize||48,
     fontWeight:obj.fontWeight||"normal",fontStyle:obj.fontStyle||"normal",
     underline:!!obj.underline,linethrough:!!obj.linethrough,
     fill:obj.fill||"#4a7fbd",backgroundColor:obj.backgroundColor||"",
@@ -77,7 +77,7 @@ function resetHeadingDefault(role){const all=getHeadingDefaults();delete all[rol
 function makeHeadingText(text,role,top,fontSize=24,fontWeight="normal"){
   const saved=headingDefaultFor(role);
   const t=new fabric.IText(text,{
-    left:fcanvas.getWidth()/2,top,originX:"center",fontFamily:"Segoe Script",fontStyle:"normal",
+    left:fcanvas.getWidth()/2,top,originX:"center",fontFamily:"Marck Script",fontStyle:"normal",
     fontSize,fontWeight,fill:"#4a7fbd",textAlign:"center",editable:true,selectable:true,evented:true,
     systemRole:role,isHeadingText:true,...(saved||{})
   });
@@ -95,19 +95,13 @@ function ensureHeadingObjects(){
     return;
   }
 
-  const wantedDate=headingDate();
-  if($("dateMode").value==="none"){
-    if(dateObj)fcanvas.remove(dateObj);
-    dateObj=null;
-  }else if(!dateObj){
-    dateObj=makeHeadingText(wantedDate,"dateHeading",24,48,"normal");
-  }
+  if(!dateObj) dateObj=makeHeadingText(headingDate(),"dateHeading",24,48,"normal");
   if(!workObj) workObj=makeHeadingText($("workType").value,"workHeading",78,50,"normal");
 
   // При зміні селектора оновлюємо лише сам текст, але об'єкт лишається редагованим
-  if(dateObj)dateObj.set({text:wantedDate});
+  dateObj.set({text:headingDate()});
   workObj.set({text:$("workType").value});
-  dateObj?.setCoords();workObj.setCoords();
+  dateObj.setCoords();workObj.setCoords();
   fcanvas.requestRenderAll();
 }
 function updateHeading(){
@@ -119,20 +113,6 @@ function updateHeading(){
   if(typeof fcanvas!=="undefined") ensureHeadingObjects();
 }
 ["dateMode","workType","pageMode"].forEach(id=>$(id).addEventListener("change",()=>{updateHeading();autoSave()}));
-// Повторний вибір уже активного пункту теж відновлює видалений напис.
-["dateMode","workType"].forEach(id=>{
-  const menu=$(id);
-  const restore=()=>setTimeout(()=>{
-    if($("pageMode").value!=="free"){
-      updateHeading();
-      autoSave();
-    }
-  },0);
-  menu.addEventListener("click",restore);
-  menu.addEventListener("keyup",event=>{
-    if(["Enter"," ","ArrowUp","ArrowDown"].includes(event.key))restore();
-  });
-});
 $("customDate").addEventListener("change",()=>{updateHeading();autoSave()});
 $("manualDate").addEventListener("input",()=>{updateHeading();autoSave()});
 updateHeading();
@@ -189,7 +169,7 @@ function applyPaper(){
   notebook.classList.add(coord?"paper-clean":"paper-"+type);
   const step=Number($("paperSize").value);
   notebook.style.setProperty("--paper-step",step+"px");
-  notebook.style.setProperty("--slant-gap",(step*6)+"px");
+  notebook.style.setProperty("--slant-gap",Math.max(96,step*4.8)+"px");
   notebook.style.setProperty("--paper-line-color",$("paperLineColor").value);
   $("coordinatePaperOverlay")?.classList.toggle("hidden",!coord);
   if(coord)renderCoordinatePlane();
@@ -199,11 +179,11 @@ function applyPaper(){
   applyPaper();autoSave();
 }));
 $("paperSizeMinus").onclick=()=>{
-  $("paperSize").value=Math.max(Number($("paperSize").min),Number($("paperSize").value)-1);
+  $("paperSize").value=Math.max(Number($("paperSize").min),Number($("paperSize").value)-4);
   $("paperSizeValue").textContent=$("paperSize").value;applyPaper();autoSave();
 };
 $("paperSizePlus").onclick=()=>{
-  $("paperSize").value=Math.min(Number($("paperSize").max),Number($("paperSize").value)+1);
+  $("paperSize").value=Math.min(Number($("paperSize").max),Number($("paperSize").value)+4);
   $("paperSizeValue").textContent=$("paperSize").value;applyPaper();autoSave();
 };
 $("paperSizeValue").textContent=$("paperSize").value;
@@ -321,7 +301,42 @@ function strokeOpts(){
     strokeLineJoin:"round"
   };
 }
-$("lineWidth").oninput=()=>$("lineWidthValue").textContent=$("lineWidth").value;
+function applyCurrentThickness(){
+  const slider=$("lineWidth");
+  if(!slider)return;
+  const w=Math.max(1,Number(slider.value)||1);
+  $("lineWidthValue").textContent=String(w);
+
+  // Застосовуємо товщину НЕГАЙНО до активного інструмента.
+  if(fcanvas.isDrawingMode && fcanvas.freeDrawingBrush){
+    if(currentTool==="marker"){
+      fcanvas.freeDrawingBrush.width=Math.max(14,w*5);
+    }else{
+      // ручка / олівець та інші PencilBrush
+      fcanvas.freeDrawingBrush.width=w;
+    }
+    fcanvas.freeDrawingBrush.strokeLineCap="round";
+    fcanvas.freeDrawingBrush.strokeLineJoin="round";
+    if("decimate" in fcanvas.freeDrawingBrush)fcanvas.freeDrawingBrush.decimate=.3;
+  }
+
+  // Якщо в цей момент будується фігура/лінія — товщина теж змінюється одразу.
+  if(temp && currentTool!=="text"){
+    try{
+      if(temp.type==="group"){
+        temp.getObjects?.().forEach(o=>{
+          if(o.stroke)o.set({strokeWidth:w,strokeUniform:true});
+        });
+      }else if(temp.stroke){
+        temp.set({strokeWidth:w,strokeUniform:true});
+      }
+      temp.setCoords?.();
+      fcanvas.requestRenderAll();
+    }catch(e){}
+  }
+}
+$("lineWidth").oninput=applyCurrentThickness;
+$("lineWidth").onchange=applyCurrentThickness;
 
 /* ---------- History ---------- */
 function canvasState(){return JSON.stringify(fcanvas.toJSON())}
@@ -528,7 +543,16 @@ function hexToRgba(hex,a){
   const n=parseInt(hex.slice(1),16);
   return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
 }
-function setTool(tool){
+window.sofiaLockedTool=window.sofiaLockedTool||"select";
+window.sofiaExplicitToolSwitch=false;
+
+function setTool(tool,explicit=false){
+  // v138: єдине джерело перемикання — прямий вибір користувача.
+  if(explicit){
+    window.sofiaLockedTool=tool;
+  }else if(window.sofiaLockedTool && tool!==window.sofiaLockedTool){
+    tool=window.sofiaLockedTool;
+  }
   currentTool=tool;
   document.querySelectorAll(".side-tool[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));
 
@@ -570,12 +594,17 @@ function setTool(tool){
   fcanvas.requestRenderAll();
   $("finishPolylineBtn").classList.toggle("hidden",tool!=="polyline");
 }
-document.querySelectorAll(".side-tool[data-tool]").forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
-setTool("select");
+document.querySelectorAll(".side-tool[data-tool]").forEach(b=>b.onclick=()=>{
+  window.sofiaLockedTool=b.dataset.tool;
+  setTool(b.dataset.tool,true);
+});
+window.sofiaLockedTool="select";
+setTool("select",true);
 $("colorPicker").oninput=()=>setTool(currentTool);
 $("correctionMarkerBtn").onclick=()=>{
   $("colorPicker").value=$("correctionColor").value;
-  setTool("marker");
+  window.sofiaLockedTool="marker";
+  setTool("marker",true);
 };
 
 /* ---------- Тип лінії: відрізок / пряма / промінь / стрілки ---------- */
@@ -644,13 +673,14 @@ fcanvas.on("mouse:down",opt=>{
   if(currentTool==="text"){
     const t=new fabric.IText("Текст",{
       left:p.x,top:p.y,fill:$("colorPicker").value,
-      fontSize:26,fontFamily:"Times New Roman",fontStyle:"normal",erasable:false
+      fontSize:28,fontFamily:"Marck Script",fontStyle:"normal",erasable:false
     });
     fcanvas.add(t);
     fcanvas.setActiveObject(t);
     t.enterEditing();
     pushHistory();autoSave();
-    setTool("select");
+    // v130: режим «Текст» не вимикається сам після одного напису.
+    // Після завершення редагування наступний клік знову створить текст.
     syncTextFormatBar();
     return;
   }
@@ -715,13 +745,16 @@ fcanvas.on("mouse:up",()=>{
   temp=null;
   pushHistory();
   autoSave();
-  setTool("select");
+
+  // v130: вибраний інструмент залишається активним.
+  // Перехід відбувається тільки коли користувач натисне інший інструмент.
+  setTool(currentTool);
 });
 
 fcanvas.on("path:created",e=>{
   // Штрихи ручки/маркера можна стирати частково.
   if(currentTool!=="eraser"){
-    e.path.set({selectable:true,evented:true,erasable:true});
+    e.path.set({selectable:true,evented:true,erasable:true,strokeUniform:true,objectCaching:false,paintFirst:"stroke"});
     pushHistory();
     autoSave();
   }
@@ -739,7 +772,9 @@ function addPolylinePoint(p){
 }
 function finishPolyline(){
   if(polyPreview){polyPreview.set({selectable:true,evented:true});polyPreview=null;pushHistory();autoSave()}
-  polyPoints=[];setTool("select");
+  polyPoints=[];
+  // v130: «Ламана» залишається активною до вибору іншого інструмента.
+  setTool("polyline");
 }
 $("finishPolylineBtn").onclick=finishPolyline;
 
@@ -2355,59 +2390,17 @@ $("insertCalcResultBtn").onclick=()=>{
 
 /* ---------- Встановлення як окремого додатка / офлайн ---------- */
 let deferredInstallPrompt=null;
-const installAppBtn=$("installAppBtn");
-const isStandaloneApp=()=>window.matchMedia?.("(display-mode: standalone)")?.matches===true || window.navigator.standalone===true;
-function updateInstallButton(){
-  if(!installAppBtn)return;
-  if(isStandaloneApp()){
-    installAppBtn.textContent="✓ Додаток встановлено";
-    installAppBtn.classList.add("primary");
-    installAppBtn.title="Sofia Notebook відкрито як встановлений додаток";
-  }else if(deferredInstallPrompt){
-    installAppBtn.textContent="⬇ Встановити додаток";
-    installAppBtn.classList.add("primary");
-    installAppBtn.title="Натисніть, щоб встановити Sofia Notebook";
-  }else{
-    installAppBtn.textContent="⬇ Встановити додаток";
-    installAppBtn.title="Встановити Sofia Notebook або переглянути інструкцію";
-  }
-}
-window.addEventListener("beforeinstallprompt",e=>{
-  e.preventDefault();
-  deferredInstallPrompt=e;
-  updateInstallButton();
-});
-window.addEventListener("appinstalled",()=>{
-  deferredInstallPrompt=null;
-  updateInstallButton();
-  alert("Sofia Notebook PRO успішно встановлено. Ярлик з’явився серед ваших програм.");
-});
-installAppBtn?.addEventListener("click",async()=>{
-  if(isStandaloneApp()){
-    alert("Sofia Notebook уже відкрито як встановлений додаток.");
-    return;
-  }
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;$("installAppBtn")?.classList.add("primary")});
+$("installAppBtn")?.addEventListener("click",async()=>{
   if(deferredInstallPrompt){
     deferredInstallPrompt.prompt();
-    const choice=await deferredInstallPrompt.userChoice;
+    await deferredInstallPrompt.userChoice;
     deferredInstallPrompt=null;
-    updateInstallButton();
-    if(choice?.outcome!=="accepted")alert("Встановлення скасовано. Ви можете повторити його цією кнопкою пізніше.");
   }else{
-    const ua=navigator.userAgent||"";
-    const ios=/iPad|iPhone|iPod/.test(ua);
-    const android=/Android/.test(ua);
-    if(ios){
-      alert("На iPhone або iPad: натисніть кнопку «Поділитися» □↑ внизу Safari → «На початковий екран» → «Додати». Встановлення потрібно виконувати саме у Safari.");
-    }else if(android){
-      alert("У Chrome натисніть меню ⋮ → «Встановити додаток» або «Додати на головний екран». Якщо такого пункту ще немає, оновіть сторінку та зачекайте кілька секунд.");
-    }else{
-      alert("У Chrome або Edge натисніть значок встановлення у правій частині адресного рядка або меню ⋮ → «Встановити Sofia Notebook PRO». Якщо вгорі видно «Відкрити в додатку», програма вже встановлена — натисніть цю кнопку.");
-    }
+    alert("У Chrome або Edge відкрийте меню ⋮ → «Встановити Sofia Notebook PRO» / «Встановити цей сайт як програму». Після першого онлайн-відкриття основні файли зберігаються для офлайн-роботи.");
   }
 });
-updateInstallButton();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=132",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=38",{updateViaCache:"none"}).then(r=>r.update()).catch(console.warn));
 
 
 /* ---------- Повноекранний режим ---------- */
@@ -2821,9 +2814,10 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="28";
+  document.documentElement.dataset.sofiaVersion="138";
   if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
 })();
+
 
 /* =========================================================
    V56 CLEAN — ОДНА СТАБІЛЬНА СТРІЧКА БЕЗ ДУБЛІКАТІВ
@@ -3531,7 +3525,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="56";
+    document.documentElement.dataset.sofiaVersion="138";
     if($v("appVersionBadge"))$v("appVersionBadge").textContent="v56";
 
     const mo=new MutationObserver(()=>{
@@ -3872,9 +3866,9 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     fcanvas.on("object:added",e=>{
       const o=e.target;
       if(o && ["i-text","textbox","text"].includes(o.type)){
-        // Regular user text defaults to Times New Roman unless it already has a specific font.
-        if(!o.systemRole && (!o.fontFamily || o.fontFamily==="Arial")){
-          o.set({fontFamily:"Times New Roman"});
+        // v128: regular user text defaults to a handwriting font close to the reference notebook.
+        if(!o.systemRole && (!o.fontFamily || o.fontFamily==="Arial" || o.fontFamily==="Times New Roman")){
+          o.set({fontFamily:"Marck Script"});
         }
       }
     });
@@ -3889,7 +3883,7 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="57";
+    document.documentElement.dataset.sofiaVersion="138";
     if($57("appVersionBadge"))$57("appVersionBadge").textContent="v57";
   }
 
@@ -3992,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v60";
-    document.documentElement.dataset.sofiaVersion="60";
+    if(badge) badge.textContent="v138";
+    document.documentElement.dataset.sofiaVersion="138";
   }
 
   function init(){
@@ -4091,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v61";
-  document.documentElement.dataset.sofiaVersion="61";
+  if(badge)badge.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4195,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v62";
-    document.documentElement.dataset.sofiaVersion="62";
+    if(badge)badge.textContent="v138";
+    document.documentElement.dataset.sofiaVersion="138";
   }
 
   if(document.readyState==="loading")
@@ -4488,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v63";
-    document.documentElement.dataset.sofiaVersion="63";
+    if(badge)badge.textContent="v138";
+    document.documentElement.dataset.sofiaVersion="138";
   }
 
   if(document.readyState==="loading")
@@ -4603,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v64";
-  document.documentElement.dataset.sofiaVersion="64";
+  if(badge)badge.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4734,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v65";
-    document.documentElement.dataset.sofiaVersion="65";
+    if(badge)badge.textContent="v138";
+    document.documentElement.dataset.sofiaVersion="138";
   }
 
   if(document.readyState==="loading")
@@ -5141,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v68";
-  document.documentElement.dataset.sofiaVersion="68";
+  if(badge)badge.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 if(document.readyState==="loading")
@@ -5238,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v86";document.documentElement.dataset.sofiaVersion="86";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v138";document.documentElement.dataset.sofiaVersion="138";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5512,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v87";
-  document.documentElement.dataset.sofiaVersion="87";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -5718,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v93";
-  document.documentElement.dataset.sofiaVersion="93";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -6015,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v94";
-  document.documentElement.dataset.sofiaVersion="94";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -6110,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v95";
-  document.documentElement.dataset.sofiaVersion="95";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -6292,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v97";
-  document.documentElement.dataset.sofiaVersion="97";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -6399,11 +6393,20 @@ function bindUnifiedToggle(){
     const sameWasActive=currentVisualActive(btn);
 
     if(sameWasActive){
-      // Second click on the same tool = neutral cursor mode.
+      // v132: повторне натискання НЕ вимикає інструмент.
+      // Інструмент залишається активним, доки користувач не вибере інший.
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      deactivateAll();
+
+      const tool=btn.dataset.tool||"select";
+      try{ if(typeof setTool==="function") setTool(tool); }catch(_){}
+      clearVisualState();
+      btn.classList.add("active");
+      btn.setAttribute("aria-pressed","true");
+      activeTool98=tool;
+
+      try{ if(typeof applyCurrentThickness==="function") applyCurrentThickness(); }catch(_){}
       return;
     }
 
@@ -6463,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v98";
-  document.documentElement.dataset.sofiaVersion="98";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -6736,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v99";
-  document.documentElement.dataset.sofiaVersion="99";
+  if(b)b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -7060,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v102";
-  document.documentElement.dataset.sofiaVersion="102";
+  if(b)b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -7171,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v103";
+  if(b) b.textContent="v138";
 }
 
 function init(){
@@ -7433,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v105";
-  document.documentElement.dataset.sofiaVersion="105";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init(){
@@ -7734,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v106";
-  document.documentElement.dataset.sofiaVersion="106";
+  if(b)b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function repair(){
@@ -7920,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v107";
-  document.documentElement.dataset.sofiaVersion="107";
+  if(b)b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8065,7 +8068,7 @@ function activateHand108(){
   deactivateCursor108();
 
   // Використовуємо штатний select V107, але без старого toggle руки.
-  try { setTool("select"); } catch(_){}
+  try { window.sofiaLockedTool="select"; setTool("select",true); } catch(_){}
 
   setObjectsInteractive108(true);
 
@@ -8203,7 +8206,7 @@ function activateCursor108(){
   deactivateHand108();
   window.sofiaV108CursorMode=true;
 
-  try { setTool("select"); } catch(_){}
+  try { window.sofiaLockedTool="select"; setTool("select",true); } catch(_){}
   c.isDrawingMode=false;
   c.selection=false;
   c.defaultCursor="text";
@@ -8270,10 +8273,10 @@ function placeRealTextCursor108(e){
     top:p.y-13,
     originX:"left",
     originY:"top",
-    fontFamily:"Times New Roman",
+    fontFamily:"Marck Script",
     fontStyle:"normal",
     fontWeight:"normal",
-    fontSize:26,
+    fontSize:28,
     fill:color,
     textAlign:"left",
     editable:true,
@@ -8355,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v108";
-  document.documentElement.dataset.sofiaVersion="108";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function init108(){
@@ -8709,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v109";
-  document.documentElement.dataset.sofiaVersion="109";
+  if(b) b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function repair109(){
@@ -8847,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v110";
-  document.documentElement.dataset.sofiaVersion="110";
+  if(b)b.textContent="v138";
+  document.documentElement.dataset.sofiaVersion="138";
 }
 
 function apply110(){
@@ -9154,7 +9157,7 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v112";
+  if(b)b.textContent="v138";
   document.documentElement.dataset.sofiaVersion="112-clean";
 }
 
@@ -9366,7 +9369,7 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v113";
+  if(b)b.textContent="v138";
   document.documentElement.dataset.sofiaVersion="113-clean";
 }
 
@@ -9599,7 +9602,7 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v114";
+  if(b)b.textContent="v138";
   document.documentElement.dataset.sofiaVersion="114-clean";
 }
 
@@ -9898,7 +9901,7 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v116";
+  if(b)b.textContent="v138";
   document.documentElement.dataset.sofiaVersion="116-clean-mobile";
 }
 
@@ -10134,7 +10137,7 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v119";
+  if(b)b.textContent="v138";
   document.documentElement.dataset.sofiaVersion="119-clean-mobile";
 }
 
@@ -10283,7 +10286,7 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v120";
+  if(b)b.textContent="v138";
   document.documentElement.dataset.sofiaVersion="120-exact119-left-only";
 }
 
@@ -10365,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v124";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v138";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -10923,9 +10926,465 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(v126ButtonAudit,1200));
 })();
 
-/* v131 — відновлення заголовків + Gemini auto-model + PWA */
-(()=>{
-  const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v132";
-  document.documentElement.dataset.sofiaVersion="132";
+
+
+/* =========================================================
+   v128 — фінальний override якості.
+   Функціонал v126 не змінюємо.
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const DEFAULT_FONT="Marck Script";
+  const getCanvas=()=>window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null);
+
+  function toolName(){
+    try{return typeof currentTool!=="undefined"?currentTool:"pen"}catch(e){return"pen"}
+  }
+
+  function brushWidth(tool,w){
+    w=Math.max(1,Number(w)||1);
+    if(tool==="marker")return Math.max(6,Math.round(w*2.6));
+    if(tool==="eraser")return Math.max(10,Math.round(w*3.2));
+    return w;
+  }
+
+  function quality(){
+    const c=getCanvas(); if(!c)return;
+    window.fcanvas=c;
+    try{
+      c.enableRetinaScaling=true;
+      c.imageSmoothingEnabled=true;
+      [c.contextContainer,c.contextTop].forEach(ctx=>{
+        if(!ctx)return;
+        ctx.imageSmoothingEnabled=true;
+        if("imageSmoothingQuality" in ctx)ctx.imageSmoothingQuality="high";
+        ctx.lineCap="round";ctx.lineJoin="round";
+      });
+      c.requestRenderAll();
+    }catch(e){}
+  }
+
+  function liveWidth(){
+    const c=getCanvas(), slider=q("lineWidth"); if(!c||!slider)return;
+    const w=Number(slider.value)||1;
+    if(q("lineWidthValue"))q("lineWidthValue").textContent=String(w);
+
+    if(c.isDrawingMode && c.freeDrawingBrush){
+      c.freeDrawingBrush.width=brushWidth(toolName(),w);
+      if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.35;
+    }
+
+    const active=c.getActiveObject?.();
+    if(active && !["i-text","text","textbox","image"].includes(active.type)){
+      const apply=o=>{
+        if(o?.stroke && o.stroke!=="transparent"){
+          o.set({strokeWidth:w,strokeUniform:true,objectCaching:false});
+        }
+      };
+      if(["activeSelection","group"].includes(active.type))active.getObjects?.().forEach(apply);
+      else apply(active);
+      active.setCoords?.();
+      c.requestRenderAll();
+    }
+  }
+
+  function afterTool(){
+    setTimeout(()=>{quality();liveWidth()},0);
+  }
+
+  function textDefaults(){
+    const sel=q("textFontFamily");
+    if(sel && [...sel.options].some(o=>o.value===DEFAULT_FONT) && !sel.dataset.v128){
+      sel.dataset.v128="1";
+      sel.value=DEFAULT_FONT;
+    }
+    const c=getCanvas();
+    if(c && !c.__v128FontBound){
+      c.__v128FontBound=true;
+      c.on("object:added",ev=>{
+        const o=ev?.target;
+        if(!o || !["i-text","textbox","text"].includes(o.type) || o.systemRole || o.isGraphFormulaLabel)return;
+        if(!o.fontFamily || ["Arial","Times New Roman","Segoe Script"].includes(o.fontFamily)){
+          o.set({fontFamily:DEFAULT_FONT,objectCaching:false});
+          c.requestRenderAll();
+        }
+      });
+    }
+  }
+
+  q("lineWidth")?.addEventListener("input",liveWidth,true);
+  q("lineWidth")?.addEventListener("change",liveWidth,true);
+  q("colorPicker")?.addEventListener("input",afterTool,true);
+  document.addEventListener("click",e=>{
+    if(e.target?.closest?.(".side-tool[data-tool]"))afterTool();
+  },true);
+
+  function init(){
+    quality();textDefaults();liveWidth();
+    const b=q("appVersionBadge");if(b)b.textContent="v138";
+    document.documentElement.dataset.sofiaVersion="138";
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
+  else setTimeout(init,250);
+  window.addEventListener("load",()=>setTimeout(init,450));
 })();
+
+
+
+/* =========================================================
+   v129 — Propysy: український шрифт прописів.
+   Додаємо як основний для нових текстів, не змінюючи інший функціонал.
+   ========================================================= */
+(function(){
+  const FONT="Propysy";
+  function addOption(sel,label,value){
+    if(!sel)return;
+    if(![...sel.options].some(o=>o.value===value)){
+      const o=document.createElement("option");o.value=value;o.textContent=label;sel.insertBefore(o,sel.firstChild);
+    }
+  }
+  function prepareSelectors(){
+    ["textFontFamily","v57TextFont","v68TextFont","v102Font"].forEach(id=>addOption(document.getElementById(id),"Propysy — українські прописи",FONT));
+  }
+  function setDefaults(){
+    window.sofiaTextDefaults=window.sofiaTextDefaults||{};
+    // Не перезаписуємо свідомо збережений користувачем стандарт.
+    const saved=localStorage.getItem("sofiaTextDefaultsV121")||localStorage.getItem("sofiaTextDefaults");
+    if(!saved) window.sofiaTextDefaults.fontFamily=FONT;
+    // Для заголовка міняємо лише старий фабричний стандарт.
+    const hf=localStorage.getItem("sofiaHeadingFontV56");
+    if(!hf || ["Marck Script","Times New Roman","Segoe Script"].includes(hf)) localStorage.setItem("sofiaHeadingFontV56",FONT);
+  }
+  function bindCanvas(){
+    const c=window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null); if(!c||c.__v129Propysy)return;
+    c.__v129Propysy=true;
+    c.on("object:added",e=>{
+      const o=e?.target;if(!o||!["i-text","textbox","text"].includes(o.type)||o.systemRole||o.isGraphFormulaLabel)return;
+      if(!o.fontFamily || ["Arial","Times New Roman","Segoe Script","Marck Script"].includes(o.fontFamily)){
+        o.set({fontFamily:FONT,objectCaching:false});c.requestRenderAll();
+      }
+    });
+  }
+  function init(){
+    prepareSelectors();setDefaults();bindCanvas();
+    document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v138";
+    document.documentElement.dataset.sofiaVersion="138";
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
+  window.addEventListener("load",()=>setTimeout(init,650));
+})();
+
+
+/* =========================================================
+   v130 — ФІКСАЦІЯ АКТИВНОГО ІНСТРУМЕНТА
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function keepToolVisual(){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+      const on=btn.dataset.tool===currentTool;
+      btn.classList.toggle("active",on);
+      btn.setAttribute("aria-pressed",on?"true":"false");
+    });
+  }
+
+  // Якщо пізні патчі перемальовують панель — повертаємо підсвічення активному інструменту.
+  const obs=new MutationObserver(()=>keepToolVisual());
+  obs.observe(document.body,{subtree:true,attributes:true,attributeFilter:["class","aria-pressed"]});
+
+  document.addEventListener("click",e=>{
+    const b=e.target?.closest?.(".side-tool[data-tool]");
+    if(!b)return;
+    setTimeout(()=>{
+      keepToolVisual();
+      applyCurrentThickness?.();
+    },0);
+  },true);
+
+  // Повзунок товщини працює наживо і не змінює активний інструмент.
+  q("lineWidth")?.addEventListener("input",()=>{
+    applyCurrentThickness?.();
+    keepToolVisual();
+  },true);
+
+  window.addEventListener("load",()=>setTimeout(()=>{
+    keepToolVisual();
+    applyCurrentThickness?.();
+    const badge=q("appVersionBadge");
+    if(badge)badge.textContent="v138";
+  },350));
+})();
+
+
+
+/* =========================================================
+   v132 — ПОСТІЙНО АКТИВНИЙ ІНСТРУМЕНТ
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function reassertTool(){
+    try{
+      if(typeof currentTool==="undefined")return;
+      const tool=currentTool;
+      if(typeof setTool==="function")setTool(tool);
+
+      document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+        const on=btn.dataset.tool===tool;
+        btn.classList.toggle("active",on);
+        btn.classList.toggle("selected",false);
+        btn.setAttribute("aria-pressed",on?"true":"false");
+      });
+
+      if(typeof applyCurrentThickness==="function")applyCurrentThickness();
+    }catch(e){}
+  }
+
+  // Після завершення штриха/фігури інструмент не переключається.
+  try{
+    fcanvas.on("path:created",()=>setTimeout(reassertTool,0));
+    fcanvas.on("mouse:up",()=>setTimeout(reassertTool,0));
+  }catch(e){}
+
+  // Повторний клік на тому самому інструменті просто підтверджує його,
+  // а не вимикає.
+  document.addEventListener("click",e=>{
+    const btn=e.target?.closest?.(".side-tool[data-tool]");
+    if(!btn)return;
+    setTimeout(reassertTool,20);
+  },true);
+
+  // Зміна товщини не повинна впливати на вибір інструмента.
+  q("lineWidth")?.addEventListener("input",()=>setTimeout(reassertTool,0),true);
+  q("lineWidth")?.addEventListener("change",()=>setTimeout(reassertTool,0),true);
+
+  window.addEventListener("load",()=>setTimeout(()=>{
+    reassertTool();
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v138";
+  },500));
+})();
+
+
+
+/* =========================================================
+   v133 — ТОВЩИНА ЗАСТОСОВУЄТЬСЯ ОДРАЗУ
+   Кожен інструмент пам'ятає свою товщину.
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const WIDTH_KEY="sofiaNotebookToolWidthsV133";
+
+  function widths(){
+    try{return JSON.parse(localStorage.getItem(WIDTH_KEY)||"{}")||{}}catch(e){return{}}
+  }
+  function remember(tool,w){
+    const a=widths(); a[tool]=w;
+    localStorage.setItem(WIDTH_KEY,JSON.stringify(a));
+  }
+  function remembered(tool){
+    const a=widths();
+    return Number(a[tool])||null;
+  }
+  function realBrushWidth(tool,w){
+    w=Math.max(1,Number(w)||1);
+    if(tool==="marker")return Math.max(10,w*5);
+    if(tool==="eraser")return Math.max(14,w*6);
+    return w;
+  }
+
+  window.sofiaApplyThicknessNow=function(){
+    const c=window.fcanvas;
+    const slider=q("lineWidth");
+    if(!c||!slider)return;
+
+    const tool=window.sofiaLockedTool||currentTool||"select";
+    const w=Math.max(1,Number(slider.value)||1);
+    q("lineWidthValue") && (q("lineWidthValue").textContent=String(w));
+    remember(tool,w);
+
+    // Саме активний brush змінюється одразу, без повторного вибору інструмента.
+    if(c.freeDrawingBrush && (tool==="pen" || tool==="marker")){
+      c.freeDrawingBrush.width=realBrushWidth(tool,w);
+      c.freeDrawingBrush.strokeLineCap="round";
+      c.freeDrawingBrush.strokeLineJoin="round";
+      if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
+    }
+
+    // Гумка читає це значення під час руху.
+    if(tool==="eraser")window.sofiaEraserSize=realBrushWidth(tool,w);
+
+    // Лінії/фігури читають lineWidth напряму через strokeOpts().
+    // Якщо фігура вже тягнеться — оновимо preview відразу.
+    if(typeof temp!=="undefined" && temp && temp.stroke){
+      try{
+        temp.set({strokeWidth:w,strokeUniform:true,objectCaching:false});
+        c.requestRenderAll();
+      }catch(e){}
+    }
+  };
+
+  function restoreWidthForTool(tool){
+    const slider=q("lineWidth");
+    if(!slider)return;
+    const saved=remembered(tool);
+    if(saved!==null){
+      slider.value=String(saved);
+      q("lineWidthValue") && (q("lineWidthValue").textContent=String(saved));
+    }
+    setTimeout(()=>window.sofiaApplyThicknessNow(),0);
+  }
+
+  q("lineWidth")?.addEventListener("input",window.sofiaApplyThicknessNow,true);
+  q("lineWidth")?.addEventListener("change",window.sofiaApplyThicknessNow,true);
+
+  // На прямому виборі інструмента повертаємо ЙОГО власну товщину.
+  document.addEventListener("click",e=>{
+    const b=e.target?.closest?.(".side-tool[data-tool]");
+    if(!b)return;
+    window.sofiaLockedTool=b.dataset.tool;
+    setTimeout(()=>restoreWidthForTool(b.dataset.tool),0);
+  },true);
+
+  window.addEventListener("load",()=>{
+    setTimeout(()=>{
+      restoreWidthForTool(window.sofiaLockedTool||"select");
+      const badge=q("appVersionBadge");
+      if(badge)badge.textContent="v138";
+    },450);
+  });
+})();
+
+
+
+/* v133 — фінальний захист активного інструмента */
+document.addEventListener("click",function(e){
+  const b=e.target?.closest?.(".side-tool[data-tool]");
+  if(!b)return;
+  const wanted=b.dataset.tool;
+  window.sofiaLockedTool=wanted;
+  setTimeout(()=>{
+    try{setTool(wanted,true)}catch(_){}
+    document.querySelectorAll(".side-tool[data-tool]").forEach(x=>{
+      const on=x.dataset.tool===wanted;
+      x.classList.toggle("active",on);
+      x.setAttribute("aria-pressed",on?"true":"false");
+    });
+    try{window.sofiaApplyThicknessNow?.()}catch(_){}
+  },30);
+},true);
+
+
+
+/* =========================================================
+   v138 CLEAN CORE
+   Стабілізує лише активний інструмент, товщину, розмір паперу і версію.
+   ========================================================= */
+(function(){
+  const VERSION="v138";
+  const q=id=>document.getElementById(id);
+
+  function cv(){
+    try{return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
+    catch(_){return null}
+  }
+
+  function activeTool(){
+    try{return window.sofiaLockedTool || currentTool || "select"}
+    catch(_){return window.sofiaLockedTool||"select"}
+  }
+
+  function paint(tool){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+      const on=b.dataset.tool===tool;
+      b.classList.toggle("active",on);
+      b.setAttribute("aria-pressed",on?"true":"false");
+    });
+  }
+
+  function widthNow(){
+    const c=cv(), s=q("lineWidth");
+    if(!c||!s)return;
+    const tool=activeTool(), w=Math.max(1,Number(s.value)||1);
+    if(q("lineWidthValue"))q("lineWidthValue").textContent=String(w);
+
+    if(c.freeDrawingBrush && (tool==="pen"||tool==="marker")){
+      c.freeDrawingBrush.width = tool==="marker" ? Math.max(14,w*5) : w;
+      c.freeDrawingBrush.strokeLineCap="round";
+      c.freeDrawingBrush.strokeLineJoin="round";
+      if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
+    }
+    if(tool==="eraser")window.sofiaEraserSize=Math.max(14,w*6);
+
+    try{
+      if(typeof temp!=="undefined" && temp){
+        const apply=o=>{
+          if(o?.stroke && o.stroke!=="transparent"){
+            o.set({strokeWidth:w,strokeUniform:true,objectCaching:false});
+          }
+        };
+        if(temp.type==="group")temp.getObjects?.().forEach(apply);
+        else apply(temp);
+        c.requestRenderAll?.();
+      }
+    }catch(_){}
+  }
+
+  function paper(){
+    const p=q("paperSize");
+    if(!p)return;
+    p.min="16";p.max="160";p.step="2";
+    if(q("paperSizeValue"))q("paperSizeValue").textContent=p.value;
+  }
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent=VERSION;
+    document.documentElement.dataset.sofiaVersion="138";
+  }
+
+  document.addEventListener("click",e=>{
+    const b=e.target?.closest?.(".side-tool[data-tool]");
+    if(!b)return;
+    window.sofiaLockedTool=b.dataset.tool;
+    setTimeout(()=>{
+      try{setTool(b.dataset.tool,true)}catch(_){}
+      paint(b.dataset.tool);
+      widthNow();
+    },0);
+  },false);
+
+  q("lineWidth")?.addEventListener("input",()=>{widthNow();paint(activeTool())},true);
+  q("lineWidth")?.addEventListener("change",()=>{widthNow();paint(activeTool())},true);
+  q("paperSize")?.addEventListener("input",paper,true);
+
+  function restore(){
+    const t=activeTool();
+    setTimeout(()=>{
+      try{setTool(t,true)}catch(_){}
+      window.sofiaLockedTool=t;
+      paint(t);
+      widthNow();
+    },0);
+  }
+
+  function init(){
+    paper();version();
+    const c=cv();
+    if(c && !c.__v138CleanBound){
+      c.__v138CleanBound=true;
+      c.on("path:created",restore);
+      c.on("mouse:up",restore);
+    }
+    paint(activeTool());
+    widthNow();
+  }
+
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
+  else init();
+  window.addEventListener("load",()=>setTimeout(init,350));
+  setTimeout(init,1200);
+})();
+
