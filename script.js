@@ -1645,6 +1645,14 @@ function updatePageIndicator(){
   $("prevPageBtn").disabled=currentPage===0;$("nextPageBtn").disabled=currentPage===pages.length-1;renderPageTabs();
 }
 $("addPageBtn").onclick=()=>{savePage();pages.push(blankPage());loadPage(pages.length-1);autoSave()};
+$("duplicatePageBtn").onclick=()=>{
+  savePage();
+  const src=pages[currentPage]||blankPage();
+  const copy=JSON.parse(JSON.stringify(src));
+  copy.pageTitle=`${pageTitleAt(currentPage)} — копія`;
+  pages.splice(currentPage+1,0,copy);
+  loadPage(currentPage+1);autoSave();
+};
 $("deletePageBtn").onclick=()=>closePage(currentPage);
 $("prevPageBtn").onclick=()=>{if(currentPage>0)goToPage(currentPage-1)};
 $("nextPageBtn").onclick=()=>{if(currentPage<pages.length-1)goToPage(currentPage+1)};

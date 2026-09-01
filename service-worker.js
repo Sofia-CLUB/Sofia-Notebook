@@ -1,4 +1,4 @@
-const CACHE_NAME="sofia-notebook-v141";
+const CACHE_NAME="sofia-notebook-v142";
 const CORE=[
   "./",
   "./index.html",
