@@ -2814,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="138";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v28";
+  document.documentElement.dataset.sofiaVersion="139";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v139";
 })();
 
 
@@ -3525,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="138";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v56";
+    document.documentElement.dataset.sofiaVersion="139";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v139";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="138";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v57";
+    document.documentElement.dataset.sofiaVersion="139";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v139";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v138";
-    document.documentElement.dataset.sofiaVersion="138";
+    if(badge) badge.textContent="v139";
+    document.documentElement.dataset.sofiaVersion="139";
   }
 
   function init(){
@@ -4085,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(badge)badge.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v138";
-    document.documentElement.dataset.sofiaVersion="138";
+    if(badge)badge.textContent="v139";
+    document.documentElement.dataset.sofiaVersion="139";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v138";
-    document.documentElement.dataset.sofiaVersion="138";
+    if(badge)badge.textContent="v139";
+    document.documentElement.dataset.sofiaVersion="139";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(badge)badge.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v138";
-    document.documentElement.dataset.sofiaVersion="138";
+    if(badge)badge.textContent="v139";
+    document.documentElement.dataset.sofiaVersion="139";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(badge)badge.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v138";document.documentElement.dataset.sofiaVersion="138";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v139";document.documentElement.dataset.sofiaVersion="139";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -5712,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -6009,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -6104,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -6286,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -6466,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -6739,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -7063,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -7174,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v138";
+  if(b) b.textContent="v139";
 }
 
 function init(){
@@ -7436,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -7737,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function repair(){
@@ -7923,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init108(){
@@ -8712,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b) b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function repair109(){
@@ -8850,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="138";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function apply110(){
@@ -9157,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="112-clean";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -9369,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="113-clean";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -9602,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="114-clean";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function initG(){
@@ -9901,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="116-clean-mobile";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function initMobile(){
@@ -10137,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="119-clean-mobile";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init119(){
@@ -10286,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v138";
-  document.documentElement.dataset.sofiaVersion="120-exact119-left-only";
+  if(b)b.textContent="v139";
+  document.documentElement.dataset.sofiaVersion="139";
 }
 
 function init(){
@@ -10368,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v138";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v139";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v138";
-    document.documentElement.dataset.sofiaVersion="138";
+    const b=q("appVersionBadge");if(b)b.textContent="v139";
+    document.documentElement.dataset.sofiaVersion="139";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,8 +11068,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v138";
-    document.documentElement.dataset.sofiaVersion="138";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v139";
+    document.documentElement.dataset.sofiaVersion="139";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11113,7 +11113,7 @@ document.addEventListener("paste",e=>{
     keepToolVisual();
     applyCurrentThickness?.();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v138";
+    if(badge)badge.textContent="v139";
   },350));
 })();
 
@@ -11163,7 +11163,7 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(()=>{
     reassertTool();
     const b=q("appVersionBadge");
-    if(b)b.textContent="v138";
+    if(b)b.textContent="v139";
   },500));
 })();
 
@@ -11252,7 +11252,7 @@ document.addEventListener("paste",e=>{
     setTimeout(()=>{
       restoreWidthForTool(window.sofiaLockedTool||"select");
       const badge=q("appVersionBadge");
-      if(badge)badge.textContent="v138";
+      if(badge)badge.textContent="v139";
     },450);
   });
 })();
@@ -11342,7 +11342,7 @@ document.addEventListener("click",function(e){
   function version(){
     const b=q("appVersionBadge");
     if(b)b.textContent=VERSION;
-    document.documentElement.dataset.sofiaVersion="138";
+    document.documentElement.dataset.sofiaVersion="139";
   }
 
   document.addEventListener("click",e=>{
@@ -11386,5 +11386,91 @@ document.addEventListener("click",function(e){
   else init();
   window.addEventListener("load",()=>setTimeout(init,350));
   setTimeout(init,1200);
+})();
+
+
+
+/* =========================================================
+   v139 — FINAL ACTIVE TOOL LOCK
+   Вибраний на лівій панелі інструмент працює доти,
+   доки користувач сам не вибере інший.
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  let userTool = window.sofiaLockedTool || "select";
+
+  function canvas(){
+    try{return window.fcanvas || (typeof fcanvas!=="undefined" ? fcanvas : null)}
+    catch(_){return null}
+  }
+
+  function paint(tool){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+      const active=btn.dataset.tool===tool;
+      btn.classList.toggle("active",active);
+      btn.setAttribute("aria-pressed",active?"true":"false");
+    });
+  }
+
+  function applyTool(tool){
+    if(!tool)return;
+    userTool=tool;
+    window.sofiaLockedTool=tool;
+    try{ if(typeof setTool==="function") setTool(tool,true); }catch(_){}
+    paint(tool);
+    try{ window.sofiaApplyThicknessNow?.(); }catch(_){}
+  }
+
+  // Фіксуємо тільки прямий вибір користувача.
+  document.addEventListener("click",e=>{
+    const btn=e.target?.closest?.(".side-tool[data-tool]");
+    if(!btn)return;
+    userTool=btn.dataset.tool;
+    window.sofiaLockedTool=userTool;
+    setTimeout(()=>applyTool(userTool),0);
+  },false);
+
+  // Після завершення штриха/лінії/фігури повертаємо той самий інструмент.
+  function restore(){
+    const t=userTool || window.sofiaLockedTool;
+    setTimeout(()=>applyTool(t),0);
+  }
+
+  function bindCanvas(){
+    const c=canvas();
+    if(!c || c.__v139ToolLockBound)return;
+    c.__v139ToolLockBound=true;
+    c.on("path:created",restore);
+    c.on("mouse:up",restore);
+  }
+
+  // Товщина змінюється відразу і не перемикає інструмент.
+  q("lineWidth")?.addEventListener("input",()=>{
+    try{window.sofiaApplyThicknessNow?.()}catch(_){}
+    paint(userTool);
+  },true);
+
+  function forceVersion(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v139";
+    document.documentElement.dataset.sofiaVersion="139";
+  }
+
+  function init(){
+    bindCanvas();
+    const active=document.querySelector(".side-tool[data-tool].active");
+    userTool=window.sofiaLockedTool || active?.dataset.tool || "select";
+    applyTool(userTool);
+    forceVersion();
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+
+  window.addEventListener("load",()=>{
+    setTimeout(init,300);
+    setTimeout(forceVersion,1200);
+  });
 })();
 

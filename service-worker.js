@@ -1,16 +1,16 @@
-const CACHE_NAME="sofia-notebook-v138";
+const CACHE_NAME="sofia-notebook-v139";
 const CORE=[
   "./",
   "./index.html",
-  "./style.css?v=138",
-  "./script.js?v=138",
-  "./controls-v37.js?v=138",
-  "./teacher-tools-v37.css?v=138",
-  "./teacher-tools-v37.js?v=138",
+  "./style.css?v=139",
+  "./script.js?v=139",
+  "./controls-v37.js?v=139",
+  "./teacher-tools-v37.css?v=139",
+  "./teacher-tools-v37.js?v=139",
   "./sofia-logo.jpg",
   "./icon-192.png",
   "./icon-512.png",
-  "./manifest.webmanifest?v=138"
+  "./manifest.webmanifest?v=139"
 ];
 self.addEventListener("install",event=>event.waitUntil((async()=>{
   const cache=await caches.open(CACHE_NAME);
