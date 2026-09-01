@@ -2814,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="149";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v149";
+  document.documentElement.dataset.sofiaVersion="151";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v151";
 })();
 
 
@@ -3525,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="149";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v149";
+    document.documentElement.dataset.sofiaVersion="151";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v151";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="149";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v149";
+    document.documentElement.dataset.sofiaVersion="151";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v151";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(badge) badge.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   function init(){
@@ -4085,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(badge)badge.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(badge)badge.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(badge)badge.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(badge)badge.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(badge)badge.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(badge)badge.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v149";document.documentElement.dataset.sofiaVersion="149";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v151";document.documentElement.dataset.sofiaVersion="151";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -5712,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -6009,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -6104,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -6286,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -6466,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -6739,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -7063,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -7174,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v149";
+  if(b) b.textContent="v151";
 }
 
 function init(){
@@ -7436,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -7737,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function repair(){
@@ -7923,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init108(){
@@ -8712,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b) b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function repair109(){
@@ -8850,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function apply110(){
@@ -9157,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -9369,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -9602,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function initG(){
@@ -9901,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function initMobile(){
@@ -10137,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init119(){
@@ -10286,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v149";
-  document.documentElement.dataset.sofiaVersion="149";
+  if(b)b.textContent="v151";
+  document.documentElement.dataset.sofiaVersion="151";
 }
 
 function init(){
@@ -10368,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v149";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v151";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    const b=q("appVersionBadge");if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,8 +11068,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11112,7 +11112,7 @@ document.addEventListener("paste",e=>{
     keepToolVisual();
     applyCurrentThickness?.();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v149";
+    if(badge)badge.textContent="v151";
   },350));
 })();
 
@@ -11162,7 +11162,7 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(()=>{
     reassertTool();
     const b=q("appVersionBadge");
-    if(b)b.textContent="v149";
+    if(b)b.textContent="v151";
   },500));
 })();
 
@@ -11251,7 +11251,7 @@ document.addEventListener("paste",e=>{
     setTimeout(()=>{
       restoreWidthForTool(window.sofiaLockedTool||"select");
       const badge=q("appVersionBadge");
-      if(badge)badge.textContent="v149";
+      if(badge)badge.textContent="v151";
     },450);
   });
 })();
@@ -11341,7 +11341,7 @@ document.addEventListener("click",function(e){
   function version(){
     const b=q("appVersionBadge");
     if(b)b.textContent=VERSION;
-    document.documentElement.dataset.sofiaVersion="149";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   document.addEventListener("click",e=>{
@@ -11451,8 +11451,8 @@ document.addEventListener("click",function(e){
 
   function forceVersion(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   function init(){
@@ -11506,7 +11506,7 @@ document.addEventListener("click",function(e){
   const tabs=[["main","⌂","Основне"],["insert","+","Вставка"],["draw","✎","Малювання"],["math","∑","Математика"],["teacher","🎓","Вчитель"],["ai","✨","AI"]];
   function right(){let r=q("v140Right");if(!r){r=document.createElement("aside");r.id="v140Right";document.body.appendChild(r)}r.innerHTML='';tabs.forEach(([k,i,n])=>{const b=document.createElement("button");b.className="v140tab";b.innerHTML=`<span class=i>${i}</span><span>${n}</span>`;b.onclick=()=>{drawer();q("v140Title").textContent=n;document.querySelectorAll(".v140panel").forEach(p=>p.classList.toggle("active",p.id==="v140-"+k));document.querySelectorAll(".v140tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");q("v140Drawer").classList.add("show")};r.appendChild(b)})}
   function pages(){try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}let d=q("v140Pages");if(!d){d=document.createElement("div");d.id="v140Pages";document.body.appendChild(d)}[q("clearPageBtn"),q("prevPageBtn"),q("pageIndicator"),q("nextPageBtn"),q("addPageBtn"),q("pageTabsWrap"),q("deletePageBtn")].forEach(el=>{if(el&&el.parentElement!==d)d.appendChild(el)})}
-  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v149";document.documentElement.dataset.sofiaVersion="149"}
+  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v151";document.documentElement.dataset.sofiaVersion="151"}
   function init(){
     css();drawer();right();pages();ver();
     setTimeout(()=>{drawer();pages();ver()},700);
@@ -11525,8 +11525,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   function paper(){
@@ -11688,8 +11688,8 @@ document.addEventListener("click",function(e){
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(badge)badge.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   if(document.readyState==="loading"){
@@ -11912,8 +11912,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   function init(){
@@ -12122,8 +12122,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   function init(){
@@ -12198,7 +12198,7 @@ document.addEventListener("click",function(e){
   }
 
   function version(){
-    const b=$("appVersionBadge"); if(b)b.textContent="v149";
+    const b=$("appVersionBadge"); if(b)b.textContent="v151";
   }
 
   function init(){
@@ -12322,7 +12322,7 @@ document.addEventListener("click",function(e){
    });
  }
 
- function version(){const b=$("appVersionBadge");if(b)b.textContent="v149";}
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v151";}
  function init(){
    addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
  }
@@ -12424,8 +12424,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   function init(){
@@ -12532,8 +12532,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=$("appVersionBadge");
-    if(b)b.textContent="v149";
-    document.documentElement.dataset.sofiaVersion="149";
+    if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
   }
 
   function init(){
@@ -12543,6 +12543,393 @@ document.addEventListener("click",function(e){
     version();
     setTimeout(()=>{restoreInsertMath();bindLeftTools();version()},500);
     setTimeout(()=>{restoreInsertMath();bindLeftTools();version()},1200);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+  window.addEventListener("load",()=>setTimeout(init,180));
+})();
+
+
+
+/* =========================================================
+   v150 — CORE CONTROLS FIX
+   1. Ліва панель: усі інструменти працюють через setTool напряму.
+   2. "Курсор" не залишається активним разом з іншим інструментом.
+   3. Вставка / Математика / інші праві вкладки відкривають свої реальні панелі.
+   4. Не змінюємо функціонал самих інструментів.
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function addCss(){
+    if(q("v150Css"))return;
+    const st=document.createElement("style");
+    st.id="v150Css";
+    st.textContent=`
+      .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
+        top:112px!important;
+        z-index:130000!important;
+        pointer-events:auto!important;
+      }
+      .side-tool[data-tool]{pointer-events:auto!important;z-index:2!important}
+      #v86Dock{z-index:129000!important}
+      #v86Commands{
+        z-index:129500!important;
+        pointer-events:auto!important;
+        display:none;
+      }
+      #v86Commands.show{display:block!important}
+      #v86Commands .v56-panel{
+        display:flex!important;
+        flex-wrap:wrap!important;
+        gap:5px!important;
+        align-items:center!important;
+        pointer-events:auto!important;
+      }
+      #v86Commands .v56-panel button,
+      #v86Commands .v56-panel select,
+      #v86Commands .v56-panel input{
+        pointer-events:auto!important;
+      }
+      #v105CursorBtn.active{background:#173b78!important;color:#fff!important}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function clearCursorMode(){
+    document.body.classList.remove("v105-cursor-mode","v94-insert-ready");
+    const c=q("v105CursorBtn");
+    if(c){
+      c.classList.remove("active");
+      c.setAttribute("aria-pressed","false");
+    }
+  }
+
+  function markOneTool(btn){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+      const on=b===btn;
+      b.classList.toggle("active",on);
+      b.classList.remove("selected","v96-hand-active","v99-hand-active");
+      b.setAttribute("aria-pressed",on?"true":"false");
+    });
+  }
+
+  function activateLeft(btn){
+    if(!btn)return;
+    const tool=btn.dataset.tool||"select";
+    clearCursorMode();
+    window.sofiaLockedTool=tool;
+
+    try{
+      if(typeof setTool==="function")setTool(tool,true);
+    }catch(err){
+      console.error("v150 setTool",err);
+    }
+
+    markOneTool(btn);
+
+    // Рука = select. Інші інструменти не повинні лишати старий hand-mode.
+    if(tool!=="select"){
+      document.body.classList.remove("v99-hand-mode","v96-hand-mode","v99-dragging","v96-dragging");
+    }
+
+    try{window.sofiaApplyThicknessNow?.()}catch(_){}
+  }
+
+  // WINDOW capture: спрацьовує раніше за старі V98/V99/V148 обробники.
+  window.addEventListener("click",e=>{
+    const btn=e.target?.closest?.(".side-tool[data-tool]");
+    if(!btn)return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    activateLeft(btn);
+  },true);
+
+  function commandBox(){
+    let box=q("v86Commands");
+    if(!box){
+      box=document.createElement("div");
+      box.id="v86Commands";
+      document.body.appendChild(box);
+    }
+    let close=q("v86Close");
+    if(!close){
+      close=document.createElement("button");
+      close.id="v86Close";
+      close.type="button";
+      close.textContent="×";
+      box.prepend(close);
+      close.onclick=()=>{
+        box.classList.remove("show");
+        document.querySelectorAll(".v86tab").forEach(x=>x.classList.remove("active"));
+      };
+    }
+    return box;
+  }
+
+  function store(){
+    let s=q("v86Store");
+    if(!s){
+      s=document.createElement("div");
+      s.id="v86Store";
+      s.style.cssText="position:fixed;left:-30000px;top:-30000px;width:1px;height:1px;overflow:hidden";
+      document.body.appendChild(s);
+    }
+    return s;
+  }
+
+  function panel(id){
+    return document.querySelector('.v56-panel[data-v56-panel="'+id+'"]');
+  }
+
+  function openRightTab(btn){
+    const id=btn.dataset.tab;
+    if(!id)return;
+    const p=panel(id);
+    if(!p)return;
+
+    const box=commandBox();
+    // Повертаємо попередню панель в store.
+    [...box.querySelectorAll(".v56-panel")].forEach(x=>store().appendChild(x));
+
+    box.appendChild(p);
+    p.hidden=false;
+    p.style.setProperty("display","flex","important");
+    p.style.removeProperty("visibility");
+    p.style.removeProperty("opacity");
+    p.style.setProperty("pointer-events","auto","important");
+
+    document.querySelectorAll(".v86tab[data-tab]").forEach(x=>{
+      x.classList.toggle("active",x===btn);
+    });
+    box.classList.add("show");
+  }
+
+  // Так само перехоплюємо вкладки Вставка/Математика до старих конфліктних handler-ів.
+  window.addEventListener("click",e=>{
+    const btn=e.target?.closest?.(".v86tab[data-tab]");
+    if(!btn)return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    openRightTab(btn);
+  },true);
+
+  // Перевіряємо, щоб кнопки в panel не були приховані старими патчами.
+  function unhidePanelButtons(){
+    document.querySelectorAll(".v56-panel").forEach(p=>{
+      p.querySelectorAll("button,select,input").forEach(el=>{
+        el.hidden=false;
+        el.style.removeProperty("display");
+        el.style.removeProperty("visibility");
+        el.style.removeProperty("opacity");
+        el.style.removeProperty("pointer-events");
+      });
+    });
+  }
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
+  }
+
+  function init(){
+    addCss();
+    unhidePanelButtons();
+    version();
+    setTimeout(()=>{unhidePanelButtons();version()},500);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+  window.addEventListener("load",()=>setTimeout(init,180));
+})();
+
+
+
+/* =========================================================
+   v151 — TIMER + SHAPES FIX
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function addCss(){
+    if(q("v151Css"))return;
+    const st=document.createElement("style");
+    st.id="v151Css";
+    st.textContent=`
+      #v151StopwatchPanel{
+        position:fixed;
+        right:84px;
+        top:170px;
+        z-index:130500;
+        display:none;
+        width:280px;
+        background:#fff;
+        border:1px solid #d8e2ef;
+        border-radius:12px;
+        box-shadow:0 8px 24px rgba(15,23,42,.18);
+        padding:12px;
+        box-sizing:border-box;
+      }
+      #v151StopwatchPanel.show{display:block}
+      #v151StopwatchTime{font:700 32px/1.1 Arial;text-align:center;margin:8px 0 12px}
+      #v151StopwatchPanel .row{display:flex;gap:8px;justify-content:center}
+      #v151StopwatchPanel button{height:34px;padding:4px 10px}
+      #v151StopwatchClose{float:right;border:0;background:#eef2f7;border-radius:7px;width:28px;height:28px}
+
+      #shapeLibraryPanel,#geometryPanel,.shape-library-panel{
+        pointer-events:auto!important;
+        z-index:130400!important;
+      }
+      #shapeLibraryPanel button,#geometryPanel button,.shape-library-panel button{
+        pointer-events:auto!important;
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  /* -------- STOPWATCH -------- */
+  let swStart=0, swElapsed=0, swTimer=null;
+
+  function fmt(ms){
+    const total=Math.floor(ms/1000);
+    const h=Math.floor(total/3600);
+    const m=Math.floor((total%3600)/60);
+    const s=total%60;
+    return (h?String(h).padStart(2,"0")+":":"")+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }
+
+  function ensureStopwatch(){
+    let p=q("v151StopwatchPanel");
+    if(p)return p;
+    p=document.createElement("div");
+    p.id="v151StopwatchPanel";
+    p.innerHTML=`
+      <button id="v151StopwatchClose">×</button>
+      <b>⏱ Секундомір</b>
+      <div id="v151StopwatchTime">00:00</div>
+      <div class="row">
+        <button id="v151SwStart">▶ Старт</button>
+        <button id="v151SwPause">⏸ Пауза</button>
+        <button id="v151SwReset">↺ Скинути</button>
+      </div>`;
+    document.body.appendChild(p);
+    q("v151StopwatchClose").onclick=()=>p.classList.remove("show");
+    q("v151SwStart").onclick=()=>{
+      if(swTimer)return;
+      swStart=Date.now()-swElapsed;
+      swTimer=setInterval(()=>{
+        swElapsed=Date.now()-swStart;
+        q("v151StopwatchTime").textContent=fmt(swElapsed);
+      },250);
+    };
+    q("v151SwPause").onclick=()=>{if(swTimer){clearInterval(swTimer);swTimer=null}};
+    q("v151SwReset").onclick=()=>{
+      if(swTimer){clearInterval(swTimer);swTimer=null}
+      swElapsed=0;swStart=0;q("v151StopwatchTime").textContent="00:00";
+    };
+    return p;
+  }
+
+  function addStopwatchButton(){
+    const teacher=document.querySelector('.v56-panel[data-v56-panel="teacher"]');
+    if(!teacher || q("v151StopwatchBtn"))return;
+    const b=document.createElement("button");
+    b.id="v151StopwatchBtn";
+    b.type="button";
+    b.textContent="⏱ Секундомір";
+    b.onclick=()=>{
+      const p=ensureStopwatch();
+      p.classList.toggle("show");
+    };
+    teacher.appendChild(b);
+  }
+
+  /* -------- SHAPES -------- */
+  function addShape(type){
+    const c=window.fcanvas;
+    if(!c || !window.fabric)return;
+    const base={
+      left:220, top:180,
+      fill:"rgba(255,255,255,.15)",
+      stroke:(q("colorPicker")?.value||"#173b78"),
+      strokeWidth:Number(q("lineWidth")?.value||3),
+      strokeUniform:true,
+      erasable:true
+    };
+    let o=null;
+    if(type==="circle")o=new fabric.Circle({...base,radius:60});
+    if(type==="ellipse")o=new fabric.Ellipse({...base,rx:85,ry:50});
+    if(type==="square")o=new fabric.Rect({...base,width:120,height:120});
+    if(type==="rect")o=new fabric.Rect({...base,width:170,height:100});
+    if(type==="triangle")o=new fabric.Triangle({...base,width:130,height:120});
+    if(type==="diamond")o=new fabric.Rect({...base,width:110,height:110,angle:45});
+    if(type==="star"){
+      const pts=[]; const outer=65, inner=28, n=5;
+      for(let i=0;i<n*2;i++){
+        const r=i%2===0?outer:inner, a=-Math.PI/2+i*Math.PI/n;
+        pts.push({x:Math.cos(a)*r,y:Math.sin(a)*r});
+      }
+      o=new fabric.Polygon(pts,{...base,left:280,top:230});
+    }
+    if(type==="parallelogram")o=new fabric.Polygon([{x:30,y:0},{x:160,y:0},{x:130,y:90},{x:0,y:90}],base);
+    if(type==="trapezoid")o=new fabric.Polygon([{x:35,y:0},{x:135,y:0},{x:170,y:95},{x:0,y:95}],base);
+
+    if(type==="cube"){
+      const a=new fabric.Rect({left:0,top:18,width:95,height:95,fill:"transparent",stroke:base.stroke,strokeWidth:base.strokeWidth});
+      const b=new fabric.Rect({left:28,top:0,width:95,height:95,fill:"transparent",stroke:base.stroke,strokeWidth:base.strokeWidth});
+      const lines=[
+        new fabric.Line([0,18,28,0],base),new fabric.Line([95,18,123,0],base),
+        new fabric.Line([0,113,28,95],base),new fabric.Line([95,113,123,95],base)
+      ];
+      o=new fabric.Group([a,b,...lines],{left:240,top:190});
+    }
+    if(!o)return;
+    c.add(o);c.setActiveObject(o);c.requestRenderAll();
+    try{pushHistory()}catch(_){}
+    try{autoSave()}catch(_){}
+  }
+
+  const shapeMap={
+    "Коло":"circle","Овал":"ellipse","Квадрат":"square","Прямокутник":"rect",
+    "Трикутник":"triangle","Зірка":"star","Паралелограм":"parallelogram","Ромб":"diamond","Трапеція":"trapezoid",
+    "Куб":"cube"
+  };
+
+  function bindShapeButtons(){
+    const panel=q("shapeLibraryPanel") || document.querySelector(".shape-library-panel");
+    if(!panel)return;
+    [...panel.querySelectorAll("button")].forEach(b=>{
+      const key=(b.textContent||"").trim();
+      if(!shapeMap[key] || b.__v151ShapeBound)return;
+      b.__v151ShapeBound=true;
+      b.onclick=(e)=>{
+        e.preventDefault();e.stopPropagation();
+        addShape(shapeMap[key]);
+      };
+    });
+  }
+
+  function version(){
+    const b=q("appVersionBadge");if(b)b.textContent="v151";
+    document.documentElement.dataset.sofiaVersion="151";
+  }
+
+  function init(){
+    addCss();
+    addStopwatchButton();
+    bindShapeButtons();
+    version();
+    setTimeout(()=>{addStopwatchButton();bindShapeButtons();version()},500);
+    setTimeout(()=>{addStopwatchButton();bindShapeButtons();version()},1200);
   }
 
   if(document.readyState==="loading"){
