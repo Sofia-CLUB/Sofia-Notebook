@@ -2814,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="143";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v143";
+  document.documentElement.dataset.sofiaVersion="148";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v148";
 })();
 
 
@@ -3525,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="143";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v143";
+    document.documentElement.dataset.sofiaVersion="148";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v148";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="143";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v143";
+    document.documentElement.dataset.sofiaVersion="148";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v148";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(badge) badge.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   function init(){
@@ -4085,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(badge)badge.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(badge)badge.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(badge)badge.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(badge)badge.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(badge)badge.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(badge)badge.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v143";document.documentElement.dataset.sofiaVersion="143";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v148";document.documentElement.dataset.sofiaVersion="148";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -5712,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -6009,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -6104,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -6286,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -6466,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -6739,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -7063,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -7174,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v143";
+  if(b) b.textContent="v148";
 }
 
 function init(){
@@ -7436,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -7737,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function repair(){
@@ -7923,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init108(){
@@ -8712,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b) b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function repair109(){
@@ -8850,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function apply110(){
@@ -9157,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -9369,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -9602,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function initG(){
@@ -9901,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function initMobile(){
@@ -10137,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init119(){
@@ -10286,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v143";
-  document.documentElement.dataset.sofiaVersion="143";
+  if(b)b.textContent="v148";
+  document.documentElement.dataset.sofiaVersion="148";
 }
 
 function init(){
@@ -10368,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v143";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v148";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    const b=q("appVersionBadge");if(b)b.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,8 +11068,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11112,7 +11112,7 @@ document.addEventListener("paste",e=>{
     keepToolVisual();
     applyCurrentThickness?.();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v143";
+    if(badge)badge.textContent="v148";
   },350));
 })();
 
@@ -11162,7 +11162,7 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(()=>{
     reassertTool();
     const b=q("appVersionBadge");
-    if(b)b.textContent="v143";
+    if(b)b.textContent="v148";
   },500));
 })();
 
@@ -11251,7 +11251,7 @@ document.addEventListener("paste",e=>{
     setTimeout(()=>{
       restoreWidthForTool(window.sofiaLockedTool||"select");
       const badge=q("appVersionBadge");
-      if(badge)badge.textContent="v143";
+      if(badge)badge.textContent="v148";
     },450);
   });
 })();
@@ -11341,7 +11341,7 @@ document.addEventListener("click",function(e){
   function version(){
     const b=q("appVersionBadge");
     if(b)b.textContent=VERSION;
-    document.documentElement.dataset.sofiaVersion="143";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   document.addEventListener("click",e=>{
@@ -11451,8 +11451,8 @@ document.addEventListener("click",function(e){
 
   function forceVersion(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(b)b.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   function init(){
@@ -11506,7 +11506,7 @@ document.addEventListener("click",function(e){
   const tabs=[["main","⌂","Основне"],["insert","+","Вставка"],["draw","✎","Малювання"],["math","∑","Математика"],["teacher","🎓","Вчитель"],["ai","✨","AI"]];
   function right(){let r=q("v140Right");if(!r){r=document.createElement("aside");r.id="v140Right";document.body.appendChild(r)}r.innerHTML='';tabs.forEach(([k,i,n])=>{const b=document.createElement("button");b.className="v140tab";b.innerHTML=`<span class=i>${i}</span><span>${n}</span>`;b.onclick=()=>{drawer();q("v140Title").textContent=n;document.querySelectorAll(".v140panel").forEach(p=>p.classList.toggle("active",p.id==="v140-"+k));document.querySelectorAll(".v140tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");q("v140Drawer").classList.add("show")};r.appendChild(b)})}
   function pages(){try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}let d=q("v140Pages");if(!d){d=document.createElement("div");d.id="v140Pages";document.body.appendChild(d)}[q("clearPageBtn"),q("prevPageBtn"),q("pageIndicator"),q("nextPageBtn"),q("addPageBtn"),q("pageTabsWrap"),q("deletePageBtn")].forEach(el=>{if(el&&el.parentElement!==d)d.appendChild(el)})}
-  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v143";document.documentElement.dataset.sofiaVersion="143"}
+  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v148";document.documentElement.dataset.sofiaVersion="148"}
   function init(){
     css();drawer();right();pages();ver();
     setTimeout(()=>{drawer();pages();ver()},700);
@@ -11525,8 +11525,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(b)b.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   function paper(){
@@ -11688,8 +11688,8 @@ document.addEventListener("click",function(e){
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(badge)badge.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   if(document.readyState==="loading"){
@@ -11912,8 +11912,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v143";
-    document.documentElement.dataset.sofiaVersion="143";
+    if(b)b.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
   }
 
   function init(){
@@ -11930,6 +11930,516 @@ document.addEventListener("click",function(e){
   if(document.readyState==="loading"){
     document.addEventListener("DOMContentLoaded",init,{once:true});
   }else init();
+  window.addEventListener("load",()=>setTimeout(init,180));
+})();
+
+
+
+/* =========================================================
+   v144 — ОДНА ПРАВА ПАНЕЛЬ
+   Залишається тільки штатна #v86Dock.
+   Її згортання виконує стабільна кнопка #v119DockToggle.
+   Дублікати v140/v142/v143 прибираються.
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function addCss(){
+    if(q("v144OneDockCss"))return;
+    const st=document.createElement("style");
+    st.id="v144OneDockCss";
+    st.textContent=`
+      :root{--v144R:64px;--v144B:48px}
+
+      /* Прибираємо дубльовану праву панель нових патчів */
+      #v140Right,#v140Drawer,#v142CollapseBtn,#v143RightToggle{
+        display:none!important;
+        visibility:hidden!important;
+        pointer-events:none!important;
+      }
+
+      /* ЄДИНА права панель — стара стабільна v86 */
+      #v86Dock{
+        position:fixed!important;
+        right:0!important;
+        top:160px!important;
+        bottom:var(--v144B)!important;
+        width:var(--v144R)!important;
+        min-width:var(--v144R)!important;
+        max-width:var(--v144R)!important;
+        padding:4px 3px!important;
+        margin:0!important;
+        background:#fff!important;
+        border-left:1px solid #d7e0ec!important;
+        box-shadow:-2px 0 8px rgba(15,23,42,.08)!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+        z-index:121000!important;
+        box-sizing:border-box!important;
+      }
+      #v86Dock .v86tab,
+      #v86Help,
+      #v105CursorBtn{
+        width:100%!important;
+        min-height:43px!important;
+        height:43px!important;
+        padding:2px 1px!important;
+        margin:0 0 2px 0!important;
+        gap:1px!important;
+        border-radius:7px!important;
+        font-size:9px!important;
+        line-height:1!important;
+        box-sizing:border-box!important;
+      }
+      #v86Dock .v86tab .ico,
+      #v86Help .ico,
+      #v105CursorBtn .ico{
+        font-size:16px!important;
+        line-height:16px!important;
+      }
+
+      /* Стабільна V119-кнопка — єдина кнопка згортання */
+      #v119DockToggle{
+        position:fixed!important;
+        top:50%!important;
+        right:var(--v144R)!important;
+        transform:translateY(-50%)!important;
+        width:25px!important;
+        height:66px!important;
+        z-index:121300!important;
+        border:0!important;
+        border-radius:9px 0 0 9px!important;
+        background:#173b78!important;
+        color:#fff!important;
+        font:bold 22px Arial!important;
+        cursor:pointer!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+      }
+      #pageViewport.v119-right-collapsed #v119DockToggle{right:0!important}
+      #pageViewport.v119-right-collapsed #v86Dock{
+        transform:translateX(105%)!important;
+        pointer-events:none!important;
+      }
+
+      /* НИЖНЯ ПАНЕЛЬ СТОРІНОК — тільки v99 */
+      #v140Pages{display:none!important}
+      #v99PageDock{
+        position:fixed!important;
+        left:82px!important;
+        right:var(--v144R)!important;
+        bottom:0!important;
+        top:auto!important;
+        z-index:120500!important;
+        height:var(--v144B)!important;
+        min-height:var(--v144B)!important;
+        max-height:var(--v144B)!important;
+        display:flex!important;
+        align-items:center!important;
+        gap:5px!important;
+        padding:4px 6px!important;
+        margin:0!important;
+        background:rgba(248,251,255,.98)!important;
+        border-top:1px solid #d7e0ec!important;
+        box-shadow:0 -2px 8px rgba(15,23,42,.08)!important;
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+        white-space:nowrap!important;
+        box-sizing:border-box!important;
+      }
+      #v99PageDock>*{flex:0 0 auto!important}
+      #v99PageDock button{
+        height:34px!important;
+        min-height:34px!important;
+        padding:3px 9px!important;
+        font-size:13px!important;
+        opacity:1!important;
+        visibility:visible!important;
+      }
+      #v99PageDock #pageTabsWrap{display:flex!important;width:auto!important;margin:0!important}
+      #v99PageDock #pageTabs{display:flex!important;gap:5px!important;padding:0!important}
+
+      /* Коли права панель згорнута — сторінки займають всю ширину */
+      #pageViewport.v119-right-collapsed ~ #v99PageDock,
+      body:has(#pageViewport.v119-right-collapsed) #v99PageDock{
+        right:0!important;
+      }
+
+      /* Прибираємо стару смугу сторінок у робочій області */
+      .workspace>.page-controls{
+        height:0!important;min-height:0!important;max-height:0!important;
+        padding:0!important;margin:0!important;border:0!important;overflow:hidden!important;
+      }
+
+      body{
+        padding-right:var(--v144R)!important;
+        padding-bottom:var(--v144B)!important;
+      }
+      body:has(#pageViewport.v119-right-collapsed){padding-right:0!important}
+      .workspace{padding-bottom:calc(var(--v144B) + 3px)!important}
+
+      @media(max-width:800px){
+        :root{--v144R:56px;--v144B:46px}
+        #v86Dock{top:148px!important}
+        #v99PageDock{left:52px!important}
+        #v119DockToggle{height:58px!important}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function removeDuplicates(){
+    ["v140Right","v140Drawer","v142CollapseBtn","v143RightToggle"].forEach(id=>{
+      q(id)?.remove();
+    });
+  }
+
+  function ensurePages(){
+    let dock=q("v99PageDock");
+    if(!dock){
+      dock=document.createElement("div");
+      dock.id="v99PageDock";
+      document.body.appendChild(dock);
+    }
+    try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}
+    const ids=["clearPageBtn","prevPageBtn","pageIndicator","nextPageBtn","addPageBtn","pageTabsWrap","deletePageBtn"];
+    ids.forEach(id=>{
+      const el=q(id);
+      if(el && el.parentElement!==dock)dock.appendChild(el);
+    });
+  }
+
+  function ensureOneToggle(){
+    /* v119 уже створює робочу кнопку. Якщо з якоїсь причини її немає —
+       викликаємо ініціалізацію через невеликий повтор, без створення дубля. */
+    const b=q("v119DockToggle");
+    if(b){
+      b.style.removeProperty("display");
+      b.style.removeProperty("visibility");
+    }
+  }
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
+  }
+
+  function init(){
+    addCss();
+    removeDuplicates();
+    ensurePages();
+    ensureOneToggle();
+    version();
+    setTimeout(()=>{removeDuplicates();ensurePages();ensureOneToggle();version()},500);
+    setTimeout(()=>{removeDuplicates();ensurePages();ensureOneToggle();version()},1200);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+  window.addEventListener("load",()=>setTimeout(init,200));
+})();
+
+
+
+/* =========================================================
+   v145 — ліва панель вище + PropySy за замовчуванням
+   ========================================================= */
+(function(){
+  const $=id=>document.getElementById(id);
+
+  function css(){
+    if($("v145Css"))return;
+    const st=document.createElement("style");
+    st.id="v145Css";
+    st.textContent=`
+      /* Ліва вертикальна панель піднята максимально вгору робочої зони */
+      .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
+        top:160px!important;
+        margin-top:0!important;
+      }
+      @media(max-width:800px){
+        .side-tools,.left-toolbar,.left-tools,.tool-sidebar{top:148px!important}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function liftRealLeftBar(){
+    const el=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+      document.querySelector(".side-tool[data-tool]")?.parentElement;
+    if(!el)return;
+    el.style.setProperty("top","160px","important");
+    el.style.setProperty("margin-top","0","important");
+  }
+
+  function setPropySyDefault(){
+    const selects=[...document.querySelectorAll("select")];
+    for(const sel of selects){
+      const opt=[...sel.options].find(o=>
+        /PropySy/i.test(o.value||"") || /PropySy/i.test(o.textContent||"") ||
+        /українські прописи/i.test(o.textContent||"")
+      );
+      if(!opt)continue;
+
+      // Font/property selects only; don't touch unrelated selects.
+      const nearby=((sel.parentElement?.textContent||"")+" "+(sel.previousElementSibling?.textContent||""));
+      if(!/шрифт|font|PropySy|прописи/i.test(nearby))continue;
+
+      // Set only when the text tool/property panel is initialized with another default.
+      if(!sel.dataset.v145DefaultApplied){
+        sel.value=opt.value;
+        sel.dataset.v145DefaultApplied="1";
+        sel.dispatchEvent(new Event("change",{bubbles:true}));
+      }
+    }
+  }
+
+  function version(){
+    const b=$("appVersionBadge"); if(b)b.textContent="v148";
+  }
+
+  function init(){
+    css(); liftRealLeftBar(); version();
+    setTimeout(setPropySyDefault,150);
+    setTimeout(()=>{liftRealLeftBar();setPropySyDefault();version()},700);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
+  else init();
+  window.addEventListener("load",()=>setTimeout(init,150));
+})();
+
+
+
+/* v146 — стиль нового тексту за замовчуванням як на зразку */
+(function(){
+  const DEFAULT_TEXT_STYLE={
+    fontFamily:"PropySy",
+    fontSize:48,
+    fontWeight:"normal",
+    fontStyle:"normal",
+    underline:false,
+    fill:"#5f91cf",
+    textAlign:"center",
+    opacity:1
+  };
+
+  function applyToNewTextObject(obj){
+    if(!obj || !(obj.type==="i-text" || obj.type==="textbox" || obj.type==="text")) return;
+    // Лише для щойно створеного тексту, не переписуємо вже оформлені старі об'єкти.
+    if(obj.__v146Styled) return;
+    obj.set(DEFAULT_TEXT_STYLE);
+    obj.__v146Styled=true;
+    obj.setCoords && obj.setCoords();
+    window.fcanvas && window.fcanvas.requestRenderAll();
+  }
+
+  function hookCanvas(){
+    const c=window.fcanvas;
+    if(!c || c.__v146TextHook)return;
+    c.__v146TextHook=true;
+    c.on("object:added",function(e){
+      const o=e && e.target;
+      if(!o || o.__v146Styled) return;
+      if(o.type==="i-text" || o.type==="textbox" || o.type==="text"){
+        setTimeout(()=>applyToNewTextObject(o),0);
+      }
+    });
+  }
+
+  function syncControls(){
+    document.querySelectorAll("select").forEach(sel=>{
+      const opt=[...sel.options].find(o=>/PropySy/i.test(o.value||"")||/PropySy|українські прописи/i.test(o.textContent||""));
+      const nearby=(sel.parentElement?.textContent||"");
+      if(opt && /шрифт|font|прописи/i.test(nearby)){
+        sel.value=opt.value;
+      }
+    });
+  }
+
+  function init(){ hookCanvas(); syncControls(); }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
+  else setTimeout(init,250);
+  window.addEventListener("load",()=>{setTimeout(init,500);setTimeout(init,1200)});
+})();
+
+
+
+/* v147 — відновлення кнопок панелей + один правий dock + порядок об'єктів */
+(function(){
+ const $=id=>document.getElementById(id);
+
+ function addCss(){
+   if($("v147Css"))return;
+   const s=document.createElement("style"); s.id="v147Css";
+   s.textContent=`
+     /* прибрати лише відомі дублікати правої навігаційної панелі */
+     #v140Right,#v140Drawer,#v142CollapseBtn,#v143RightToggle{display:none!important}
+     /* основна робоча права панель має бути поверх полотна */
+     #v86Dock{z-index:12000!important}
+     /* модальні/вкладкові панелі не обрізають кнопки */
+     .v56-panel,.teacher-panel,.tool-panel{overflow:visible!important}
+   `;
+   document.head.appendChild(s);
+ }
+
+ function restorePanelContents(){
+   // v56/v86 tabs: remove accidental hiding from previous patches.
+   document.querySelectorAll('.v56-panel,[data-v56-panel]').forEach(p=>{
+     p.style.removeProperty("height");
+     p.style.removeProperty("max-height");
+   });
+   // Never hide ordinary buttons inside "Основне" / "Малювання".
+   document.querySelectorAll('button').forEach(b=>{
+     const t=(b.textContent||"").trim();
+     if(/^(Назад|Вперед|Видалити вибране|Зберегти|Повний екран|Очистити сторінку)$/i.test(t)){
+       b.style.removeProperty("display");
+       b.hidden=false;
+     }
+   });
+ }
+
+ function ensureOrderButtons(){
+   const c=window.fcanvas;
+   if(!c)return;
+   const panels=[...document.querySelectorAll('.v56-panel,[data-v56-panel],.teacher-panel,.tool-panel')];
+   const target=panels.find(p=>/Основне/i.test(p.textContent||"")) || panels[0];
+   if(!target || $("v147OrderBtns"))return;
+   const row=document.createElement("div");
+   row.id="v147OrderBtns";
+   row.style.cssText="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px";
+   row.innerHTML='<button type="button" id="v147Front">⬆ На передній план</button><button type="button" id="v147Back">⬇ На задній план</button>';
+   target.appendChild(row);
+   $("v147Front").onclick=()=>{const o=c.getActiveObject();if(o){c.bringToFront(o);c.requestRenderAll();}};
+   $("v147Back").onclick=()=>{const o=c.getActiveObject();if(o){c.sendToBack(o);c.requestRenderAll();}};
+ }
+
+ function removeDuplicateRightBars(){
+   ["v140Right","v140Drawer","v142CollapseBtn","v143RightToggle"].forEach(id=>{
+     const e=$(id); if(e)e.remove();
+   });
+ }
+
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v148";}
+ function init(){
+   addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
+ }
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
+ else setTimeout(init,250);
+ window.addEventListener("load",()=>{setTimeout(init,500);setTimeout(init,1200)});
+})();
+
+
+
+/* =========================================================
+   v148 — ОДИН АКТИВНИЙ ІНСТРУМЕНТ + ЛІВА ПАНЕЛЬ ВИЩЕ
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function addCss(){
+    if(q("v148Css"))return;
+    const st=document.createElement("style");
+    st.id="v148Css";
+    st.textContent=`
+      /* Підіймаємо реальну ліву панель максимально вгору робочої області */
+      .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
+        top:112px!important;
+        margin-top:0!important;
+      }
+      @media(max-width:800px){
+        .side-tools,.left-toolbar,.left-tools,.tool-sidebar{top:106px!important}
+      }
+
+      /* Візуально активний може бути тільки один side-tool */
+      .side-tool.active,
+      .side-tool.v99-hand-active{
+        box-shadow:none!important;
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function leftBar(){
+    return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+           document.querySelector(".side-tool[data-tool]")?.parentElement;
+  }
+
+  function lift(){
+    const el=leftBar();
+    if(!el)return;
+    el.style.setProperty("top","112px","important");
+    el.style.setProperty("margin-top","0","important");
+  }
+
+  function clearAllVisuals(except){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+      const keep = btn===except;
+      btn.classList.toggle("active",keep);
+      btn.classList.toggle("v99-hand-active",false);
+      btn.classList.toggle("v96-hand-active",false);
+      btn.classList.toggle("v105-cursor-active",false);
+      btn.setAttribute("aria-pressed",keep?"true":"false");
+    });
+
+    /* Старі режими руки/курсора не повинні одночасно підсвічувати інший пункт */
+    document.body.classList.remove("v99-hand-mode","v96-hand-mode","v105-cursor-mode");
+  }
+
+  function activateExclusive(btn){
+    if(!btn)return;
+    const tool=btn.dataset.tool || "select";
+
+    clearAllVisuals(btn);
+    window.sofiaLockedTool=tool;
+
+    try{
+      if(typeof setTool==="function") setTool(tool,true);
+    }catch(_){}
+
+    /* Після старих обробників ще раз нормалізуємо підсвічення */
+    setTimeout(()=>{
+      clearAllVisuals(btn);
+      btn.classList.add("active");
+      btn.setAttribute("aria-pressed","true");
+    },0);
+  }
+
+  document.addEventListener("click",e=>{
+    const btn=e.target?.closest?.(".side-tool[data-tool]");
+    if(!btn)return;
+    activateExclusive(btn);
+  },true);
+
+  function normalizeInitial(){
+    const selected =
+      document.querySelector(".side-tool[data-tool].active:not(.v99-hand-active)") ||
+      document.querySelector(".side-tool[data-tool].active") ||
+      document.querySelector('.side-tool[data-tool="select"]') ||
+      document.querySelector(".side-tool[data-tool]");
+    if(selected)activateExclusive(selected);
+  }
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v148";
+    document.documentElement.dataset.sofiaVersion="148";
+  }
+
+  function init(){
+    addCss();
+    lift();
+    normalizeInitial();
+    version();
+    setTimeout(()=>{lift();normalizeInitial();version()},500);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+
   window.addEventListener("load",()=>setTimeout(init,180));
 })();
 
