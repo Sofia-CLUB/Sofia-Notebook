@@ -1645,14 +1645,6 @@ function updatePageIndicator(){
   $("prevPageBtn").disabled=currentPage===0;$("nextPageBtn").disabled=currentPage===pages.length-1;renderPageTabs();
 }
 $("addPageBtn").onclick=()=>{savePage();pages.push(blankPage());loadPage(pages.length-1);autoSave()};
-$("duplicatePageBtn").onclick=()=>{
-  savePage();
-  const src=pages[currentPage]||blankPage();
-  const copy=JSON.parse(JSON.stringify(src));
-  copy.pageTitle=`${pageTitleAt(currentPage)} — копія`;
-  pages.splice(currentPage+1,0,copy);
-  loadPage(currentPage+1);autoSave();
-};
 $("deletePageBtn").onclick=()=>closePage(currentPage);
 $("prevPageBtn").onclick=()=>{if(currentPage>0)goToPage(currentPage-1)};
 $("nextPageBtn").onclick=()=>{if(currentPage<pages.length-1)goToPage(currentPage+1)};
@@ -2822,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="141";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v141";
+  document.documentElement.dataset.sofiaVersion="143";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v143";
 })();
 
 
@@ -3533,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="141";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v141";
+    document.documentElement.dataset.sofiaVersion="143";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v143";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3891,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="141";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v141";
+    document.documentElement.dataset.sofiaVersion="143";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v143";
   }
 
   if(document.readyState==="loading"){
@@ -3994,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    if(badge) badge.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
 
   function init(){
@@ -4093,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(badge)badge.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4197,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    if(badge)badge.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
 
   if(document.readyState==="loading")
@@ -4490,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    if(badge)badge.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
 
   if(document.readyState==="loading")
@@ -4605,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(badge)badge.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4736,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    if(badge)badge.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
 
   if(document.readyState==="loading")
@@ -5143,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(badge)badge.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 if(document.readyState==="loading")
@@ -5240,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v141";document.documentElement.dataset.sofiaVersion="141";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v143";document.documentElement.dataset.sofiaVersion="143";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5514,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -5720,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -6017,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -6112,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -6294,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -6474,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -6747,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -7071,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -7182,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v141";
+  if(b) b.textContent="v143";
 }
 
 function init(){
@@ -7444,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -7745,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function repair(){
@@ -7931,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8366,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init108(){
@@ -8720,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b) b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function repair109(){
@@ -8858,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function apply110(){
@@ -9165,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -9377,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -9610,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function initG(){
@@ -9909,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function initMobile(){
@@ -10145,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init119(){
@@ -10294,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v141";
-  document.documentElement.dataset.sofiaVersion="141";
+  if(b)b.textContent="v143";
+  document.documentElement.dataset.sofiaVersion="143";
 }
 
 function init(){
@@ -10376,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v141";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v143";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11029,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    const b=q("appVersionBadge");if(b)b.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11076,8 +11068,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11120,7 +11112,7 @@ document.addEventListener("paste",e=>{
     keepToolVisual();
     applyCurrentThickness?.();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v141";
+    if(badge)badge.textContent="v143";
   },350));
 })();
 
@@ -11170,7 +11162,7 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(()=>{
     reassertTool();
     const b=q("appVersionBadge");
-    if(b)b.textContent="v141";
+    if(b)b.textContent="v143";
   },500));
 })();
 
@@ -11259,7 +11251,7 @@ document.addEventListener("paste",e=>{
     setTimeout(()=>{
       restoreWidthForTool(window.sofiaLockedTool||"select");
       const badge=q("appVersionBadge");
-      if(badge)badge.textContent="v141";
+      if(badge)badge.textContent="v143";
     },450);
   });
 })();
@@ -11349,7 +11341,7 @@ document.addEventListener("click",function(e){
   function version(){
     const b=q("appVersionBadge");
     if(b)b.textContent=VERSION;
-    document.documentElement.dataset.sofiaVersion="141";
+    document.documentElement.dataset.sofiaVersion="143";
   }
 
   document.addEventListener("click",e=>{
@@ -11459,8 +11451,8 @@ document.addEventListener("click",function(e){
 
   function forceVersion(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    if(b)b.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
 
   function init(){
@@ -11514,7 +11506,7 @@ document.addEventListener("click",function(e){
   const tabs=[["main","⌂","Основне"],["insert","+","Вставка"],["draw","✎","Малювання"],["math","∑","Математика"],["teacher","🎓","Вчитель"],["ai","✨","AI"]];
   function right(){let r=q("v140Right");if(!r){r=document.createElement("aside");r.id="v140Right";document.body.appendChild(r)}r.innerHTML='';tabs.forEach(([k,i,n])=>{const b=document.createElement("button");b.className="v140tab";b.innerHTML=`<span class=i>${i}</span><span>${n}</span>`;b.onclick=()=>{drawer();q("v140Title").textContent=n;document.querySelectorAll(".v140panel").forEach(p=>p.classList.toggle("active",p.id==="v140-"+k));document.querySelectorAll(".v140tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");q("v140Drawer").classList.add("show")};r.appendChild(b)})}
   function pages(){try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}let d=q("v140Pages");if(!d){d=document.createElement("div");d.id="v140Pages";document.body.appendChild(d)}[q("clearPageBtn"),q("prevPageBtn"),q("pageIndicator"),q("nextPageBtn"),q("addPageBtn"),q("pageTabsWrap"),q("deletePageBtn")].forEach(el=>{if(el&&el.parentElement!==d)d.appendChild(el)})}
-  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v141";document.documentElement.dataset.sofiaVersion="141"}
+  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v143";document.documentElement.dataset.sofiaVersion="143"}
   function init(){
     css();drawer();right();pages();ver();
     setTimeout(()=>{drawer();pages();ver()},700);
@@ -11533,8 +11525,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v141";
-    document.documentElement.dataset.sofiaVersion="141";
+    if(b)b.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
   }
 
   function paper(){
@@ -11592,5 +11584,352 @@ document.addEventListener("click",function(e){
   }else init();
 
   window.addEventListener("load",()=>setTimeout(init,250));
+})();
+
+
+
+/* =========================================================
+   v142 — ПРАВА ПАНЕЛЬ: ЗГОРТАННЯ / РОЗГОРТАННЯ
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function ensureCss(){
+    if(q("v142CollapseCss"))return;
+    const s=document.createElement("style");
+    s.id="v142CollapseCss";
+    s.textContent=`
+      #v142CollapseBtn{
+        position:fixed!important;
+        right:72px!important;
+        top:50%!important;
+        transform:translateY(-50%)!important;
+        z-index:120200!important;
+        width:28px!important;
+        height:76px!important;
+        border:0!important;
+        border-radius:10px 0 0 10px!important;
+        background:#173b78!important;
+        color:#fff!important;
+        font-size:24px!important;
+        cursor:pointer!important;
+        box-shadow:-2px 3px 10px rgba(15,23,42,.18)!important;
+      }
+      body.v142-right-collapsed #v140Right{
+        transform:translateX(100%)!important;
+        pointer-events:none!important;
+      }
+      body.v142-right-collapsed #v140Drawer{
+        display:none!important;
+      }
+      body.v142-right-collapsed #v142CollapseBtn{
+        right:0!important;
+        border-radius:10px 0 0 10px!important;
+      }
+      body.v142-right-collapsed{
+        padding-right:0!important;
+      }
+      body.v142-right-collapsed #v140Pages{
+        right:0!important;
+      }
+      #v140Right{
+        transition:transform .18s ease!important;
+      }
+      @media(max-width:768px){
+        #v142CollapseBtn{right:58px!important}
+        body.v142-right-collapsed #v142CollapseBtn{right:0!important}
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function closeDrawer(){
+    const d=q("v140Drawer");
+    if(d)d.classList.remove("show");
+    document.querySelectorAll(".v140tab").forEach(b=>b.classList.remove("active"));
+  }
+
+  function ensureButton(){
+    let b=q("v142CollapseBtn");
+    if(!b){
+      b=document.createElement("button");
+      b.id="v142CollapseBtn";
+      b.type="button";
+      b.title="Згорнути / розгорнути праву панель";
+      b.setAttribute("aria-label","Згорнути або розгорнути праву панель");
+      document.body.appendChild(b);
+    }
+
+    function sync(){
+      const collapsed=document.body.classList.contains("v142-right-collapsed");
+      b.textContent=collapsed ? "‹" : "›";
+      b.title=collapsed ? "Розгорнути праву панель" : "Згорнути праву панель";
+      b.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    }
+
+    b.onclick=()=>{
+      const collapsed=document.body.classList.toggle("v142-right-collapsed");
+      if(collapsed)closeDrawer();
+      try{
+        localStorage.setItem("sofiaRightPanelCollapsed",collapsed?"1":"0");
+      }catch(_){}
+      sync();
+    };
+
+    try{
+      if(localStorage.getItem("sofiaRightPanelCollapsed")==="1"){
+        document.body.classList.add("v142-right-collapsed");
+      }
+    }catch(_){}
+    sync();
+  }
+
+  function init(){
+    ensureCss();
+    ensureButton();
+    const badge=q("appVersionBadge");
+    if(badge)badge.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+
+  window.addEventListener("load",()=>setTimeout(init,250));
+})();
+
+
+
+/* =========================================================
+   v143 — COMPACT LAYOUT FINAL
+   1) Права панель реально згортається.
+   2) Сторінки завжди внизу.
+   3) Компактні відступи/кнопки.
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const RIGHT_KEY="sofiaRightCompactCollapsedV143";
+
+  function addCss(){
+    if(q("v143CompactCss"))return;
+    const st=document.createElement("style");
+    st.id="v143CompactCss";
+    st.textContent=`
+      :root{--v143R:64px;--v143B:48px}
+
+      /* ПРАВА ПАНЕЛЬ */
+      #v140Right{
+        position:fixed!important;
+        right:0!important;
+        top:160px!important;
+        bottom:var(--v143B)!important;
+        width:var(--v143R)!important;
+        min-width:var(--v143R)!important;
+        padding:4px 3px!important;
+        gap:2px!important;
+        border-left:1px solid #d7e0ec!important;
+        background:#fff!important;
+        box-shadow:-2px 0 8px rgba(15,23,42,.08)!important;
+        overflow-y:auto!important;
+        z-index:121000!important;
+        transition:none!important;
+        transform:none!important;
+      }
+      .v140tab{
+        min-height:43px!important;
+        height:43px!important;
+        padding:2px 1px!important;
+        gap:1px!important;
+        font-size:9px!important;
+        line-height:1!important;
+        border-radius:7px!important;
+      }
+      .v140tab .i{font-size:16px!important;line-height:16px!important}
+
+      /* drawer компактний */
+      #v140Drawer{
+        right:70px!important;
+        top:160px!important;
+        width:min(560px,calc(100vw - 165px))!important;
+        max-height:280px!important;
+        padding:8px!important;
+        border-radius:10px!important;
+        z-index:120900!important;
+      }
+      #v140Head{margin-bottom:6px!important;font-size:14px!important}
+      .v140panel{gap:5px!important}
+      .v140panel button,.v140panel select{min-height:31px!important;height:31px!important;padding:3px 7px!important;font-size:13px!important}
+
+      /* реальне згортання — display:none, без transform-конфліктів */
+      body.v143-right-hidden #v140Right{display:none!important}
+      body.v143-right-hidden #v140Drawer{display:none!important}
+
+      #v143RightToggle{
+        position:fixed!important;
+        right:var(--v143R)!important;
+        top:50%!important;
+        transform:translateY(-50%)!important;
+        width:25px!important;
+        height:66px!important;
+        z-index:121200!important;
+        border:0!important;
+        border-radius:9px 0 0 9px!important;
+        background:#173b78!important;
+        color:#fff!important;
+        font:bold 22px Arial!important;
+        cursor:pointer!important;
+        box-shadow:-2px 2px 8px rgba(15,23,42,.16)!important;
+      }
+      body.v143-right-hidden #v143RightToggle{right:0!important}
+      /* Стару кнопку згортання v142 ховаємо */
+      #v142CollapseBtn{display:none!important}
+
+      /* НИЖНЯ ПАНЕЛЬ СТОРІНОК: використовуємо стабільну V99 */
+      #v99PageDock{
+        position:fixed!important;
+        left:82px!important;
+        right:var(--v143R)!important;
+        bottom:0!important;
+        top:auto!important;
+        z-index:120500!important;
+        height:var(--v143B)!important;
+        min-height:var(--v143B)!important;
+        max-height:var(--v143B)!important;
+        display:flex!important;
+        align-items:center!important;
+        gap:5px!important;
+        padding:4px 6px!important;
+        margin:0!important;
+        background:rgba(248,251,255,.98)!important;
+        border-top:1px solid #d7e0ec!important;
+        box-shadow:0 -2px 8px rgba(15,23,42,.08)!important;
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+        white-space:nowrap!important;
+        box-sizing:border-box!important;
+      }
+      #v99PageDock>*{flex:0 0 auto!important}
+      #v99PageDock button{
+        height:34px!important;
+        min-height:34px!important;
+        padding:3px 9px!important;
+        font-size:13px!important;
+        opacity:1!important;
+        visibility:visible!important;
+      }
+      #v99PageDock #pageTabsWrap{display:flex!important;width:auto!important;margin:0!important}
+      #v99PageDock #pageTabs{display:flex!important;gap:5px!important;padding:0!important}
+      #v140Pages{display:none!important}
+      body.v143-right-hidden #v99PageDock{right:0!important}
+
+      /* Робоче поле використовує максимум місця */
+      body{padding-right:var(--v143R)!important;padding-bottom:var(--v143B)!important}
+      body.v143-right-hidden{padding-right:0!important}
+      .workspace{padding-bottom:calc(var(--v143B) + 3px)!important}
+      .workspace>.page-controls{height:0!important;min-height:0!important;max-height:0!important;padding:0!important;margin:0!important;border:0!important;overflow:hidden!important}
+
+      /* верх компактніше */
+      .topbar{min-height:58px!important;padding-top:5px!important;padding-bottom:5px!important}
+      .filters{gap:5px!important;padding:5px 8px!important}
+      .filters select,.filters input{min-height:38px!important}
+      .workspace{margin-top:0!important}
+
+      @media(max-width:800px){
+        :root{--v143R:56px;--v143B:46px}
+        #v140Right{top:148px!important}
+        #v140Drawer{left:6px!important;right:62px!important;width:auto!important;top:148px!important}
+        #v99PageDock{left:52px!important}
+        #v143RightToggle{height:58px!important}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function closeDrawer(){
+    q("v140Drawer")?.classList.remove("show");
+    document.querySelectorAll(".v140tab").forEach(x=>x.classList.remove("active"));
+  }
+
+  function setRightHidden(hidden){
+    document.body.classList.toggle("v143-right-hidden",!!hidden);
+    if(hidden)closeDrawer();
+    const b=q("v143RightToggle");
+    if(b){
+      b.textContent=hidden?"‹":"›";
+      b.title=hidden?"Розгорнути праву панель":"Згорнути праву панель";
+      b.setAttribute("aria-expanded",hidden?"false":"true");
+    }
+    try{localStorage.setItem(RIGHT_KEY,hidden?"1":"0")}catch(_){}
+  }
+
+  function ensureToggle(){
+    let b=q("v143RightToggle");
+    if(!b){
+      b=document.createElement("button");
+      b.id="v143RightToggle";
+      b.type="button";
+      b.setAttribute("aria-label","Згорнути або розгорнути праву панель");
+      document.body.appendChild(b);
+    }
+    // Прямий обробник без участі старих модулів.
+    b.onclick=function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      setRightHidden(!document.body.classList.contains("v143-right-hidden"));
+      return false;
+    };
+    let hidden=false;
+    try{hidden=localStorage.getItem(RIGHT_KEY)==="1"}catch(_){}
+    setRightHidden(hidden);
+  }
+
+  function pageDock(){
+    let dock=q("v99PageDock");
+    if(!dock){
+      dock=document.createElement("div");
+      dock.id="v99PageDock";
+      document.body.appendChild(dock);
+    }
+
+    try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}
+
+    // Якщо v140 уже забрав сторінки — повертаємо їх у єдиний нижній dock.
+    const ids=["prevPageBtn","pageIndicator","nextPageBtn","addPageBtn","pageTabsWrap","deletePageBtn"];
+    ids.forEach(id=>{
+      const el=q(id);
+      if(el && el.parentElement!==dock)dock.appendChild(el);
+    });
+
+    // Очищення сторінки теж компактно ліворуч.
+    const clear=q("clearPageBtn");
+    if(clear && clear.parentElement!==dock)dock.insertBefore(clear,dock.firstChild);
+
+    const old=q("v140Pages");
+    if(old)old.style.setProperty("display","none","important");
+  }
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v143";
+    document.documentElement.dataset.sofiaVersion="143";
+  }
+
+  function init(){
+    addCss();
+    ensureToggle();
+    pageDock();
+    version();
+
+    // Лише два легкі повтори, щоб підхопити сторінкові вкладки, створені пізніше.
+    setTimeout(()=>{pageDock();version()},450);
+    setTimeout(()=>{pageDock();version()},1100);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+  window.addEventListener("load",()=>setTimeout(init,180));
 })();
 
