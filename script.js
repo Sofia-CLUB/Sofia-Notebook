@@ -2814,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="155";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v155";
+  document.documentElement.dataset.sofiaVersion="156";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v156";
 })();
 
 
@@ -3525,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="155";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v155";
+    document.documentElement.dataset.sofiaVersion="156";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v156";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="155";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v155";
+    document.documentElement.dataset.sofiaVersion="156";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v156";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    if(badge) badge.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
   function init(){
@@ -4085,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(badge)badge.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    if(badge)badge.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    if(badge)badge.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(badge)badge.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    if(badge)badge.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(badge)badge.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v155";document.documentElement.dataset.sofiaVersion="155";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v156";document.documentElement.dataset.sofiaVersion="156";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -5712,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -6009,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -6104,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -6286,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -6466,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -6739,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -7063,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -7174,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v155";
+  if(b) b.textContent="v156";
 }
 
 function init(){
@@ -7436,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -7737,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function repair(){
@@ -7923,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init108(){
@@ -8712,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b) b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function repair109(){
@@ -8850,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function apply110(){
@@ -9157,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -9369,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -9602,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function initG(){
@@ -9901,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function initMobile(){
@@ -10137,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init119(){
@@ -10286,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v155";
-  document.documentElement.dataset.sofiaVersion="155";
+  if(b)b.textContent="v156";
+  document.documentElement.dataset.sofiaVersion="156";
 }
 
 function init(){
@@ -10368,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v155";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v156";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    const b=q("appVersionBadge");if(b)b.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,526 +11068,17 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
 })();
 
 
-/* =========================================================
-   v130 — ФІКСАЦІЯ АКТИВНОГО ІНСТРУМЕНТА
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
 
-  function keepToolVisual(){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-      const on=btn.dataset.tool===currentTool;
-      btn.classList.toggle("active",on);
-      btn.setAttribute("aria-pressed",on?"true":"false");
-    });
-  }
 
-  // v141: важкий рекурсивний MutationObserver прибрано.
-  // Підсвічення підтримується подіями click/input та фінальним контролером.
-
-  document.addEventListener("click",e=>{
-    const b=e.target?.closest?.(".side-tool[data-tool]");
-    if(!b)return;
-    setTimeout(()=>{
-      keepToolVisual();
-      applyCurrentThickness?.();
-    },0);
-  },true);
-
-  // Повзунок товщини працює наживо і не змінює активний інструмент.
-  q("lineWidth")?.addEventListener("input",()=>{
-    applyCurrentThickness?.();
-    keepToolVisual();
-  },true);
-
-  window.addEventListener("load",()=>setTimeout(()=>{
-    keepToolVisual();
-    applyCurrentThickness?.();
-    const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v155";
-  },350));
-})();
-
-
-
-/* =========================================================
-   v132 — ПОСТІЙНО АКТИВНИЙ ІНСТРУМЕНТ
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-
-  function reassertTool(){
-    try{
-      if(typeof currentTool==="undefined")return;
-      const tool=currentTool;
-      if(typeof setTool==="function")setTool(tool);
-
-      document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-        const on=btn.dataset.tool===tool;
-        btn.classList.toggle("active",on);
-        btn.classList.toggle("selected",false);
-        btn.setAttribute("aria-pressed",on?"true":"false");
-      });
-
-      if(typeof applyCurrentThickness==="function")applyCurrentThickness();
-    }catch(e){}
-  }
-
-  // Після завершення штриха/фігури інструмент не переключається.
-  try{
-    fcanvas.on("path:created",()=>setTimeout(reassertTool,0));
-    fcanvas.on("mouse:up",()=>setTimeout(reassertTool,0));
-  }catch(e){}
-
-  // Повторний клік на тому самому інструменті просто підтверджує його,
-  // а не вимикає.
-  document.addEventListener("click",e=>{
-    const btn=e.target?.closest?.(".side-tool[data-tool]");
-    if(!btn)return;
-    setTimeout(reassertTool,20);
-  },true);
-
-  // Зміна товщини не повинна впливати на вибір інструмента.
-  q("lineWidth")?.addEventListener("input",()=>setTimeout(reassertTool,0),true);
-  q("lineWidth")?.addEventListener("change",()=>setTimeout(reassertTool,0),true);
-
-  window.addEventListener("load",()=>setTimeout(()=>{
-    reassertTool();
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-  },500));
-})();
-
-
-
-/* =========================================================
-   v133 — ТОВЩИНА ЗАСТОСОВУЄТЬСЯ ОДРАЗУ
-   Кожен інструмент пам'ятає свою товщину.
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-  const WIDTH_KEY="sofiaNotebookToolWidthsV133";
-
-  function widths(){
-    try{return JSON.parse(localStorage.getItem(WIDTH_KEY)||"{}")||{}}catch(e){return{}}
-  }
-  function remember(tool,w){
-    const a=widths(); a[tool]=w;
-    localStorage.setItem(WIDTH_KEY,JSON.stringify(a));
-  }
-  function remembered(tool){
-    const a=widths();
-    return Number(a[tool])||null;
-  }
-  function realBrushWidth(tool,w){
-    w=Math.max(1,Number(w)||1);
-    if(tool==="marker")return Math.max(10,w*5);
-    if(tool==="eraser")return Math.max(14,w*6);
-    return w;
-  }
-
-  window.sofiaApplyThicknessNow=function(){
-    const c=window.fcanvas;
-    const slider=q("lineWidth");
-    if(!c||!slider)return;
-
-    const tool=window.sofiaLockedTool||currentTool||"select";
-    const w=Math.max(1,Number(slider.value)||1);
-    q("lineWidthValue") && (q("lineWidthValue").textContent=String(w));
-    remember(tool,w);
-
-    // Саме активний brush змінюється одразу, без повторного вибору інструмента.
-    if(c.freeDrawingBrush && (tool==="pen" || tool==="marker")){
-      c.freeDrawingBrush.width=realBrushWidth(tool,w);
-      c.freeDrawingBrush.strokeLineCap="round";
-      c.freeDrawingBrush.strokeLineJoin="round";
-      if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
-    }
-
-    // Гумка читає це значення під час руху.
-    if(tool==="eraser")window.sofiaEraserSize=realBrushWidth(tool,w);
-
-    // Лінії/фігури читають lineWidth напряму через strokeOpts().
-    // Якщо фігура вже тягнеться — оновимо preview відразу.
-    if(typeof temp!=="undefined" && temp && temp.stroke){
-      try{
-        temp.set({strokeWidth:w,strokeUniform:true,objectCaching:false});
-        c.requestRenderAll();
-      }catch(e){}
-    }
-  };
-
-  function restoreWidthForTool(tool){
-    const slider=q("lineWidth");
-    if(!slider)return;
-    const saved=remembered(tool);
-    if(saved!==null){
-      slider.value=String(saved);
-      q("lineWidthValue") && (q("lineWidthValue").textContent=String(saved));
-    }
-    setTimeout(()=>window.sofiaApplyThicknessNow(),0);
-  }
-
-  q("lineWidth")?.addEventListener("input",window.sofiaApplyThicknessNow,true);
-  q("lineWidth")?.addEventListener("change",window.sofiaApplyThicknessNow,true);
-
-  // На прямому виборі інструмента повертаємо ЙОГО власну товщину.
-  document.addEventListener("click",e=>{
-    const b=e.target?.closest?.(".side-tool[data-tool]");
-    if(!b)return;
-    window.sofiaLockedTool=b.dataset.tool;
-    setTimeout(()=>restoreWidthForTool(b.dataset.tool),0);
-  },true);
-
-  window.addEventListener("load",()=>{
-    setTimeout(()=>{
-      restoreWidthForTool(window.sofiaLockedTool||"select");
-      const badge=q("appVersionBadge");
-      if(badge)badge.textContent="v155";
-    },450);
-  });
-})();
-
-
-
-/* v133 — фінальний захист активного інструмента */
-document.addEventListener("click",function(e){
-  const b=e.target?.closest?.(".side-tool[data-tool]");
-  if(!b)return;
-  const wanted=b.dataset.tool;
-  window.sofiaLockedTool=wanted;
-  setTimeout(()=>{
-    try{setTool(wanted,true)}catch(_){}
-    document.querySelectorAll(".side-tool[data-tool]").forEach(x=>{
-      const on=x.dataset.tool===wanted;
-      x.classList.toggle("active",on);
-      x.setAttribute("aria-pressed",on?"true":"false");
-    });
-    try{window.sofiaApplyThicknessNow?.()}catch(_){}
-  },30);
-},true);
-
-
-
-/* =========================================================
-   v138 CLEAN CORE
-   Стабілізує лише активний інструмент, товщину, розмір паперу і версію.
-   ========================================================= */
-(function(){
-  const VERSION="v138";
-  const q=id=>document.getElementById(id);
-
-  function cv(){
-    try{return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
-    catch(_){return null}
-  }
-
-  function activeTool(){
-    try{return window.sofiaLockedTool || currentTool || "select"}
-    catch(_){return window.sofiaLockedTool||"select"}
-  }
-
-  function paint(tool){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      const on=b.dataset.tool===tool;
-      b.classList.toggle("active",on);
-      b.setAttribute("aria-pressed",on?"true":"false");
-    });
-  }
-
-  function widthNow(){
-    const c=cv(), s=q("lineWidth");
-    if(!c||!s)return;
-    const tool=activeTool(), w=Math.max(1,Number(s.value)||1);
-    if(q("lineWidthValue"))q("lineWidthValue").textContent=String(w);
-
-    if(c.freeDrawingBrush && (tool==="pen"||tool==="marker")){
-      c.freeDrawingBrush.width = tool==="marker" ? Math.max(14,w*5) : w;
-      c.freeDrawingBrush.strokeLineCap="round";
-      c.freeDrawingBrush.strokeLineJoin="round";
-      if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
-    }
-    if(tool==="eraser")window.sofiaEraserSize=Math.max(14,w*6);
-
-    try{
-      if(typeof temp!=="undefined" && temp){
-        const apply=o=>{
-          if(o?.stroke && o.stroke!=="transparent"){
-            o.set({strokeWidth:w,strokeUniform:true,objectCaching:false});
-          }
-        };
-        if(temp.type==="group")temp.getObjects?.().forEach(apply);
-        else apply(temp);
-        c.requestRenderAll?.();
-      }
-    }catch(_){}
-  }
-
-  function paper(){
-    const p=q("paperSize");
-    if(!p)return;
-    p.min="16";p.max="160";p.step="2";
-    if(q("paperSizeValue"))q("paperSizeValue").textContent=p.value;
-  }
-
-  function version(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent=VERSION;
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  document.addEventListener("click",e=>{
-    const b=e.target?.closest?.(".side-tool[data-tool]");
-    if(!b)return;
-    window.sofiaLockedTool=b.dataset.tool;
-    setTimeout(()=>{
-      try{setTool(b.dataset.tool,true)}catch(_){}
-      paint(b.dataset.tool);
-      widthNow();
-    },0);
-  },false);
-
-  q("lineWidth")?.addEventListener("input",()=>{widthNow();paint(activeTool())},true);
-  q("lineWidth")?.addEventListener("change",()=>{widthNow();paint(activeTool())},true);
-  q("paperSize")?.addEventListener("input",paper,true);
-
-  function restore(){
-    const t=activeTool();
-    setTimeout(()=>{
-      try{setTool(t,true)}catch(_){}
-      window.sofiaLockedTool=t;
-      paint(t);
-      widthNow();
-    },0);
-  }
-
-  function init(){
-    paper();version();
-    const c=cv();
-    if(c && !c.__v138CleanBound){
-      c.__v138CleanBound=true;
-      c.on("path:created",restore);
-      c.on("mouse:up",restore);
-    }
-    paint(activeTool());
-    widthNow();
-  }
-
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
-  else init();
-  window.addEventListener("load",()=>setTimeout(init,350));
-  setTimeout(init,1200);
-})();
-
-
-
-/* =========================================================
-   v139 — FINAL ACTIVE TOOL LOCK
-   Вибраний на лівій панелі інструмент працює доти,
-   доки користувач сам не вибере інший.
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-  let userTool = window.sofiaLockedTool || "select";
-
-  function canvas(){
-    try{return window.fcanvas || (typeof fcanvas!=="undefined" ? fcanvas : null)}
-    catch(_){return null}
-  }
-
-  function paint(tool){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-      const active=btn.dataset.tool===tool;
-      btn.classList.toggle("active",active);
-      btn.setAttribute("aria-pressed",active?"true":"false");
-    });
-  }
-
-  function applyTool(tool){
-    if(!tool)return;
-    userTool=tool;
-    window.sofiaLockedTool=tool;
-    try{ if(typeof setTool==="function") setTool(tool,true); }catch(_){}
-    paint(tool);
-    try{ window.sofiaApplyThicknessNow?.(); }catch(_){}
-  }
-
-  // Фіксуємо тільки прямий вибір користувача.
-  document.addEventListener("click",e=>{
-    const btn=e.target?.closest?.(".side-tool[data-tool]");
-    if(!btn)return;
-    userTool=btn.dataset.tool;
-    window.sofiaLockedTool=userTool;
-    setTimeout(()=>applyTool(userTool),0);
-  },false);
-
-  // Після завершення штриха/лінії/фігури повертаємо той самий інструмент.
-  function restore(){
-    const t=window.sofiaLockedTool || userTool || "select";
-    userTool=t;
-    setTimeout(()=>applyTool(t),0);
-  }
-
-  function bindCanvas(){
-    const c=canvas();
-    if(!c || c.__v139ToolLockBound)return;
-    c.__v139ToolLockBound=true;
-    c.on("path:created",restore);
-    c.on("mouse:up",restore);
-  }
-
-  // Товщина змінюється відразу і не перемикає інструмент.
-  q("lineWidth")?.addEventListener("input",()=>{
-    try{window.sofiaApplyThicknessNow?.()}catch(_){}
-    paint(userTool);
-  },true);
-
-  function forceVersion(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function init(){
-    bindCanvas();
-    const active=document.querySelector(".side-tool[data-tool].active");
-    userTool=window.sofiaLockedTool || active?.dataset.tool || "select";
-    applyTool(userTool);
-    forceVersion();
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-
-  window.addEventListener("load",()=>{
-    setTimeout(init,300);
-    setTimeout(forceVersion,1200);
-  });
-})();
-
-
-
-/* v140 — restore right tools panel + bottom page dock */
-(function(){
-  const q=id=>document.getElementById(id);
-  function css(){
-    if(q("v140css"))return;
-    const s=document.createElement("style"); s.id="v140css";
-    s.textContent=`
-      :root{--v140R:76px;--v140B:56px}
-      #v140Right{position:fixed;right:0;top:138px;bottom:0;width:var(--v140R);z-index:120000;background:#fff;border-left:1px solid #d8e2ef;box-shadow:-3px 0 12px rgba(15,23,42,.10);display:flex;flex-direction:column;gap:4px;padding:6px 4px calc(var(--v140B) + 6px);box-sizing:border-box;overflow-y:auto}
-      .v140tab{width:100%;min-height:48px;border:0;border-radius:9px;background:#fff;color:#26384f;font:600 9px/1.05 Arial;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
-      .v140tab .i{font-size:18px}.v140tab:hover{background:#eef4fb}.v140tab.active{background:#173b78;color:#fff}
-      #v140Drawer{position:fixed;right:82px;top:138px;z-index:119900;display:none;width:min(760px,calc(100vw - 180px));max-height:310px;overflow:auto;padding:10px;background:#fff;border:1px solid #d8e2ef;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.20);box-sizing:border-box}
-      #v140Drawer.show{display:block}
-      #v140Head{display:flex;align-items:center;gap:8px;font:700 15px Arial;margin-bottom:8px}
-      #v140Close{margin-left:auto;width:30px;height:30px;border:0;border-radius:7px;background:#eef2f7;cursor:pointer}
-      .v140panel{display:none;flex-wrap:wrap;gap:7px;align-items:center}.v140panel.active{display:flex}
-      .v140panel label{display:flex;align-items:center;gap:5px}
-      .workspace>.ribbon{display:none!important}
-      #v140Pages{position:fixed;left:86px;right:var(--v140R);bottom:0;z-index:118000;height:var(--v140B);display:flex;align-items:center;gap:7px;padding:5px 8px;background:rgba(248,251,255,.98);border-top:1px solid #d7e1ed;box-shadow:0 -3px 12px rgba(15,23,42,.10);overflow-x:auto;overflow-y:hidden;white-space:nowrap;box-sizing:border-box}
-      #v140Pages>*{flex:0 0 auto}#v140Pages button{min-height:38px}
-      .workspace>.page-controls{height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
-      body{padding-right:var(--v140R)!important;padding-bottom:var(--v140B)!important}.workspace{padding-bottom:calc(var(--v140B) + 5px)!important}
-      @media(max-width:768px){:root{--v140R:62px;--v140B:54px}#v140Right{top:126px}#v140Drawer{left:8px;right:68px;width:auto;top:126px;max-height:calc(100vh - 200px)}#v140Pages{left:54px}}
-    `; document.head.appendChild(s);
-  }
-  const groups={main:["undoBtn","redoBtn","deleteSelectedBtn","clearPageBtn","saveBtn","fullscreenBtn"],insert:["mediaBtn","elementsBtn","shapeLibraryBtn","noteBtn"],draw:["colorPicker","lineWidth","lineStyle","lineKind","correctionColor","correctionMarkerBtn"],math:["geometryBtn","angleBtn","numberRayBtn","graphBuilderBtn","pointBtn","vertexLabelBtn"],teacher:["ukrainianBtn","keyboardBtn","timerBtn","calculatorBtn","diagnosticsBtn"],ai:["aiBtn"]};
-  function movable(id){const el=q(id);if(!el)return null;if(["colorPicker","lineWidth","correctionColor"].includes(id)&&el.parentElement?.tagName==="LABEL")return el.parentElement;return el}
-  function drawer(){let d=q("v140Drawer");if(!d){d=document.createElement("div");d.id="v140Drawer";d.innerHTML='<div id="v140Head"><span id="v140Title">Панель</span><button id="v140Close">×</button></div>'+Object.keys(groups).map(k=>`<div id="v140-${k}" class="v140panel"></div>`).join('');document.body.appendChild(d);q("v140Close").onclick=()=>{d.classList.remove("show");document.querySelectorAll(".v140tab").forEach(b=>b.classList.remove("active"))}}Object.entries(groups).forEach(([k,ids])=>{const p=q("v140-"+k);ids.forEach(id=>{const el=movable(id);if(el&&el.parentElement!==p)p.appendChild(el)})});return d}
-  const tabs=[["main","⌂","Основне"],["insert","+","Вставка"],["draw","✎","Малювання"],["math","∑","Математика"],["teacher","🎓","Вчитель"],["ai","✨","AI"]];
-  function right(){let r=q("v140Right");if(!r){r=document.createElement("aside");r.id="v140Right";document.body.appendChild(r)}r.innerHTML='';tabs.forEach(([k,i,n])=>{const b=document.createElement("button");b.className="v140tab";b.innerHTML=`<span class=i>${i}</span><span>${n}</span>`;b.onclick=()=>{drawer();q("v140Title").textContent=n;document.querySelectorAll(".v140panel").forEach(p=>p.classList.toggle("active",p.id==="v140-"+k));document.querySelectorAll(".v140tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");q("v140Drawer").classList.add("show")};r.appendChild(b)})}
-  function pages(){try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}let d=q("v140Pages");if(!d){d=document.createElement("div");d.id="v140Pages";document.body.appendChild(d)}[q("clearPageBtn"),q("prevPageBtn"),q("pageIndicator"),q("nextPageBtn"),q("addPageBtn"),q("pageTabsWrap"),q("deletePageBtn")].forEach(el=>{if(el&&el.parentElement!==d)d.appendChild(el)})}
-  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v155";document.documentElement.dataset.sofiaVersion="155"}
-  function init(){
-    css();drawer();right();pages();ver();
-    setTimeout(()=>{drawer();pages();ver()},700);
-  }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});else setTimeout(init,250);
-})();
-
-
-
-/* =========================================================
-   v141 — PERFORMANCE / STABILITY
-   Без рекурсивних MutationObserver.
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-
-  function version(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function paper(){
-    const p=q("paperSize");
-    if(!p)return;
-    p.min="16";
-    p.max="160";
-    p.step="2";
-    if(q("paperSizeValue"))q("paperSizeValue").textContent=p.value;
-  }
-
-  function current(){
-    try{return window.sofiaLockedTool || currentTool || "select"}
-    catch(_){return window.sofiaLockedTool || "select"}
-  }
-
-  function paint(tool){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      const on=b.dataset.tool===tool;
-      if(b.classList.contains("active")!==on)b.classList.toggle("active",on);
-      const value=on?"true":"false";
-      if(b.getAttribute("aria-pressed")!==value)b.setAttribute("aria-pressed",value);
-    });
-  }
-
-  function widthNow(){
-    try{window.sofiaApplyThicknessNow?.()}catch(_){}
-    paint(current());
-  }
-
-  document.addEventListener("click",e=>{
-    const b=e.target?.closest?.(".side-tool[data-tool]");
-    if(!b)return;
-    window.sofiaLockedTool=b.dataset.tool;
-    setTimeout(()=>{
-      try{setTool(b.dataset.tool,true)}catch(_){}
-      paint(b.dataset.tool);
-      widthNow();
-    },0);
-  },false);
-
-  q("lineWidth")?.addEventListener("input",widthNow,true);
-  q("lineWidth")?.addEventListener("change",widthNow,true);
-  q("paperSize")?.addEventListener("input",paper,true);
-
-  function init(){
-    version();
-    paper();
-    paint(current());
-    widthNow();
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-
-  window.addEventListener("load",()=>setTimeout(init,250));
-})();
-
-
+/* v156: old v130-v141 tool-lock patch stack removed */
 
 /* =========================================================
    v142 — ПРАВА ПАНЕЛЬ: ЗГОРТАННЯ / РОЗГОРТАННЯ
@@ -11689,8 +11180,8 @@ document.addEventListener("click",function(e){
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    if(badge)badge.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
   if(document.readyState==="loading"){
@@ -11913,8 +11404,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    if(b)b.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
   function init(){
@@ -12123,8 +11614,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    if(b)b.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
   function init(){
@@ -12199,7 +11690,7 @@ document.addEventListener("click",function(e){
   }
 
   function version(){
-    const b=$("appVersionBadge"); if(b)b.textContent="v155";
+    const b=$("appVersionBadge"); if(b)b.textContent="v156";
   }
 
   function init(){
@@ -12323,7 +11814,7 @@ document.addEventListener("click",function(e){
    });
  }
 
- function version(){const b=$("appVersionBadge");if(b)b.textContent="v155";}
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v156";}
  function init(){
    addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
  }
@@ -12334,1029 +11825,26 @@ document.addEventListener("click",function(e){
 
 
 
+
+
+/* v156: old v148-v155 conflicting patches removed */
+
+
 /* =========================================================
-   v148 — ОДИН АКТИВНИЙ ІНСТРУМЕНТ + ЛІВА ПАНЕЛЬ ВИЩЕ
+   v156 — CLEAN LEFT TOOLS + DRAG MATH SHAPES
+   Один контролер без дубльованих capture/polling обробників.
    ========================================================= */
 (function(){
   const q=id=>document.getElementById(id);
-
-  function addCss(){
-    if(q("v148Css"))return;
-    const st=document.createElement("style");
-    st.id="v148Css";
-    st.textContent=`
-      /* Підіймаємо реальну ліву панель максимально вгору робочої області */
-      .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
-        top:112px!important;
-        margin-top:0!important;
-      }
-      @media(max-width:800px){
-        .side-tools,.left-toolbar,.left-tools,.tool-sidebar{top:106px!important}
-      }
-
-      /* Візуально активний може бути тільки один side-tool */
-      .side-tool.active,
-      .side-tool.v99-hand-active{
-        box-shadow:none!important;
-      }
-    `;
-    document.head.appendChild(st);
-  }
-
-  function leftBar(){
-    return document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
-           document.querySelector(".side-tool[data-tool]")?.parentElement;
-  }
-
-  function lift(){
-    const el=leftBar();
-    if(!el)return;
-    el.style.setProperty("top","112px","important");
-    el.style.setProperty("margin-top","0","important");
-  }
-
-  function clearAllVisuals(except){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-      const keep = btn===except;
-      btn.classList.toggle("active",keep);
-      btn.classList.toggle("v99-hand-active",false);
-      btn.classList.toggle("v96-hand-active",false);
-      btn.classList.toggle("v105-cursor-active",false);
-      btn.setAttribute("aria-pressed",keep?"true":"false");
-    });
-
-    /* Старі режими руки/курсора не повинні одночасно підсвічувати інший пункт */
-    document.body.classList.remove("v99-hand-mode","v96-hand-mode","v105-cursor-mode");
-  }
-
-  function activateExclusive(btn){
-    if(!btn)return;
-    const tool=btn.dataset.tool || "select";
-
-    clearAllVisuals(btn);
-    window.sofiaLockedTool=tool;
-
-    try{
-      if(typeof setTool==="function") setTool(tool,true);
-    }catch(_){}
-
-    /* Після старих обробників ще раз нормалізуємо підсвічення */
-    setTimeout(()=>{
-      clearAllVisuals(btn);
-      btn.classList.add("active");
-      btn.setAttribute("aria-pressed","true");
-    },0);
-  }
-
-  // v155: duplicate capture click removed; original toolbar handlers stay authoritative.
-
-  function normalizeInitial(){
-    const selected =
-      document.querySelector(".side-tool[data-tool].active:not(.v99-hand-active)") ||
-      document.querySelector(".side-tool[data-tool].active") ||
-      document.querySelector('.side-tool[data-tool="select"]') ||
-      document.querySelector(".side-tool[data-tool]");
-    if(selected)activateExclusive(selected);
-  }
-
-  function version(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function init(){
-    addCss();
-    lift();
-    normalizeInitial();
-    version();
-    setTimeout(()=>{lift();normalizeInitial();version()},500);
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-
-  window.addEventListener("load",()=>setTimeout(init,180));
-})();
-
-
-
-/* =========================================================
-   v149 — RESTORE INSERT / MATH + LEFT TOOLBAR FIX
-   ========================================================= */
-(function(){
-  const $=id=>document.getElementById(id);
-
-  function addCss(){
-    if($("v149Css"))return;
-    const st=document.createElement("style");
-    st.id="v149Css";
-    st.textContent=`
-      /* Ліва панель не перекривається невидимими шарами */
-      .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
-        z-index:122500!important;
-        pointer-events:auto!important;
-      }
-      .side-tool[data-tool]{
-        pointer-events:auto!important;
-        position:relative!important;
-        z-index:1!important;
-      }
-      /* Панелі праворуч поверх полотна */
-      #v86Dock{z-index:121000!important}
-      #v86Commands,#v86HelpBox,#v87Help,#v102Help{z-index:121100!important}
-    `;
-    document.head.appendChild(st);
-  }
-
-  function showButton(id){
-    const el=$(id);
-    if(!el)return;
-    el.hidden=false;
-    el.style.removeProperty("display");
-    el.style.removeProperty("visibility");
-    el.style.removeProperty("opacity");
-    el.style.removeProperty("pointer-events");
-  }
-
-  function restoreInsertMath(){
-    [
-      "mediaBtn","elementsBtn","shapeLibraryBtn","noteBtn",
-      "geometryBtn","angleBtn","numberRayBtn","graphBuilderBtn","pointBtn","vertexLabelBtn",
-      "v56TableBtn","teacherToolsBtn"
-    ].forEach(showButton);
-
-    // Не дозволяємо старим патчам ховати кнопки через inline display:none.
-    document.querySelectorAll("#v86Commands button,.v56-panel button,[data-v56-panel] button").forEach(b=>{
-      const txt=(b.textContent||"").trim();
-      if(/Фото|Відео|Файл|Елементи|Прилади|2D|3D|кут|Числов|графік|Точка|Вершина|Таблиц/i.test(txt)){
-        b.hidden=false;
-        b.style.removeProperty("display");
-        b.style.removeProperty("visibility");
-        b.style.removeProperty("opacity");
-        b.style.removeProperty("pointer-events");
-      }
-    });
-  }
-
-  function onlyOneActive(btn){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      const on=b===btn;
-      b.classList.toggle("active",on);
-      b.classList.remove("v99-hand-active","v96-hand-active","v105-cursor-active");
-      b.setAttribute("aria-pressed",on?"true":"false");
-    });
-  }
-
-  function bindLeftTools(){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-      if(btn.__v149Bound)return;
-      btn.__v149Bound=true;
-
-      // Pointerdown capture is used only to remember; click is left to the app.
-      btn.addEventListener("pointerdown",()=>{
-        window.sofiaLockedTool=btn.dataset.tool;
-      },true);
-
-      // v155: duplicate click handler removed; native toolbar onclick is used.
-    });
-  }
-
-  function version(){
-    const b=$("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function init(){
-    addCss();
-    restoreInsertMath();
-    bindLeftTools();
-    version();
-    setTimeout(()=>{restoreInsertMath();bindLeftTools();version()},500);
-    setTimeout(()=>{restoreInsertMath();bindLeftTools();version()},1200);
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-  window.addEventListener("load",()=>setTimeout(init,180));
-})();
-
-
-
-/* =========================================================
-   v150 — CORE CONTROLS FIX
-   1. Ліва панель: усі інструменти працюють через setTool напряму.
-   2. "Курсор" не залишається активним разом з іншим інструментом.
-   3. Вставка / Математика / інші праві вкладки відкривають свої реальні панелі.
-   4. Не змінюємо функціонал самих інструментів.
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-
-  function addCss(){
-    if(q("v150Css"))return;
-    const st=document.createElement("style");
-    st.id="v150Css";
-    st.textContent=`
-      .side-tools,.left-toolbar,.left-tools,.tool-sidebar{
-        top:112px!important;
-        z-index:130000!important;
-        pointer-events:auto!important;
-      }
-      .side-tool[data-tool]{pointer-events:auto!important;z-index:2!important}
-      #v86Dock{z-index:129000!important}
-      #v86Commands{
-        z-index:129500!important;
-        pointer-events:auto!important;
-        display:none;
-      }
-      #v86Commands.show{display:block!important}
-      #v86Commands .v56-panel{
-        display:flex!important;
-        flex-wrap:wrap!important;
-        gap:5px!important;
-        align-items:center!important;
-        pointer-events:auto!important;
-      }
-      #v86Commands .v56-panel button,
-      #v86Commands .v56-panel select,
-      #v86Commands .v56-panel input{
-        pointer-events:auto!important;
-      }
-      #v105CursorBtn.active{background:#173b78!important;color:#fff!important}
-    `;
-    document.head.appendChild(st);
-  }
-
-  function clearCursorMode(){
-    document.body.classList.remove("v105-cursor-mode","v94-insert-ready");
-    const c=q("v105CursorBtn");
-    if(c){
-      c.classList.remove("active");
-      c.setAttribute("aria-pressed","false");
-    }
-  }
-
-  function markOneTool(btn){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      const on=b===btn;
-      b.classList.toggle("active",on);
-      b.classList.remove("selected","v96-hand-active","v99-hand-active");
-      b.setAttribute("aria-pressed",on?"true":"false");
-    });
-  }
-
-  function activateLeft(btn){
-    if(!btn)return;
-    const tool=btn.dataset.tool||"select";
-    clearCursorMode();
-    window.sofiaLockedTool=tool;
-
-    try{
-      // Важливо: currentTool — саме те, що читають mouse:down/move/up
-      // для лінії, кривої, ламаної, хвилястої, стрілки та фігур.
-      if(typeof currentTool!=="undefined") currentTool=tool;
-      if(typeof setTool==="function") setTool(tool,true);
-
-      const c=window.fcanvas || (typeof fcanvas!=="undefined" ? fcanvas : null);
-      if(c){
-        c.isDrawingMode=false;
-        c.selection=(tool==="select");
-        c.defaultCursor=(tool==="select")?"grab":"crosshair";
-        c.hoverCursor=(tool==="select")?"move":"crosshair";
-
-        c.forEachObject?.(o=>{
-          o.selectable=(tool==="select");
-          o.evented=(tool==="select");
-        });
-
-        if(tool==="pen" || tool==="marker"){
-          c.freeDrawingBrush=new fabric.PencilBrush(c);
-          const baseColor=q("colorPicker")?.value||"#17315f";
-          const w=Math.max(1,Number(q("lineWidth")?.value)||2);
-          c.freeDrawingBrush.color=(tool==="marker")
-            ? hexToRgba(baseColor,window.sofiaMarkerOpacity??.32)
-            : baseColor;
-          c.freeDrawingBrush.width=(tool==="marker") ? Math.max(14,w*5) : w;
-          c.freeDrawingBrush.strokeLineCap="round";
-          c.freeDrawingBrush.strokeLineJoin="round";
-          if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
-          c.isDrawingMode=true;
-        }
-
-        if(tool==="eraser"){
-          window.sofiaEraserSize=Math.max(14,(Number(q("lineWidth")?.value)||2)*6);
-        }
-
-        c.discardActiveObject?.();
-        c.requestRenderAll?.();
-      }
-    }catch(err){
-      console.error("v153 activate tool",err);
-    }
-
-    markOneTool(btn);
-
-    if(tool!=="select"){
-      document.body.classList.remove(
-        "v99-hand-mode","v96-hand-mode","v99-dragging","v96-dragging",
-        "v105-cursor-mode","v94-insert-ready"
-      );
-    }
-
-    try{window.sofiaApplyThicknessNow?.()}catch(_){}
-  }
-
-  // v155: WINDOW capture removed.
-  // The original toolbar onclick + v154 pointerdown now receive the event normally.
-
-  function commandBox(){
-    let box=q("v86Commands");
-    if(!box){
-      box=document.createElement("div");
-      box.id="v86Commands";
-      document.body.appendChild(box);
-    }
-    let close=q("v86Close");
-    if(!close){
-      close=document.createElement("button");
-      close.id="v86Close";
-      close.type="button";
-      close.textContent="×";
-      box.prepend(close);
-      close.onclick=()=>{
-        box.classList.remove("show");
-        document.querySelectorAll(".v86tab").forEach(x=>x.classList.remove("active"));
-      };
-    }
-    return box;
-  }
-
-  function store(){
-    let s=q("v86Store");
-    if(!s){
-      s=document.createElement("div");
-      s.id="v86Store";
-      s.style.cssText="position:fixed;left:-30000px;top:-30000px;width:1px;height:1px;overflow:hidden";
-      document.body.appendChild(s);
-    }
-    return s;
-  }
-
-  function panel(id){
-    return document.querySelector('.v56-panel[data-v56-panel="'+id+'"]');
-  }
-
-  function openRightTab(btn){
-    const id=btn.dataset.tab;
-    if(!id)return;
-    const p=panel(id);
-    if(!p)return;
-
-    const box=commandBox();
-    // Повертаємо попередню панель в store.
-    [...box.querySelectorAll(".v56-panel")].forEach(x=>store().appendChild(x));
-
-    box.appendChild(p);
-    p.hidden=false;
-    p.style.setProperty("display","flex","important");
-    p.style.removeProperty("visibility");
-    p.style.removeProperty("opacity");
-    p.style.setProperty("pointer-events","auto","important");
-
-    document.querySelectorAll(".v86tab[data-tab]").forEach(x=>{
-      x.classList.toggle("active",x===btn);
-    });
-    box.classList.add("show");
-  }
-
-  // Так само перехоплюємо вкладки Вставка/Математика до старих конфліктних handler-ів.
-  window.addEventListener("click",e=>{
-    const btn=e.target?.closest?.(".v86tab[data-tab]");
-    if(!btn)return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    openRightTab(btn);
-  },true);
-
-  // Перевіряємо, щоб кнопки в panel не були приховані старими патчами.
-  function unhidePanelButtons(){
-    document.querySelectorAll(".v56-panel").forEach(p=>{
-      p.querySelectorAll("button,select,input").forEach(el=>{
-        el.hidden=false;
-        el.style.removeProperty("display");
-        el.style.removeProperty("visibility");
-        el.style.removeProperty("opacity");
-        el.style.removeProperty("pointer-events");
-      });
-    });
-  }
-
-  function version(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function init(){
-    addCss();
-    unhidePanelButtons();
-    version();
-    setTimeout(()=>{unhidePanelButtons();version()},500);
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-  window.addEventListener("load",()=>setTimeout(init,180));
-})();
-
-
-
-/* =========================================================
-   v151 — TIMER + SHAPES FIX
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-
-  function addCss(){
-    if(q("v151Css"))return;
-    const st=document.createElement("style");
-    st.id="v151Css";
-    st.textContent=`
-      #v151StopwatchPanel{
-        position:fixed;
-        right:84px;
-        top:170px;
-        z-index:130500;
-        display:none;
-        width:280px;
-        background:#fff;
-        border:1px solid #d8e2ef;
-        border-radius:12px;
-        box-shadow:0 8px 24px rgba(15,23,42,.18);
-        padding:12px;
-        box-sizing:border-box;
-      }
-      #v151StopwatchPanel.show{display:block}
-      #v151StopwatchTime{font:700 32px/1.1 Arial;text-align:center;margin:8px 0 12px}
-      #v151StopwatchPanel .row{display:flex;gap:8px;justify-content:center}
-      #v151StopwatchPanel button{height:34px;padding:4px 10px}
-      #v151StopwatchClose{float:right;border:0;background:#eef2f7;border-radius:7px;width:28px;height:28px}
-
-      #shapeLibraryPanel,#geometryPanel,.shape-library-panel{
-        pointer-events:auto!important;
-        z-index:130400!important;
-      }
-      #shapeLibraryPanel button,#geometryPanel button,.shape-library-panel button{
-        pointer-events:auto!important;
-      }
-    `;
-    document.head.appendChild(st);
-  }
-
-  /* -------- STOPWATCH -------- */
-  let swStart=0, swElapsed=0, swTimer=null;
-
-  function fmt(ms){
-    const total=Math.floor(ms/1000);
-    const h=Math.floor(total/3600);
-    const m=Math.floor((total%3600)/60);
-    const s=total%60;
-    return (h?String(h).padStart(2,"0")+":":"")+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
-  }
-
-  function ensureStopwatch(){
-    let p=q("v151StopwatchPanel");
-    if(p)return p;
-    p=document.createElement("div");
-    p.id="v151StopwatchPanel";
-    p.innerHTML=`
-      <button id="v151StopwatchClose">×</button>
-      <b>⏱ Секундомір</b>
-      <div id="v151StopwatchTime">00:00</div>
-      <div class="row">
-        <button id="v151SwStart">▶ Старт</button>
-        <button id="v151SwPause">⏸ Пауза</button>
-        <button id="v151SwReset">↺ Скинути</button>
-      </div>`;
-    document.body.appendChild(p);
-    q("v151StopwatchClose").onclick=()=>p.classList.remove("show");
-    q("v151SwStart").onclick=()=>{
-      if(swTimer)return;
-      swStart=Date.now()-swElapsed;
-      swTimer=setInterval(()=>{
-        swElapsed=Date.now()-swStart;
-        q("v151StopwatchTime").textContent=fmt(swElapsed);
-      },250);
-    };
-    q("v151SwPause").onclick=()=>{if(swTimer){clearInterval(swTimer);swTimer=null}};
-    q("v151SwReset").onclick=()=>{
-      if(swTimer){clearInterval(swTimer);swTimer=null}
-      swElapsed=0;swStart=0;q("v151StopwatchTime").textContent="00:00";
-    };
-    return p;
-  }
-
-  function addStopwatchButton(){
-    const teacher=document.querySelector('.v56-panel[data-v56-panel="teacher"]');
-    if(!teacher || q("v151StopwatchBtn"))return;
-    const b=document.createElement("button");
-    b.id="v151StopwatchBtn";
-    b.type="button";
-    b.textContent="⏱ Секундомір";
-    b.onclick=()=>{
-      const p=ensureStopwatch();
-      p.classList.toggle("show");
-    };
-    teacher.appendChild(b);
-  }
-
-  /* -------- SHAPES -------- */
-  function addShape(type){
-    const c=window.fcanvas;
-    if(!c || !window.fabric)return;
-    const base={
-      left:220, top:180,
-      fill:"rgba(255,255,255,.15)",
-      stroke:(q("colorPicker")?.value||"#173b78"),
-      strokeWidth:Number(q("lineWidth")?.value||3),
-      strokeUniform:true,
-      erasable:true
-    };
-    let o=null;
-    if(type==="circle")o=new fabric.Circle({...base,radius:60});
-    if(type==="ellipse")o=new fabric.Ellipse({...base,rx:85,ry:50});
-    if(type==="square")o=new fabric.Rect({...base,width:120,height:120});
-    if(type==="rect")o=new fabric.Rect({...base,width:170,height:100});
-    if(type==="triangle")o=new fabric.Triangle({...base,width:130,height:120});
-    if(type==="diamond")o=new fabric.Rect({...base,width:110,height:110,angle:45});
-    if(type==="star"){
-      const pts=[]; const outer=65, inner=28, n=5;
-      for(let i=0;i<n*2;i++){
-        const r=i%2===0?outer:inner, a=-Math.PI/2+i*Math.PI/n;
-        pts.push({x:Math.cos(a)*r,y:Math.sin(a)*r});
-      }
-      o=new fabric.Polygon(pts,{...base,left:280,top:230});
-    }
-    if(type==="parallelogram")o=new fabric.Polygon([{x:30,y:0},{x:160,y:0},{x:130,y:90},{x:0,y:90}],base);
-    if(type==="trapezoid")o=new fabric.Polygon([{x:35,y:0},{x:135,y:0},{x:170,y:95},{x:0,y:95}],base);
-
-    if(type==="cube"){
-      const a=new fabric.Rect({left:0,top:18,width:95,height:95,fill:"transparent",stroke:base.stroke,strokeWidth:base.strokeWidth});
-      const b=new fabric.Rect({left:28,top:0,width:95,height:95,fill:"transparent",stroke:base.stroke,strokeWidth:base.strokeWidth});
-      const lines=[
-        new fabric.Line([0,18,28,0],base),new fabric.Line([95,18,123,0],base),
-        new fabric.Line([0,113,28,95],base),new fabric.Line([95,113,123,95],base)
-      ];
-      o=new fabric.Group([a,b,...lines],{left:240,top:190});
-    }
-    if(!o)return;
-    c.add(o);c.setActiveObject(o);c.requestRenderAll();
-    try{pushHistory()}catch(_){}
-    try{autoSave()}catch(_){}
-  }
-
-  const shapeMap={
-    "Коло":"circle","Овал":"ellipse","Квадрат":"square","Прямокутник":"rect",
-    "Трикутник":"triangle","Зірка":"star","Паралелограм":"parallelogram","Ромб":"diamond","Трапеція":"trapezoid",
-    "Куб":"cube"
-  };
-
-  function bindShapeButtons(){
-    const panel=q("shapeLibraryPanel") || document.querySelector(".shape-library-panel");
-    if(!panel)return;
-    [...panel.querySelectorAll("button")].forEach(b=>{
-      const key=(b.textContent||"").trim();
-      if(!shapeMap[key] || b.__v151ShapeBound)return;
-      b.__v151ShapeBound=true;
-      b.onclick=(e)=>{
-        e.preventDefault();e.stopPropagation();
-        addShape(shapeMap[key]);
-      };
-    });
-  }
-
-  function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function init(){
-    addCss();
-    addStopwatchButton();
-    bindShapeButtons();
-    version();
-    setTimeout(()=>{addStopwatchButton();bindShapeButtons();version()},500);
-    setTimeout(()=>{addStopwatchButton();bindShapeButtons();version()},1200);
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-  window.addEventListener("load",()=>setTimeout(init,180));
-})();
-
-
-
-/* =========================================================
-   v152 — ПОВЕРНЕННЯ РІДНОГО ТАЙМЕРА + ПОВНА МАТЕМАТИКА + ФІГУРИ
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-
-  function addCss(){
-    if(q("v152Css"))return;
-    const st=document.createElement("style");
-    st.id="v152Css";
-    st.textContent=`
-      /* Старий доданий секундомір v151 більше не використовуємо */
-      #v151StopwatchPanel,#v151StopwatchBtn{display:none!important}
-
-      #timerPanel{
-        z-index:132000!important;
-        pointer-events:auto!important;
-      }
-      #timerPanel.fullscreen-timer{
-        position:fixed!important;
-        inset:10px!important;
-        width:auto!important;
-        height:auto!important;
-        max-width:none!important;
-        max-height:none!important;
-        z-index:2147482000!important;
-        display:flex!important;
-        flex-direction:column!important;
-        justify-content:center!important;
-        align-items:center!important;
-        background:#fff!important;
-      }
-      #timerPanel.fullscreen-timer #timerDisplay{
-        font-size:min(22vw,240px)!important;
-        line-height:1!important;
-      }
-
-      #v86Commands .v56-panel[data-v56-panel="math"]{
-        display:flex!important;
-        gap:6px!important;
-        flex-wrap:wrap!important;
-        align-items:center!important;
-      }
-      #v86Commands .v56-panel[data-v56-panel="math"] button{
-        display:inline-flex!important;
-        align-items:center!important;
-        justify-content:center!important;
-        min-height:32px!important;
-        pointer-events:auto!important;
-      }
-
-      #v56FiguresPanel{
-        z-index:132100!important;
-        pointer-events:auto!important;
-      }
-      #v56FiguresPanel button{pointer-events:auto!important}
-    `;
-    document.head.appendChild(st);
-  }
-
-  /* ---------- РІДНИЙ ТАЙМЕР ---------- */
-  function showNativeTimer(){
-    const p=q("timerPanel");
-    if(!p)return;
-    p.hidden=false;
-    p.classList.remove("hidden");
-    p.style.removeProperty("display");
-    p.style.setProperty("display","block","important");
-  }
-
-  function ensureTimerShortcut(){
-    const teacher=document.querySelector('.v56-panel[data-v56-panel="teacher"]');
-    if(!teacher)return;
-    let b=q("timerBtn");
-    if(!b){
-      b=document.createElement("button");
-      b.id="timerBtn";b.type="button";b.textContent="⏱ Таймер";
-    }
-    b.hidden=false;b.style.removeProperty("display");
-    if(b.parentElement!==teacher)teacher.appendChild(b);
-
-    // На capture, щоб жоден пізній старий handler не відкрив v151 stopwatch.
-    b.addEventListener("click",e=>{
-      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-      showNativeTimer();
-    },true);
-  }
-
-  /* ---------- ПОВНА МАТЕМАТИКА ---------- */
-  function safeShow(id){
-    const p=q(id);if(!p)return;
-    p.hidden=false;p.classList.remove("hidden");
-    p.style.removeProperty("display");
-  }
-
-  function clickExisting(id){
-    const b=q(id);
-    if(b){b.click();return true}
-    return false;
-  }
-
-  function clickInstrument(kind){
-    const b=document.querySelector('[data-instrument="'+kind+'"]');
-    if(!b){safeShow("geometryPanel");return}
-    // native capture listeners, напр. циркуль V56, отримають клік
-    b.click();
-  }
-
-  function openFiguresPanel(){
-    const p=q("v56FiguresPanel");
-    if(p){p.style.display="block";p.hidden=false;return}
-    // якщо V56 ще не створив свою панель, відкриваємо оригінальну бібліотеку
-    safeShow("shapeLibraryPanel");
-  }
-
-  const mathButtons=[
-    ["v152Ruler","📏 Лінійка",()=>clickInstrument("ruler")],
-    ["v152SetSquare","◩ Косинець",()=>clickInstrument("setsquare")],
-    ["v152Protractor","📐 Транспортир",()=>clickInstrument("protractor")],
-    ["v152Compass","🧭 Циркуль",()=>clickInstrument("compass")],
-    ["v152Angle","∠ Кут",()=>clickExisting("angleBtn")||safeShow("anglePanel")],
-    ["v152Ray","↦ Числовий промінь",()=>clickExisting("numberRayBtn")||safeShow("numberRayPanel")],
-    ["v152Graph","📈 Графік",()=>clickExisting("graphBuilderBtn")||safeShow("graphBuilderPanel")],
-    ["v152Calc","🧮 Калькулятор",()=>clickExisting("calculatorBtn")||safeShow("calculatorPanel")],
-    ["v152Point","• Точка",()=>clickExisting("pointBtn")],
-    ["v152Vertex","A Вершина",()=>clickExisting("vertexLabelBtn")],
-    ["v152Figures","⬡ 2D / 3D фігури",openFiguresPanel]
-  ];
-
-  function rebuildMath(){
-    const p=document.querySelector('.v56-panel[data-v56-panel="math"]');
-    if(!p)return;
-
-    // Залишаємо робочі існуючі елементи, але додаємо гарантований комплект зверху.
-    mathButtons.forEach(([id,label,fn])=>{
-      let b=q(id);
-      if(!b){
-        b=document.createElement("button");
-        b.id=id;b.type="button";b.className="v56-command";b.textContent=label;
-      }
-      if(b.parentElement!==p)p.appendChild(b);
-      b.onclick=e=>{e.preventDefault();e.stopPropagation();fn()};
-    });
-  }
-
-  /* ---------- ФІГУРИ: НЕЗАЛЕЖНИЙ НАДІЙНИЙ РЕНДЕР ---------- */
-  function canvas(){return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
-  function style(){
-    return {
-      stroke:q("colorPicker")?.value||"#17315f",
-      strokeWidth:Math.max(1,Number(q("lineWidth")?.value||2)),
-      fill:"transparent",
-      strokeUniform:true,
-      erasable:true
-    };
-  }
-  function line(x1,y1,x2,y2,st,dash){
-    return new fabric.Line([x1,y1,x2,y2],{...st,fill:undefined,strokeDashArray:dash||null,selectable:false,evented:false});
-  }
-  function group(parts,left=320,top=230){
-    return new fabric.Group(parts,{left,top,selectable:true,evented:true,erasable:"deep"});
-  }
-  function poly(points,st){return new fabric.Polygon(points,{...st})}
-  function regular(n,r,st,star=false){
-    const pts=[];
-    const total=star?n*2:n;
-    for(let i=0;i<total;i++){
-      const rr=star?(i%2===0?r:r*.43):r;
-      const a=-Math.PI/2+i*2*Math.PI/total;
-      pts.push({x:Math.cos(a)*rr,y:Math.sin(a)*rr});
-    }
-    return poly(pts,st);
-  }
-
-  function addRobustShape(type){
-    const c=canvas();
-    if(!c || !window.fabric)return;
-    const st=style();
-    let o=null;
-
-    if(type==="circle") o=new fabric.Circle({...st,left:320,top:230,radius:65});
-    else if(type==="ellipse") o=new fabric.Ellipse({...st,left:320,top:230,rx:95,ry:58});
-    else if(type==="square") o=new fabric.Rect({...st,left:320,top:230,width:130,height:130});
-    else if(type==="rect") o=new fabric.Rect({...st,left:320,top:230,width:190,height:115});
-    else if(type==="triangle") o=new fabric.Triangle({...st,left:320,top:230,width:145,height:130});
-    else if(type==="star"){o=regular(5,72,st,true);o.set({left:320,top:230});}
-    else if(type==="parallelogram"){o=poly([{x:35,y:0},{x:180,y:0},{x:145,y:105},{x:0,y:105}],st);o.set({left:320,top:230});}
-    else if(type==="rhombus"){o=poly([{x:80,y:0},{x:160,y:65},{x:80,y:130},{x:0,y:65}],st);o.set({left:320,top:230});}
-    else if(type==="trapezoid"){o=poly([{x:45,y:0},{x:145,y:0},{x:190,y:110},{x:0,y:110}],st);o.set({left:320,top:230});}
-
-    else if(type==="cube" || type==="cuboid"){
-      const w=type==="cube"?105:155,h=100,d=32;
-      const parts=[
-        line(0,d,w,d,st),line(w,d,w,d+h,st),line(w,d+h,0,d+h,st),line(0,d+h,0,d,st),
-        line(d,0,w+d,0,st),line(w+d,0,w+d,h,st),line(w+d,h,w,d+h,st),
-        line(0,d,d,0,st),line(w,d,w+d,0,st),line(0,d+h,d,h,st,[7,5]),line(d,0,d,h,st,[7,5])
-      ];
-      o=group(parts);
-    }
-    else if(type==="pyramid"){
-      const parts=[
-        line(90,0,0,120,st),line(90,0,170,120,st),line(90,0,50,155,st),
-        line(0,120,170,120,st),line(170,120,50,155,st),line(50,155,0,120,st),
-        line(90,0,90,105,st,[7,5]),line(90,105,0,120,st,[7,5]),line(90,105,170,120,st,[7,5])
-      ]; o=group(parts);
-    }
-    else if(type==="cylinder"){
-      const parts=[
-        new fabric.Ellipse({...st,left:0,top:0,rx:70,ry:20,selectable:false,evented:false}),
-        line(0,20,0,135,st),line(140,20,140,135,st),
-        new fabric.Ellipse({...st,left:0,top:115,rx:70,ry:20,selectable:false,evented:false})
-      ]; o=group(parts);
-    }
-    else if(type==="cone"){
-      const parts=[
-        line(70,0,0,135,st),line(70,0,140,135,st),
-        new fabric.Ellipse({...st,left:0,top:115,rx:70,ry:20,selectable:false,evented:false})
-      ]; o=group(parts);
-    }
-    else if(type==="sphere"){
-      const parts=[
-        new fabric.Circle({...st,left:0,top:0,radius:70,selectable:false,evented:false}),
-        new fabric.Ellipse({...st,left:10,top:53,rx:60,ry:17,selectable:false,evented:false}),
-        new fabric.Ellipse({...st,left:52,top:5,rx:18,ry:65,selectable:false,evented:false})
-      ]; o=group(parts);
-    }
-    else if(type==="prism"){
-      const pts=[{x:0,y:35},{x:60,y:0},{x:120,y:35},{x:120,y:105},{x:60,y:140},{x:0,y:105}];
-      const back=pts.map(p=>({x:p.x+40,y:p.y-25}));
-      const parts=[];
-      for(let i=0;i<6;i++){let a=pts[i],b=pts[(i+1)%6];parts.push(line(a.x,a.y,b.x,b.y,st));}
-      for(let i=0;i<6;i++){let a=back[i],b=back[(i+1)%6];parts.push(line(a.x,a.y,b.x,b.y,st,i>2?[7,5]:null));}
-      for(let i=0;i<6;i++)parts.push(line(pts[i].x,pts[i].y,back[i].x,back[i].y,st,i>2?[7,5]:null));
-      o=group(parts);
-    }
-
-    if(!o)return;
-    c.add(o);c.setActiveObject(o);c.requestRenderAll();
-    try{pushHistory()}catch(_){}
-    try{autoSave()}catch(_){}
-  }
-
-  const map={
-    "Коло":"circle","Овал":"ellipse","Квадрат":"square","Прямокутник":"rect",
-    "Трикутник":"triangle","Зірка":"star","Паралелограм":"parallelogram","Ромб":"rhombus","Трапеція":"trapezoid",
-    "Куб":"cube","Паралелепіпед":"cuboid","Піраміда":"pyramid","Циліндр":"cylinder","Конус":"cone","Сфера":"sphere","Призма":"prism"
-  };
-
-  function bindFigures(){
-    const panels=[q("v56FiguresPanel"),q("shapeLibraryPanel")].filter(Boolean);
-    panels.forEach(p=>{
-      [...p.querySelectorAll("button")].forEach(b=>{
-        const text=(b.textContent||"").trim();
-        const type=b.dataset.v56Shape || b.dataset.shape || map[text];
-        const normalized=type==="diamond"?"rhombus":type;
-        if(!normalized || !["circle","ellipse","square","rect","triangle","star","parallelogram","rhombus","trapezoid","cube","cuboid","pyramid","cylinder","cone","sphere","prism"].includes(normalized))return;
-        if(b.__v152Bound)return;
-        b.__v152Bound=true;
-
-        // Capture на самій кнопці: старий handler, який давав null.value, не запускаємо.
-        b.addEventListener("click",e=>{
-          e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-          addRobustShape(normalized);
-          p.style.display="none";
-          p.classList.add("hidden");
-        },true);
-      });
-    });
-  }
-
-  function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function init(){
-    addCss();
-    ensureTimerShortcut();
-    rebuildMath();
-    bindFigures();
-    version();
-    setTimeout(()=>{ensureTimerShortcut();rebuildMath();bindFigures();version()},450);
-    setTimeout(()=>{ensureTimerShortcut();rebuildMath();bindFigures();version()},1100);
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-  window.addEventListener("load",()=>setTimeout(init,180));
-})();
-
-
-
-/* =========================================================
-   v153 — LEFT TOOLBAR FINAL STATE GUARD
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-
-  function paint(){
-    const tool=window.sofiaLockedTool||"select";
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      const on=b.dataset.tool===tool;
-      b.classList.toggle("active",on);
-      b.classList.remove("selected","v96-hand-active","v99-hand-active");
-      b.setAttribute("aria-pressed",on?"true":"false");
-    });
-    const cursor=q("v105CursorBtn");
-    if(cursor && tool!=="select"){
-      cursor.classList.remove("active");
-      cursor.setAttribute("aria-pressed","false");
-    }
-  }
-
-  function reapply(){
-    const tool=window.sofiaLockedTool||"select";
-    try{
-      if(typeof currentTool!=="undefined")currentTool=tool;
-      if(typeof setTool==="function")setTool(tool,true);
-      if((tool==="pen"||tool==="marker") && window.fcanvas){
-        window.fcanvas.isDrawingMode=true;
-      }
-    }catch(_){}
-    paint();
-  }
-
-  // Після створення штриха/фігури залишаємо саме вибраний користувачем інструмент.
   const c=window.fcanvas;
-  if(c && !c.__v153GuardBound){
-    c.__v153GuardBound=true;
-    c.on("path:created",()=>setTimeout(reapply,0));
-    c.on("mouse:up",()=>setTimeout(reapply,0));
-  }
+  if(!c || !window.fabric) return;
 
-  function version(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
+  let mathShape=null;
+  let dragStart=null;
+  let preview=null;
 
-  paint();
-  version();
-  window.addEventListener("load",()=>setTimeout(()=>{paint();version()},250));
-})();
-
-
-
-/* =========================================================
-   v154 — TIMER CLOSE + LEFT TOOLBAR HARD FIX
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-
-  function version(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
-  }
-
-  function canvas(){
-    try{return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
-    catch(_){return null}
-  }
-
-  function hideTimer(){
-    const p=q("timerPanel");
-    if(!p)return;
-    p.classList.add("hidden");
-    p.classList.remove("fullscreen-timer");
-    p.style.removeProperty("display");
-  }
-
-  function bindTimerClose(){
-    const close=q("timerCloseBtn");
-    if(close && !close.__v154Bound){
-      close.__v154Bound=true;
-      close.addEventListener("click",e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        hideTimer();
-      },true);
-    }
-    if(!document.__v154EscBound){
-      document.__v154EscBound=true;
-      document.addEventListener("keydown",e=>{
-        if(e.key==="Escape"){
-          const p=q("timerPanel");
-          if(p && !p.classList.contains("hidden")) hideTimer();
-        }
-      },true);
-    }
-  }
+  function color(){ return q("colorPicker")?.value || "#17315f"; }
+  function width(){ return Math.max(1,Number(q("lineWidth")?.value)||2); }
 
   function paint(tool){
     document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
@@ -13367,387 +11855,255 @@ document.addEventListener("click",function(e){
     });
   }
 
-  function hardActivate(tool){
-    const c=canvas();
-    if(!c)return;
+  function chooseTool(tool){
+    mathShape=null;
+    dragStart=null;
+    if(preview){c.remove(preview);preview=null}
 
     window.sofiaLockedTool=tool;
-    try{ if(typeof currentTool!=="undefined") currentTool=tool; }catch(_){}
+    try{currentTool=tool}catch(_){}
+    try{setTool(tool,true)}catch(_){}
 
-    document.body.classList.remove(
-      "v99-hand-mode","v96-hand-mode","v99-dragging","v96-dragging",
-      "v105-cursor-mode","v94-insert-ready"
-    );
-
-    c.isDrawingMode=false;
-    c.selection=(tool==="select");
-    c.defaultCursor=(tool==="select")?"grab":"crosshair";
-    c.hoverCursor=(tool==="select")?"move":"crosshair";
-
-    c.forEachObject?.(o=>{
-      o.selectable=(tool==="select");
-      o.evented=(tool==="select");
-    });
-
-    const color=q("colorPicker")?.value||"#17315f";
-    const width=Math.max(1,Number(q("lineWidth")?.value)||2);
-
+    // Explicitly configure drawing brushes too.
     if(tool==="pen" || tool==="marker"){
       c.freeDrawingBrush=new fabric.PencilBrush(c);
-      c.freeDrawingBrush.color=(tool==="marker")
-        ? (typeof hexToRgba==="function" ? hexToRgba(color,window.sofiaMarkerOpacity??.32) : color)
-        : color;
-      c.freeDrawingBrush.width=(tool==="marker")?Math.max(14,width*5):width;
+      c.freeDrawingBrush.color=(tool==="marker" && typeof hexToRgba==="function")
+        ? hexToRgba(color(),window.sofiaMarkerOpacity??.32)
+        : color();
+      c.freeDrawingBrush.width=tool==="marker" ? Math.max(14,width()*5) : width();
       c.freeDrawingBrush.strokeLineCap="round";
       c.freeDrawingBrush.strokeLineJoin="round";
       if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
       c.isDrawingMode=true;
     }
-
     if(tool==="eraser"){
-      window.sofiaEraserSize=Math.max(14,width*6);
+      window.sofiaEraserSize=Math.max(14,width()*6);
       c.isDrawingMode=false;
       c.selection=false;
     }
 
-    try{
-      if(typeof setTool==="function") setTool(tool,true);
-    }catch(_){}
-
-    try{ if(typeof currentTool!=="undefined") currentTool=tool; }catch(_){}
-    window.sofiaLockedTool=tool;
-
     paint(tool);
-    try{window.sofiaApplyThicknessNow?.()}catch(_){}
-    c.requestRenderAll?.();
+    c.requestRenderAll();
   }
 
-  function bindLeftToolbar(){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
-      if(btn.__v154Bound)return;
-      btn.__v154Bound=true;
+  // Replace old onclick on the actual left buttons. No capture interception.
+  document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+    btn.onclick=function(e){
+      e.preventDefault();
+      chooseTool(btn.dataset.tool||"select");
+    };
+  });
 
-      btn.addEventListener("pointerdown",e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        hardActivate(btn.dataset.tool||"select");
-      },true);
-
-      btn.addEventListener("click",e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        hardActivate(btn.dataset.tool||"select");
-      },true);
-    });
-  }
-
-  function reapplyLocked(){
-    hardActivate(window.sofiaLockedTool||"select");
-  }
-
-  function bindCanvasGuard(){
-    const c=canvas();
-    if(!c || c.__v154GuardBound)return;
-    c.__v154GuardBound=true;
-    c.on("path:created",()=>setTimeout(reapplyLocked,0));
-    c.on("mouse:up",()=>setTimeout(reapplyLocked,0));
-  }
-
-  function raiseLeftPanel(){
-    const bar=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
-              document.querySelector(".side-tool[data-tool]")?.parentElement;
-    if(bar){
-      bar.style.setProperty("top","104px","important");
-      bar.style.setProperty("z-index","140000","important");
-      bar.style.setProperty("pointer-events","auto","important");
+  // Thickness applies immediately to the active drawing tool.
+  q("lineWidth")?.addEventListener("input",()=>{
+    const tool=window.sofiaLockedTool||currentTool||"select";
+    if((tool==="pen"||tool==="marker") && c.freeDrawingBrush){
+      c.freeDrawingBrush.width=tool==="marker" ? Math.max(14,width()*5) : width();
     }
-  }
+    if(tool==="eraser")window.sofiaEraserSize=Math.max(14,width()*6);
+  });
 
-  function init(){
-    bindTimerClose();
-    bindLeftToolbar();
-    bindCanvasGuard();
-    raiseLeftPanel();
-    version();
-    setTimeout(()=>{bindTimerClose();bindLeftToolbar();bindCanvasGuard();raiseLeftPanel();version()},500);
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-  window.addEventListener("load",()=>setTimeout(init,180));
-})();
-
-
-
-/* =========================================================
-   v155 — LEFT TOOLBAR CLEAN + DRAG-TO-DRAW MATH SHAPES
-   ========================================================= */
-(function(){
-  const q=id=>document.getElementById(id);
-  let shapeMode=null;
-  let start=null;
-  let preview=null;
-
-  function cv(){
-    try{return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
-    catch(_){return null}
-  }
-
-  function stroke(){
+  // ----------------------------------------------------------
+  // Math figures: choose figure, then mouse-drag from start point.
+  // ----------------------------------------------------------
+  function st(){
     return {
-      stroke:q("colorPicker")?.value||"#17315f",
-      strokeWidth:Math.max(1,Number(q("lineWidth")?.value)||2),
-      fill:"transparent",
-      strokeUniform:true,
-      objectCaching:false
+      stroke:color(),strokeWidth:width(),fill:"transparent",
+      strokeUniform:true,objectCaching:false
     };
   }
-
-  function paintLeft(tool){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      const on=b.dataset.tool===tool;
-      b.classList.toggle("active",on);
-      b.classList.remove("selected","v96-hand-active","v99-hand-active","v105-cursor-active");
-      b.setAttribute("aria-pressed",on?"true":"false");
-    });
-  }
-
-  function setLeft(tool){
-    shapeMode=null;
-    window.sofiaLockedTool=tool;
-    try{currentTool=tool}catch(_){}
-    try{setTool(tool,true)}catch(_){}
-    paintLeft(tool);
-    try{window.sofiaApplyThicknessNow?.()}catch(_){}
-  }
-
-  // One clean delegated click, without stopping the native event chain.
-  function bindLeft(){
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      if(b.__v155Clean)return;
-      b.__v155Clean=true;
-      b.addEventListener("pointerdown",()=>{
-        setLeft(b.dataset.tool||"select");
-      },false);
-    });
-  }
-
-  function line(x1,y1,x2,y2,st,dash){
+  function ln(x1,y1,x2,y2,S,dash=null){
     return new fabric.Line([x1,y1,x2,y2],{
-      stroke:st.stroke,strokeWidth:st.strokeWidth,
-      strokeDashArray:dash||null,fill:"transparent",
-      selectable:false,evented:false,objectCaching:false
+      stroke:S.stroke,strokeWidth:S.strokeWidth,fill:"transparent",
+      strokeDashArray:dash,selectable:false,evented:false,objectCaching:false
     });
   }
-
-  function group(parts,left,top){
-    return new fabric.Group(parts,{
-      left,top,selectable:false,evented:false,objectCaching:false
-    });
+  function grp(parts,x,y){
+    return new fabric.Group(parts,{left:x,top:y,selectable:false,evented:false,objectCaching:false});
   }
-
-  function poly(points,st,left,top){
-    return new fabric.Polygon(points,{...st,left,top,selectable:false,evented:false});
+  function poly(points,S,x,y){
+    return new fabric.Polygon(points,{...S,left:x,top:y,selectable:false,evented:false});
   }
 
   function makeShape(type,x,y,w,h){
-    const st=stroke();
-    w=Math.max(8,w); h=Math.max(8,h);
+    const S=st();
+    w=Math.max(8,w);h=Math.max(8,h);
 
     if(type==="circle"){
       const d=Math.min(w,h);
-      return new fabric.Circle({...st,left:x,top:y,radius:d/2,selectable:false,evented:false});
+      return new fabric.Circle({...S,left:x,top:y,radius:d/2,selectable:false,evented:false});
     }
-    if(type==="ellipse"){
-      return new fabric.Ellipse({...st,left:x,top:y,rx:w/2,ry:h/2,selectable:false,evented:false});
-    }
+    if(type==="ellipse") return new fabric.Ellipse({...S,left:x,top:y,rx:w/2,ry:h/2,selectable:false,evented:false});
     if(type==="square"){
       const d=Math.min(w,h);
-      return new fabric.Rect({...st,left:x,top:y,width:d,height:d,selectable:false,evented:false});
+      return new fabric.Rect({...S,left:x,top:y,width:d,height:d,selectable:false,evented:false});
     }
-    if(type==="rect"){
-      return new fabric.Rect({...st,left:x,top:y,width:w,height:h,selectable:false,evented:false});
-    }
-    if(type==="triangle"){
-      return new fabric.Triangle({...st,left:x,top:y,width:w,height:h,selectable:false,evented:false});
-    }
-    if(type==="rhombus"){
-      return poly([{x:w/2,y:0},{x:w,y:h/2},{x:w/2,y:h},{x:0,y:h/2}],st,x,y);
-    }
+    if(type==="rect") return new fabric.Rect({...S,left:x,top:y,width:w,height:h,selectable:false,evented:false});
+    if(type==="triangle") return new fabric.Triangle({...S,left:x,top:y,width:w,height:h,selectable:false,evented:false});
+    if(type==="rhombus") return poly([{x:w/2,y:0},{x:w,y:h/2},{x:w/2,y:h},{x:0,y:h/2}],S,x,y);
     if(type==="parallelogram"){
-      const skew=Math.min(w*.22,45);
-      return poly([{x:skew,y:0},{x:w,y:0},{x:w-skew,y:h},{x:0,y:h}],st,x,y);
+      const d=Math.min(45,w*.22);
+      return poly([{x:d,y:0},{x:w,y:0},{x:w-d,y:h},{x:0,y:h}],S,x,y);
     }
     if(type==="trapezoid"){
-      const inset=Math.min(w*.22,45);
-      return poly([{x:inset,y:0},{x:w-inset,y:0},{x:w,y:h},{x:0,y:h}],st,x,y);
+      const d=Math.min(45,w*.22);
+      return poly([{x:d,y:0},{x:w-d,y:0},{x:w,y:h},{x:0,y:h}],S,x,y);
     }
     if(type==="star"){
-      const pts=[],cx=w/2,cy=h/2,rx=w/2,ry=h/2;
+      const pts=[],cx=w/2,cy=h/2;
       for(let i=0;i<10;i++){
-        const rr=i%2===0?1:.42;
-        const a=-Math.PI/2+i*Math.PI/5;
-        pts.push({x:cx+Math.cos(a)*rx*rr,y:cy+Math.sin(a)*ry*rr});
+        const rr=i%2===0?1:.43,a=-Math.PI/2+i*Math.PI/5;
+        pts.push({x:cx+Math.cos(a)*(w/2)*rr,y:cy+Math.sin(a)*(h/2)*rr});
       }
-      return poly(pts,st,x,y);
+      return poly(pts,S,x,y);
     }
 
-    // 3D wireframes scaled to dragged box.
-    const L=(ax,ay,bx,by,dash)=>line(ax*w,ay*h,bx*w,by*h,st,dash);
-
-    if(type==="cube" || type==="cuboid"){
+    const L=(a,b,d,e,dash=null)=>ln(a*w,b*h,d*w,e*h,S,dash);
+    if(type==="cube"||type==="cuboid"){
       const d=.20;
-      const parts=[
+      return grp([
         L(0,d,1-d,d),L(1-d,d,1-d,1),L(1-d,1,0,1),L(0,1,0,d),
         L(d,0,1,0),L(1,0,1,1-d),L(1,1-d,1-d,1),
         L(0,d,d,0),L(1-d,d,1,0),L(0,1,d,1-d,[6,4]),L(d,0,d,1-d,[6,4])
-      ];
-      return group(parts,x,y);
+      ],x,y);
     }
     if(type==="pyramid"){
-      const parts=[
+      return grp([
         L(.5,0,0,.72),L(.5,0,1,.72),L(.5,0,.3,1),
         L(0,.72,1,.72),L(1,.72,.3,1),L(.3,1,0,.72),
         L(.5,0,.5,.63,[6,4]),L(.5,.63,0,.72,[6,4]),L(.5,.63,1,.72,[6,4])
-      ];
-      return group(parts,x,y);
+      ],x,y);
     }
     if(type==="cylinder"){
-      const e1=new fabric.Ellipse({...st,left:0,top:0,rx:w/2,ry:h*.12,selectable:false,evented:false});
-      const e2=new fabric.Ellipse({...st,left:0,top:h*.76,rx:w/2,ry:h*.12,selectable:false,evented:false});
-      return group([e1,e2,line(0,h*.12,0,h*.88,st),line(w,h*.12,w,h*.88,st)],x,y);
+      const e1=new fabric.Ellipse({...S,left:0,top:0,rx:w/2,ry:h*.12,selectable:false,evented:false});
+      const e2=new fabric.Ellipse({...S,left:0,top:h*.76,rx:w/2,ry:h*.12,selectable:false,evented:false});
+      return grp([e1,e2,ln(0,h*.12,0,h*.88,S),ln(w,h*.12,w,h*.88,S)],x,y);
     }
     if(type==="cone"){
-      const e=new fabric.Ellipse({...st,left:0,top:h*.76,rx:w/2,ry:h*.12,selectable:false,evented:false});
-      return group([e,line(w/2,0,0,h*.88,st),line(w/2,0,w,h*.88,st)],x,y);
+      const e=new fabric.Ellipse({...S,left:0,top:h*.76,rx:w/2,ry:h*.12,selectable:false,evented:false});
+      return grp([e,ln(w/2,0,0,h*.88,S),ln(w/2,0,w,h*.88,S)],x,y);
     }
     if(type==="sphere"){
-      const c=new fabric.Ellipse({...st,left:0,top:0,rx:w/2,ry:h/2,selectable:false,evented:false});
-      const eq=new fabric.Ellipse({...st,left:w*.08,top:h*.38,rx:w*.42,ry:h*.12,selectable:false,evented:false});
-      const mer=new fabric.Ellipse({...st,left:w*.37,top:h*.05,rx:w*.13,ry:h*.45,selectable:false,evented:false});
-      return group([c,eq,mer],x,y);
+      return grp([
+        new fabric.Ellipse({...S,left:0,top:0,rx:w/2,ry:h/2,selectable:false,evented:false}),
+        new fabric.Ellipse({...S,left:w*.08,top:h*.38,rx:w*.42,ry:h*.12,selectable:false,evented:false}),
+        new fabric.Ellipse({...S,left:w*.37,top:h*.05,rx:w*.13,ry:h*.45,selectable:false,evented:false})
+      ],x,y);
     }
     if(type==="prism"){
-      const d=.20;
-      const parts=[
+      return grp([
         L(0,.25,.32,0),L(.32,0,.64,.25),L(.64,.25,.64,.82),L(.64,.82,.32,1),L(.32,1,0,.82),L(0,.82,0,.25),
-        L(d,.15,.32+d,0),L(.32+d,0,.64+d,.25),L(.64+d,.25,.64+d,.82),
-        L(0,.25,d,.15),L(.64,.25,.64+d,.25),L(.64,.82,.64+d,.82)
-      ];
-      return group(parts,x,y);
+        L(.2,.15,.52,0),L(.52,0,.84,.25),L(.84,.25,.84,.82),
+        L(0,.25,.2,.15),L(.64,.25,.84,.25),L(.64,.82,.84,.82)
+      ],x,y);
     }
     return null;
   }
 
-  function selectShape(type){
-    const c=cv(); if(!c)return;
-    shapeMode=type;
+  function selectMathShape(type){
+    mathShape=type==="diamond"?"rhombus":type;
+    dragStart=null;
+    if(preview){c.remove(preview);preview=null}
+
     window.sofiaLockedTool="math-shape";
     try{currentTool="math-shape"}catch(_){}
     c.isDrawingMode=false;
     c.selection=false;
-    c.discardActiveObject?.();
+    c.discardActiveObject();
     c.defaultCursor="crosshair";
     c.hoverCursor="crosshair";
-    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
-      b.classList.remove("active");
-      b.setAttribute("aria-pressed","false");
-    });
+    paint("__none__");
+    c.requestRenderAll();
   }
 
-  function bindShapeButtons(){
-    const selectors=[
-      "#v56FiguresPanel [data-v56-shape]",
-      "#shapeLibraryPanel [data-shape]"
+  // Stop old instant-add handlers ONLY for figure buttons.
+  document.addEventListener("click",e=>{
+    const b=e.target.closest?.("#v56FiguresPanel [data-v56-shape],#shapeLibraryPanel [data-shape]");
+    if(!b)return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    selectMathShape(b.dataset.v56Shape||b.dataset.shape);
+    const p=b.closest("#v56FiguresPanel,#shapeLibraryPanel");
+    if(p){p.style.display="none";p.classList.add("hidden")}
+  },true);
+
+  c.on("mouse:down",opt=>{
+    if(!mathShape)return;
+    const p=c.getPointer(opt.e);
+    dragStart={x:p.x,y:p.y};
+  });
+
+  c.on("mouse:move",opt=>{
+    if(!mathShape||!dragStart)return;
+    const p=c.getPointer(opt.e);
+    const x=Math.min(dragStart.x,p.x),y=Math.min(dragStart.y,p.y);
+    const w=Math.abs(p.x-dragStart.x),h=Math.abs(p.y-dragStart.y);
+    if(preview)c.remove(preview);
+    preview=makeShape(mathShape,x,y,w,h);
+    if(preview)c.add(preview);
+    c.requestRenderAll();
+  });
+
+  c.on("mouse:up",opt=>{
+    if(!mathShape||!dragStart)return;
+    const p=c.getPointer(opt.e);
+    const x=Math.min(dragStart.x,p.x),y=Math.min(dragStart.y,p.y);
+    const w=Math.abs(p.x-dragStart.x),h=Math.abs(p.y-dragStart.y);
+
+    if(preview){c.remove(preview);preview=null}
+    if(w>=8&&h>=8){
+      const obj=makeShape(mathShape,x,y,w,h);
+      if(obj){
+        c.add(obj);
+        try{pushHistory()}catch(_){}
+        try{autoSave()}catch(_){}
+      }
+    }
+    dragStart=null;
+    c.requestRenderAll();
+  });
+
+  // ----------------------------------------------------------
+  // Put geometry tools also in Mathematics.
+  // Native graph builder is reused (including grouped formula label).
+  // ----------------------------------------------------------
+  function addMathShortcuts(){
+    const math=document.querySelector('.v56-panel[data-v56-panel="math"]');
+    if(!math || q("v156MathTools"))return;
+
+    const row=document.createElement("div");
+    row.id="v156MathTools";
+    row.style.cssText="display:flex;flex-wrap:wrap;gap:6px;width:100%";
+
+    const defs=[
+      ["📏 Лінійка",()=>document.querySelector('[data-instrument="ruler"]')?.click()],
+      ["◩ Косинець",()=>document.querySelector('[data-instrument="setsquare"]')?.click()],
+      ["📐 Транспортир",()=>document.querySelector('[data-instrument="protractor"]')?.click()],
+      ["🧭 Циркуль",()=>document.querySelector('[data-instrument="compass"]')?.click()],
+      ["⬡ Фігури",()=>{
+        const b=q("v56FiguresBtn");
+        if(b)b.click();
+        else {
+          const p=q("shapeLibraryPanel");
+          if(p){p.classList.remove("hidden");p.hidden=false}
+        }
+      }]
     ];
-    document.querySelectorAll(selectors.join(",")).forEach(b=>{
-      if(b.__v155Drag)return;
-      b.__v155Drag=true;
-      b.addEventListener("click",e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        const type=b.dataset.v56Shape||b.dataset.shape;
-        selectShape(type==="diamond"?"rhombus":type);
-
-        const panel=b.closest("#v56FiguresPanel,#shapeLibraryPanel");
-        if(panel){
-          panel.style.display="none";
-          panel.classList.add("hidden");
-        }
-      },true);
+    defs.forEach(([label,fn])=>{
+      const b=document.createElement("button");
+      b.type="button";b.textContent=label;b.onclick=fn;row.appendChild(b);
     });
-  }
-
-  function bindCanvas(){
-    const c=cv(); if(!c || c.__v155ShapeDrag)return;
-    c.__v155ShapeDrag=true;
-
-    c.on("mouse:down",opt=>{
-      if(!shapeMode)return;
-      const p=c.getPointer(opt.e);
-      start={x:p.x,y:p.y};
-      preview=null;
-    });
-
-    c.on("mouse:move",opt=>{
-      if(!shapeMode||!start)return;
-      const p=c.getPointer(opt.e);
-      const x=Math.min(start.x,p.x), y=Math.min(start.y,p.y);
-      const w=Math.abs(p.x-start.x), h=Math.abs(p.y-start.y);
-      if(preview)c.remove(preview);
-      preview=makeShape(shapeMode,x,y,w,h);
-      if(preview){
-        preview.__v155Preview=true;
-        c.add(preview);
-        c.requestRenderAll();
-      }
-    });
-
-    c.on("mouse:up",opt=>{
-      if(!shapeMode||!start)return;
-      const p=c.getPointer(opt.e);
-      const x=Math.min(start.x,p.x), y=Math.min(start.y,p.y);
-      const w=Math.abs(p.x-start.x), h=Math.abs(p.y-start.y);
-
-      if(preview)c.remove(preview);
-      preview=null;
-
-      if(w>=8 && h>=8){
-        const obj=makeShape(shapeMode,x,y,w,h);
-        if(obj){
-          obj.selectable=false; obj.evented=false;
-          c.add(obj);
-          c.requestRenderAll();
-          try{pushHistory()}catch(_){}
-          try{autoSave()}catch(_){}
-        }
-      }
-      start=null;
-      // Shape mode stays active until another tool/shape is selected.
-    });
+    math.prepend(row);
   }
 
   function version(){
-    const b=q("appVersionBadge");
-    if(b)b.textContent="v155";
-    document.documentElement.dataset.sofiaVersion="155";
+    const b=q("appVersionBadge");if(b)b.textContent="v156";
+    document.documentElement.dataset.sofiaVersion="156";
   }
 
-  function init(){
-    bindLeft();
-    bindShapeButtons();
-    bindCanvas();
-    version();
-    setTimeout(()=>{bindLeft();bindShapeButtons();bindCanvas();version()},500);
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-  window.addEventListener("load",()=>setTimeout(init,180));
+  addMathShortcuts();
+  version();
+  window.addEventListener("load",()=>{addMathShortcuts();version()});
 })();
-
