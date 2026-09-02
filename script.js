@@ -2814,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="153";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v153";
+  document.documentElement.dataset.sofiaVersion="155";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v155";
 })();
 
 
@@ -3525,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="153";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v153";
+    document.documentElement.dataset.sofiaVersion="155";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v155";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="153";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v153";
+    document.documentElement.dataset.sofiaVersion="155";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v155";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(badge) badge.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -4085,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(badge)badge.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(badge)badge.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(badge)badge.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(badge)badge.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(badge)badge.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(badge)badge.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v153";document.documentElement.dataset.sofiaVersion="153";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v155";document.documentElement.dataset.sofiaVersion="155";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -5712,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -6009,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -6104,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -6286,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -6466,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -6739,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -7063,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -7174,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v153";
+  if(b) b.textContent="v155";
 }
 
 function init(){
@@ -7436,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -7737,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function repair(){
@@ -7923,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init108(){
@@ -8712,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b) b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function repair109(){
@@ -8850,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function apply110(){
@@ -9157,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -9369,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -9602,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function initG(){
@@ -9901,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function initMobile(){
@@ -10137,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init119(){
@@ -10286,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v153";
-  document.documentElement.dataset.sofiaVersion="153";
+  if(b)b.textContent="v155";
+  document.documentElement.dataset.sofiaVersion="155";
 }
 
 function init(){
@@ -10368,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v153";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v155";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    const b=q("appVersionBadge");if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,8 +11068,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11112,7 +11112,7 @@ document.addEventListener("paste",e=>{
     keepToolVisual();
     applyCurrentThickness?.();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v153";
+    if(badge)badge.textContent="v155";
   },350));
 })();
 
@@ -11162,7 +11162,7 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(()=>{
     reassertTool();
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
+    if(b)b.textContent="v155";
   },500));
 })();
 
@@ -11251,7 +11251,7 @@ document.addEventListener("paste",e=>{
     setTimeout(()=>{
       restoreWidthForTool(window.sofiaLockedTool||"select");
       const badge=q("appVersionBadge");
-      if(badge)badge.textContent="v153";
+      if(badge)badge.textContent="v155";
     },450);
   });
 })();
@@ -11341,7 +11341,7 @@ document.addEventListener("click",function(e){
   function version(){
     const b=q("appVersionBadge");
     if(b)b.textContent=VERSION;
-    document.documentElement.dataset.sofiaVersion="153";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   document.addEventListener("click",e=>{
@@ -11452,8 +11452,8 @@ document.addEventListener("click",function(e){
 
   function forceVersion(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -11507,7 +11507,7 @@ document.addEventListener("click",function(e){
   const tabs=[["main","⌂","Основне"],["insert","+","Вставка"],["draw","✎","Малювання"],["math","∑","Математика"],["teacher","🎓","Вчитель"],["ai","✨","AI"]];
   function right(){let r=q("v140Right");if(!r){r=document.createElement("aside");r.id="v140Right";document.body.appendChild(r)}r.innerHTML='';tabs.forEach(([k,i,n])=>{const b=document.createElement("button");b.className="v140tab";b.innerHTML=`<span class=i>${i}</span><span>${n}</span>`;b.onclick=()=>{drawer();q("v140Title").textContent=n;document.querySelectorAll(".v140panel").forEach(p=>p.classList.toggle("active",p.id==="v140-"+k));document.querySelectorAll(".v140tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");q("v140Drawer").classList.add("show")};r.appendChild(b)})}
   function pages(){try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}let d=q("v140Pages");if(!d){d=document.createElement("div");d.id="v140Pages";document.body.appendChild(d)}[q("clearPageBtn"),q("prevPageBtn"),q("pageIndicator"),q("nextPageBtn"),q("addPageBtn"),q("pageTabsWrap"),q("deletePageBtn")].forEach(el=>{if(el&&el.parentElement!==d)d.appendChild(el)})}
-  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v153";document.documentElement.dataset.sofiaVersion="153"}
+  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v155";document.documentElement.dataset.sofiaVersion="155"}
   function init(){
     css();drawer();right();pages();ver();
     setTimeout(()=>{drawer();pages();ver()},700);
@@ -11526,8 +11526,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function paper(){
@@ -11689,8 +11689,8 @@ document.addEventListener("click",function(e){
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(badge)badge.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   if(document.readyState==="loading"){
@@ -11913,8 +11913,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -12123,8 +12123,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -12199,7 +12199,7 @@ document.addEventListener("click",function(e){
   }
 
   function version(){
-    const b=$("appVersionBadge"); if(b)b.textContent="v153";
+    const b=$("appVersionBadge"); if(b)b.textContent="v155";
   }
 
   function init(){
@@ -12323,7 +12323,7 @@ document.addEventListener("click",function(e){
    });
  }
 
- function version(){const b=$("appVersionBadge");if(b)b.textContent="v153";}
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v155";}
  function init(){
    addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
  }
@@ -12408,11 +12408,7 @@ document.addEventListener("click",function(e){
     },0);
   }
 
-  document.addEventListener("click",e=>{
-    const btn=e.target?.closest?.(".side-tool[data-tool]");
-    if(!btn)return;
-    activateExclusive(btn);
-  },true);
+  // v155: duplicate capture click removed; original toolbar handlers stay authoritative.
 
   function normalizeInitial(){
     const selected =
@@ -12425,8 +12421,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -12523,18 +12519,14 @@ document.addEventListener("click",function(e){
         window.sofiaLockedTool=btn.dataset.tool;
       },true);
 
-      btn.addEventListener("click",()=>{
-        window.sofiaLockedTool=btn.dataset.tool;
-        try{ if(typeof setTool==="function") setTool(btn.dataset.tool,true); }catch(_){}
-        onlyOneActive(btn);
-      },false);
+      // v155: duplicate click handler removed; native toolbar onclick is used.
     });
   }
 
   function version(){
     const b=$("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -12678,16 +12670,8 @@ document.addEventListener("click",function(e){
     try{window.sofiaApplyThicknessNow?.()}catch(_){}
   }
 
-  // WINDOW capture: спрацьовує раніше за старі V98/V99/V148 обробники.
-  window.addEventListener("click",e=>{
-    const btn=e.target?.closest?.(".side-tool[data-tool]");
-    if(!btn)return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    activateLeft(btn);
-  },true);
+  // v155: WINDOW capture removed.
+  // The original toolbar onclick + v154 pointerdown now receive the event normally.
 
   function commandBox(){
     let box=q("v86Commands");
@@ -12775,8 +12759,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -12959,8 +12943,8 @@ document.addEventListener("click",function(e){
   }
 
   function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    const b=q("appVersionBadge");if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -13251,8 +13235,8 @@ document.addEventListener("click",function(e){
   }
 
   function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    const b=q("appVersionBadge");if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   function init(){
@@ -13316,12 +13300,454 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v153";
-    document.documentElement.dataset.sofiaVersion="153";
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
   }
 
   paint();
   version();
   window.addEventListener("load",()=>setTimeout(()=>{paint();version()},250));
+})();
+
+
+
+/* =========================================================
+   v154 — TIMER CLOSE + LEFT TOOLBAR HARD FIX
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
+  }
+
+  function canvas(){
+    try{return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
+    catch(_){return null}
+  }
+
+  function hideTimer(){
+    const p=q("timerPanel");
+    if(!p)return;
+    p.classList.add("hidden");
+    p.classList.remove("fullscreen-timer");
+    p.style.removeProperty("display");
+  }
+
+  function bindTimerClose(){
+    const close=q("timerCloseBtn");
+    if(close && !close.__v154Bound){
+      close.__v154Bound=true;
+      close.addEventListener("click",e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        hideTimer();
+      },true);
+    }
+    if(!document.__v154EscBound){
+      document.__v154EscBound=true;
+      document.addEventListener("keydown",e=>{
+        if(e.key==="Escape"){
+          const p=q("timerPanel");
+          if(p && !p.classList.contains("hidden")) hideTimer();
+        }
+      },true);
+    }
+  }
+
+  function paint(tool){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+      const on=b.dataset.tool===tool;
+      b.classList.toggle("active",on);
+      b.classList.remove("selected","v96-hand-active","v99-hand-active","v105-cursor-active");
+      b.setAttribute("aria-pressed",on?"true":"false");
+    });
+  }
+
+  function hardActivate(tool){
+    const c=canvas();
+    if(!c)return;
+
+    window.sofiaLockedTool=tool;
+    try{ if(typeof currentTool!=="undefined") currentTool=tool; }catch(_){}
+
+    document.body.classList.remove(
+      "v99-hand-mode","v96-hand-mode","v99-dragging","v96-dragging",
+      "v105-cursor-mode","v94-insert-ready"
+    );
+
+    c.isDrawingMode=false;
+    c.selection=(tool==="select");
+    c.defaultCursor=(tool==="select")?"grab":"crosshair";
+    c.hoverCursor=(tool==="select")?"move":"crosshair";
+
+    c.forEachObject?.(o=>{
+      o.selectable=(tool==="select");
+      o.evented=(tool==="select");
+    });
+
+    const color=q("colorPicker")?.value||"#17315f";
+    const width=Math.max(1,Number(q("lineWidth")?.value)||2);
+
+    if(tool==="pen" || tool==="marker"){
+      c.freeDrawingBrush=new fabric.PencilBrush(c);
+      c.freeDrawingBrush.color=(tool==="marker")
+        ? (typeof hexToRgba==="function" ? hexToRgba(color,window.sofiaMarkerOpacity??.32) : color)
+        : color;
+      c.freeDrawingBrush.width=(tool==="marker")?Math.max(14,width*5):width;
+      c.freeDrawingBrush.strokeLineCap="round";
+      c.freeDrawingBrush.strokeLineJoin="round";
+      if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
+      c.isDrawingMode=true;
+    }
+
+    if(tool==="eraser"){
+      window.sofiaEraserSize=Math.max(14,width*6);
+      c.isDrawingMode=false;
+      c.selection=false;
+    }
+
+    try{
+      if(typeof setTool==="function") setTool(tool,true);
+    }catch(_){}
+
+    try{ if(typeof currentTool!=="undefined") currentTool=tool; }catch(_){}
+    window.sofiaLockedTool=tool;
+
+    paint(tool);
+    try{window.sofiaApplyThicknessNow?.()}catch(_){}
+    c.requestRenderAll?.();
+  }
+
+  function bindLeftToolbar(){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(btn=>{
+      if(btn.__v154Bound)return;
+      btn.__v154Bound=true;
+
+      btn.addEventListener("pointerdown",e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        hardActivate(btn.dataset.tool||"select");
+      },true);
+
+      btn.addEventListener("click",e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        hardActivate(btn.dataset.tool||"select");
+      },true);
+    });
+  }
+
+  function reapplyLocked(){
+    hardActivate(window.sofiaLockedTool||"select");
+  }
+
+  function bindCanvasGuard(){
+    const c=canvas();
+    if(!c || c.__v154GuardBound)return;
+    c.__v154GuardBound=true;
+    c.on("path:created",()=>setTimeout(reapplyLocked,0));
+    c.on("mouse:up",()=>setTimeout(reapplyLocked,0));
+  }
+
+  function raiseLeftPanel(){
+    const bar=document.querySelector(".side-tools,.left-toolbar,.left-tools,.tool-sidebar") ||
+              document.querySelector(".side-tool[data-tool]")?.parentElement;
+    if(bar){
+      bar.style.setProperty("top","104px","important");
+      bar.style.setProperty("z-index","140000","important");
+      bar.style.setProperty("pointer-events","auto","important");
+    }
+  }
+
+  function init(){
+    bindTimerClose();
+    bindLeftToolbar();
+    bindCanvasGuard();
+    raiseLeftPanel();
+    version();
+    setTimeout(()=>{bindTimerClose();bindLeftToolbar();bindCanvasGuard();raiseLeftPanel();version()},500);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+  window.addEventListener("load",()=>setTimeout(init,180));
+})();
+
+
+
+/* =========================================================
+   v155 — LEFT TOOLBAR CLEAN + DRAG-TO-DRAW MATH SHAPES
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  let shapeMode=null;
+  let start=null;
+  let preview=null;
+
+  function cv(){
+    try{return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
+    catch(_){return null}
+  }
+
+  function stroke(){
+    return {
+      stroke:q("colorPicker")?.value||"#17315f",
+      strokeWidth:Math.max(1,Number(q("lineWidth")?.value)||2),
+      fill:"transparent",
+      strokeUniform:true,
+      objectCaching:false
+    };
+  }
+
+  function paintLeft(tool){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+      const on=b.dataset.tool===tool;
+      b.classList.toggle("active",on);
+      b.classList.remove("selected","v96-hand-active","v99-hand-active","v105-cursor-active");
+      b.setAttribute("aria-pressed",on?"true":"false");
+    });
+  }
+
+  function setLeft(tool){
+    shapeMode=null;
+    window.sofiaLockedTool=tool;
+    try{currentTool=tool}catch(_){}
+    try{setTool(tool,true)}catch(_){}
+    paintLeft(tool);
+    try{window.sofiaApplyThicknessNow?.()}catch(_){}
+  }
+
+  // One clean delegated click, without stopping the native event chain.
+  function bindLeft(){
+    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+      if(b.__v155Clean)return;
+      b.__v155Clean=true;
+      b.addEventListener("pointerdown",()=>{
+        setLeft(b.dataset.tool||"select");
+      },false);
+    });
+  }
+
+  function line(x1,y1,x2,y2,st,dash){
+    return new fabric.Line([x1,y1,x2,y2],{
+      stroke:st.stroke,strokeWidth:st.strokeWidth,
+      strokeDashArray:dash||null,fill:"transparent",
+      selectable:false,evented:false,objectCaching:false
+    });
+  }
+
+  function group(parts,left,top){
+    return new fabric.Group(parts,{
+      left,top,selectable:false,evented:false,objectCaching:false
+    });
+  }
+
+  function poly(points,st,left,top){
+    return new fabric.Polygon(points,{...st,left,top,selectable:false,evented:false});
+  }
+
+  function makeShape(type,x,y,w,h){
+    const st=stroke();
+    w=Math.max(8,w); h=Math.max(8,h);
+
+    if(type==="circle"){
+      const d=Math.min(w,h);
+      return new fabric.Circle({...st,left:x,top:y,radius:d/2,selectable:false,evented:false});
+    }
+    if(type==="ellipse"){
+      return new fabric.Ellipse({...st,left:x,top:y,rx:w/2,ry:h/2,selectable:false,evented:false});
+    }
+    if(type==="square"){
+      const d=Math.min(w,h);
+      return new fabric.Rect({...st,left:x,top:y,width:d,height:d,selectable:false,evented:false});
+    }
+    if(type==="rect"){
+      return new fabric.Rect({...st,left:x,top:y,width:w,height:h,selectable:false,evented:false});
+    }
+    if(type==="triangle"){
+      return new fabric.Triangle({...st,left:x,top:y,width:w,height:h,selectable:false,evented:false});
+    }
+    if(type==="rhombus"){
+      return poly([{x:w/2,y:0},{x:w,y:h/2},{x:w/2,y:h},{x:0,y:h/2}],st,x,y);
+    }
+    if(type==="parallelogram"){
+      const skew=Math.min(w*.22,45);
+      return poly([{x:skew,y:0},{x:w,y:0},{x:w-skew,y:h},{x:0,y:h}],st,x,y);
+    }
+    if(type==="trapezoid"){
+      const inset=Math.min(w*.22,45);
+      return poly([{x:inset,y:0},{x:w-inset,y:0},{x:w,y:h},{x:0,y:h}],st,x,y);
+    }
+    if(type==="star"){
+      const pts=[],cx=w/2,cy=h/2,rx=w/2,ry=h/2;
+      for(let i=0;i<10;i++){
+        const rr=i%2===0?1:.42;
+        const a=-Math.PI/2+i*Math.PI/5;
+        pts.push({x:cx+Math.cos(a)*rx*rr,y:cy+Math.sin(a)*ry*rr});
+      }
+      return poly(pts,st,x,y);
+    }
+
+    // 3D wireframes scaled to dragged box.
+    const L=(ax,ay,bx,by,dash)=>line(ax*w,ay*h,bx*w,by*h,st,dash);
+
+    if(type==="cube" || type==="cuboid"){
+      const d=.20;
+      const parts=[
+        L(0,d,1-d,d),L(1-d,d,1-d,1),L(1-d,1,0,1),L(0,1,0,d),
+        L(d,0,1,0),L(1,0,1,1-d),L(1,1-d,1-d,1),
+        L(0,d,d,0),L(1-d,d,1,0),L(0,1,d,1-d,[6,4]),L(d,0,d,1-d,[6,4])
+      ];
+      return group(parts,x,y);
+    }
+    if(type==="pyramid"){
+      const parts=[
+        L(.5,0,0,.72),L(.5,0,1,.72),L(.5,0,.3,1),
+        L(0,.72,1,.72),L(1,.72,.3,1),L(.3,1,0,.72),
+        L(.5,0,.5,.63,[6,4]),L(.5,.63,0,.72,[6,4]),L(.5,.63,1,.72,[6,4])
+      ];
+      return group(parts,x,y);
+    }
+    if(type==="cylinder"){
+      const e1=new fabric.Ellipse({...st,left:0,top:0,rx:w/2,ry:h*.12,selectable:false,evented:false});
+      const e2=new fabric.Ellipse({...st,left:0,top:h*.76,rx:w/2,ry:h*.12,selectable:false,evented:false});
+      return group([e1,e2,line(0,h*.12,0,h*.88,st),line(w,h*.12,w,h*.88,st)],x,y);
+    }
+    if(type==="cone"){
+      const e=new fabric.Ellipse({...st,left:0,top:h*.76,rx:w/2,ry:h*.12,selectable:false,evented:false});
+      return group([e,line(w/2,0,0,h*.88,st),line(w/2,0,w,h*.88,st)],x,y);
+    }
+    if(type==="sphere"){
+      const c=new fabric.Ellipse({...st,left:0,top:0,rx:w/2,ry:h/2,selectable:false,evented:false});
+      const eq=new fabric.Ellipse({...st,left:w*.08,top:h*.38,rx:w*.42,ry:h*.12,selectable:false,evented:false});
+      const mer=new fabric.Ellipse({...st,left:w*.37,top:h*.05,rx:w*.13,ry:h*.45,selectable:false,evented:false});
+      return group([c,eq,mer],x,y);
+    }
+    if(type==="prism"){
+      const d=.20;
+      const parts=[
+        L(0,.25,.32,0),L(.32,0,.64,.25),L(.64,.25,.64,.82),L(.64,.82,.32,1),L(.32,1,0,.82),L(0,.82,0,.25),
+        L(d,.15,.32+d,0),L(.32+d,0,.64+d,.25),L(.64+d,.25,.64+d,.82),
+        L(0,.25,d,.15),L(.64,.25,.64+d,.25),L(.64,.82,.64+d,.82)
+      ];
+      return group(parts,x,y);
+    }
+    return null;
+  }
+
+  function selectShape(type){
+    const c=cv(); if(!c)return;
+    shapeMode=type;
+    window.sofiaLockedTool="math-shape";
+    try{currentTool="math-shape"}catch(_){}
+    c.isDrawingMode=false;
+    c.selection=false;
+    c.discardActiveObject?.();
+    c.defaultCursor="crosshair";
+    c.hoverCursor="crosshair";
+    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+      b.classList.remove("active");
+      b.setAttribute("aria-pressed","false");
+    });
+  }
+
+  function bindShapeButtons(){
+    const selectors=[
+      "#v56FiguresPanel [data-v56-shape]",
+      "#shapeLibraryPanel [data-shape]"
+    ];
+    document.querySelectorAll(selectors.join(",")).forEach(b=>{
+      if(b.__v155Drag)return;
+      b.__v155Drag=true;
+      b.addEventListener("click",e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const type=b.dataset.v56Shape||b.dataset.shape;
+        selectShape(type==="diamond"?"rhombus":type);
+
+        const panel=b.closest("#v56FiguresPanel,#shapeLibraryPanel");
+        if(panel){
+          panel.style.display="none";
+          panel.classList.add("hidden");
+        }
+      },true);
+    });
+  }
+
+  function bindCanvas(){
+    const c=cv(); if(!c || c.__v155ShapeDrag)return;
+    c.__v155ShapeDrag=true;
+
+    c.on("mouse:down",opt=>{
+      if(!shapeMode)return;
+      const p=c.getPointer(opt.e);
+      start={x:p.x,y:p.y};
+      preview=null;
+    });
+
+    c.on("mouse:move",opt=>{
+      if(!shapeMode||!start)return;
+      const p=c.getPointer(opt.e);
+      const x=Math.min(start.x,p.x), y=Math.min(start.y,p.y);
+      const w=Math.abs(p.x-start.x), h=Math.abs(p.y-start.y);
+      if(preview)c.remove(preview);
+      preview=makeShape(shapeMode,x,y,w,h);
+      if(preview){
+        preview.__v155Preview=true;
+        c.add(preview);
+        c.requestRenderAll();
+      }
+    });
+
+    c.on("mouse:up",opt=>{
+      if(!shapeMode||!start)return;
+      const p=c.getPointer(opt.e);
+      const x=Math.min(start.x,p.x), y=Math.min(start.y,p.y);
+      const w=Math.abs(p.x-start.x), h=Math.abs(p.y-start.y);
+
+      if(preview)c.remove(preview);
+      preview=null;
+
+      if(w>=8 && h>=8){
+        const obj=makeShape(shapeMode,x,y,w,h);
+        if(obj){
+          obj.selectable=false; obj.evented=false;
+          c.add(obj);
+          c.requestRenderAll();
+          try{pushHistory()}catch(_){}
+          try{autoSave()}catch(_){}
+        }
+      }
+      start=null;
+      // Shape mode stays active until another tool/shape is selected.
+    });
+  }
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v155";
+    document.documentElement.dataset.sofiaVersion="155";
+  }
+
+  function init(){
+    bindLeft();
+    bindShapeButtons();
+    bindCanvas();
+    version();
+    setTimeout(()=>{bindLeft();bindShapeButtons();bindCanvas();version()},500);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+  window.addEventListener("load",()=>setTimeout(init,180));
 })();
 
