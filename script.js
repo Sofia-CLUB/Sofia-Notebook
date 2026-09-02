@@ -2814,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="151";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v151";
+  document.documentElement.dataset.sofiaVersion="153";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v153";
 })();
 
 
@@ -3525,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="151";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v151";
+    document.documentElement.dataset.sofiaVersion="153";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v153";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="151";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v151";
+    document.documentElement.dataset.sofiaVersion="153";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v153";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(badge) badge.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -4085,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(badge)badge.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(badge)badge.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(badge)badge.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(badge)badge.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(badge)badge.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(badge)badge.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v151";document.documentElement.dataset.sofiaVersion="151";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v153";document.documentElement.dataset.sofiaVersion="153";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -5712,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -6009,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -6104,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -6286,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -6466,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -6739,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -7063,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -7174,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v151";
+  if(b) b.textContent="v153";
 }
 
 function init(){
@@ -7436,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -7737,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function repair(){
@@ -7923,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init108(){
@@ -8712,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b) b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function repair109(){
@@ -8850,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function apply110(){
@@ -9157,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -9369,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -9602,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function initG(){
@@ -9901,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function initMobile(){
@@ -10137,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init119(){
@@ -10286,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v151";
-  document.documentElement.dataset.sofiaVersion="151";
+  if(b)b.textContent="v153";
+  document.documentElement.dataset.sofiaVersion="153";
 }
 
 function init(){
@@ -10368,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v151";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v153";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    const b=q("appVersionBadge");if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,8 +11068,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11112,7 +11112,7 @@ document.addEventListener("paste",e=>{
     keepToolVisual();
     applyCurrentThickness?.();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v151";
+    if(badge)badge.textContent="v153";
   },350));
 })();
 
@@ -11162,7 +11162,7 @@ document.addEventListener("paste",e=>{
   window.addEventListener("load",()=>setTimeout(()=>{
     reassertTool();
     const b=q("appVersionBadge");
-    if(b)b.textContent="v151";
+    if(b)b.textContent="v153";
   },500));
 })();
 
@@ -11251,7 +11251,7 @@ document.addEventListener("paste",e=>{
     setTimeout(()=>{
       restoreWidthForTool(window.sofiaLockedTool||"select");
       const badge=q("appVersionBadge");
-      if(badge)badge.textContent="v151";
+      if(badge)badge.textContent="v153";
     },450);
   });
 })();
@@ -11341,7 +11341,7 @@ document.addEventListener("click",function(e){
   function version(){
     const b=q("appVersionBadge");
     if(b)b.textContent=VERSION;
-    document.documentElement.dataset.sofiaVersion="151";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   document.addEventListener("click",e=>{
@@ -11431,7 +11431,8 @@ document.addEventListener("click",function(e){
 
   // Після завершення штриха/лінії/фігури повертаємо той самий інструмент.
   function restore(){
-    const t=userTool || window.sofiaLockedTool;
+    const t=window.sofiaLockedTool || userTool || "select";
+    userTool=t;
     setTimeout(()=>applyTool(t),0);
   }
 
@@ -11451,8 +11452,8 @@ document.addEventListener("click",function(e){
 
   function forceVersion(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -11506,7 +11507,7 @@ document.addEventListener("click",function(e){
   const tabs=[["main","⌂","Основне"],["insert","+","Вставка"],["draw","✎","Малювання"],["math","∑","Математика"],["teacher","🎓","Вчитель"],["ai","✨","AI"]];
   function right(){let r=q("v140Right");if(!r){r=document.createElement("aside");r.id="v140Right";document.body.appendChild(r)}r.innerHTML='';tabs.forEach(([k,i,n])=>{const b=document.createElement("button");b.className="v140tab";b.innerHTML=`<span class=i>${i}</span><span>${n}</span>`;b.onclick=()=>{drawer();q("v140Title").textContent=n;document.querySelectorAll(".v140panel").forEach(p=>p.classList.toggle("active",p.id==="v140-"+k));document.querySelectorAll(".v140tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");q("v140Drawer").classList.add("show")};r.appendChild(b)})}
   function pages(){try{if(typeof ensurePageTabsUI==="function")ensurePageTabsUI()}catch(_){}let d=q("v140Pages");if(!d){d=document.createElement("div");d.id="v140Pages";document.body.appendChild(d)}[q("clearPageBtn"),q("prevPageBtn"),q("pageIndicator"),q("nextPageBtn"),q("addPageBtn"),q("pageTabsWrap"),q("deletePageBtn")].forEach(el=>{if(el&&el.parentElement!==d)d.appendChild(el)})}
-  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v151";document.documentElement.dataset.sofiaVersion="151"}
+  function ver(){const b=q("appVersionBadge");if(b)b.textContent="v153";document.documentElement.dataset.sofiaVersion="153"}
   function init(){
     css();drawer();right();pages();ver();
     setTimeout(()=>{drawer();pages();ver()},700);
@@ -11525,8 +11526,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function paper(){
@@ -11688,8 +11689,8 @@ document.addEventListener("click",function(e){
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(badge)badge.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   if(document.readyState==="loading"){
@@ -11912,8 +11913,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -12122,8 +12123,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -12198,7 +12199,7 @@ document.addEventListener("click",function(e){
   }
 
   function version(){
-    const b=$("appVersionBadge"); if(b)b.textContent="v151";
+    const b=$("appVersionBadge"); if(b)b.textContent="v153";
   }
 
   function init(){
@@ -12322,7 +12323,7 @@ document.addEventListener("click",function(e){
    });
  }
 
- function version(){const b=$("appVersionBadge");if(b)b.textContent="v151";}
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v153";}
  function init(){
    addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
  }
@@ -12424,8 +12425,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -12532,8 +12533,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=$("appVersionBadge");
-    if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -12623,16 +12624,55 @@ document.addEventListener("click",function(e){
     window.sofiaLockedTool=tool;
 
     try{
-      if(typeof setTool==="function")setTool(tool,true);
+      // Важливо: currentTool — саме те, що читають mouse:down/move/up
+      // для лінії, кривої, ламаної, хвилястої, стрілки та фігур.
+      if(typeof currentTool!=="undefined") currentTool=tool;
+      if(typeof setTool==="function") setTool(tool,true);
+
+      const c=window.fcanvas || (typeof fcanvas!=="undefined" ? fcanvas : null);
+      if(c){
+        c.isDrawingMode=false;
+        c.selection=(tool==="select");
+        c.defaultCursor=(tool==="select")?"grab":"crosshair";
+        c.hoverCursor=(tool==="select")?"move":"crosshair";
+
+        c.forEachObject?.(o=>{
+          o.selectable=(tool==="select");
+          o.evented=(tool==="select");
+        });
+
+        if(tool==="pen" || tool==="marker"){
+          c.freeDrawingBrush=new fabric.PencilBrush(c);
+          const baseColor=q("colorPicker")?.value||"#17315f";
+          const w=Math.max(1,Number(q("lineWidth")?.value)||2);
+          c.freeDrawingBrush.color=(tool==="marker")
+            ? hexToRgba(baseColor,window.sofiaMarkerOpacity??.32)
+            : baseColor;
+          c.freeDrawingBrush.width=(tool==="marker") ? Math.max(14,w*5) : w;
+          c.freeDrawingBrush.strokeLineCap="round";
+          c.freeDrawingBrush.strokeLineJoin="round";
+          if("decimate" in c.freeDrawingBrush)c.freeDrawingBrush.decimate=.25;
+          c.isDrawingMode=true;
+        }
+
+        if(tool==="eraser"){
+          window.sofiaEraserSize=Math.max(14,(Number(q("lineWidth")?.value)||2)*6);
+        }
+
+        c.discardActiveObject?.();
+        c.requestRenderAll?.();
+      }
     }catch(err){
-      console.error("v150 setTool",err);
+      console.error("v153 activate tool",err);
     }
 
     markOneTool(btn);
 
-    // Рука = select. Інші інструменти не повинні лишати старий hand-mode.
     if(tool!=="select"){
-      document.body.classList.remove("v99-hand-mode","v96-hand-mode","v99-dragging","v96-dragging");
+      document.body.classList.remove(
+        "v99-hand-mode","v96-hand-mode","v99-dragging","v96-dragging",
+        "v105-cursor-mode","v94-insert-ready"
+      );
     }
 
     try{window.sofiaApplyThicknessNow?.()}catch(_){}
@@ -12735,8 +12775,8 @@ document.addEventListener("click",function(e){
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -12919,8 +12959,8 @@ document.addEventListener("click",function(e){
   }
 
   function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v151";
-    document.documentElement.dataset.sofiaVersion="151";
+    const b=q("appVersionBadge");if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
   }
 
   function init(){
@@ -12936,5 +12976,352 @@ document.addEventListener("click",function(e){
     document.addEventListener("DOMContentLoaded",init,{once:true});
   }else init();
   window.addEventListener("load",()=>setTimeout(init,180));
+})();
+
+
+
+/* =========================================================
+   v152 — ПОВЕРНЕННЯ РІДНОГО ТАЙМЕРА + ПОВНА МАТЕМАТИКА + ФІГУРИ
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function addCss(){
+    if(q("v152Css"))return;
+    const st=document.createElement("style");
+    st.id="v152Css";
+    st.textContent=`
+      /* Старий доданий секундомір v151 більше не використовуємо */
+      #v151StopwatchPanel,#v151StopwatchBtn{display:none!important}
+
+      #timerPanel{
+        z-index:132000!important;
+        pointer-events:auto!important;
+      }
+      #timerPanel.fullscreen-timer{
+        position:fixed!important;
+        inset:10px!important;
+        width:auto!important;
+        height:auto!important;
+        max-width:none!important;
+        max-height:none!important;
+        z-index:2147482000!important;
+        display:flex!important;
+        flex-direction:column!important;
+        justify-content:center!important;
+        align-items:center!important;
+        background:#fff!important;
+      }
+      #timerPanel.fullscreen-timer #timerDisplay{
+        font-size:min(22vw,240px)!important;
+        line-height:1!important;
+      }
+
+      #v86Commands .v56-panel[data-v56-panel="math"]{
+        display:flex!important;
+        gap:6px!important;
+        flex-wrap:wrap!important;
+        align-items:center!important;
+      }
+      #v86Commands .v56-panel[data-v56-panel="math"] button{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        min-height:32px!important;
+        pointer-events:auto!important;
+      }
+
+      #v56FiguresPanel{
+        z-index:132100!important;
+        pointer-events:auto!important;
+      }
+      #v56FiguresPanel button{pointer-events:auto!important}
+    `;
+    document.head.appendChild(st);
+  }
+
+  /* ---------- РІДНИЙ ТАЙМЕР ---------- */
+  function showNativeTimer(){
+    const p=q("timerPanel");
+    if(!p)return;
+    p.hidden=false;
+    p.classList.remove("hidden");
+    p.style.removeProperty("display");
+    p.style.setProperty("display","block","important");
+  }
+
+  function ensureTimerShortcut(){
+    const teacher=document.querySelector('.v56-panel[data-v56-panel="teacher"]');
+    if(!teacher)return;
+    let b=q("timerBtn");
+    if(!b){
+      b=document.createElement("button");
+      b.id="timerBtn";b.type="button";b.textContent="⏱ Таймер";
+    }
+    b.hidden=false;b.style.removeProperty("display");
+    if(b.parentElement!==teacher)teacher.appendChild(b);
+
+    // На capture, щоб жоден пізній старий handler не відкрив v151 stopwatch.
+    b.addEventListener("click",e=>{
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      showNativeTimer();
+    },true);
+  }
+
+  /* ---------- ПОВНА МАТЕМАТИКА ---------- */
+  function safeShow(id){
+    const p=q(id);if(!p)return;
+    p.hidden=false;p.classList.remove("hidden");
+    p.style.removeProperty("display");
+  }
+
+  function clickExisting(id){
+    const b=q(id);
+    if(b){b.click();return true}
+    return false;
+  }
+
+  function clickInstrument(kind){
+    const b=document.querySelector('[data-instrument="'+kind+'"]');
+    if(!b){safeShow("geometryPanel");return}
+    // native capture listeners, напр. циркуль V56, отримають клік
+    b.click();
+  }
+
+  function openFiguresPanel(){
+    const p=q("v56FiguresPanel");
+    if(p){p.style.display="block";p.hidden=false;return}
+    // якщо V56 ще не створив свою панель, відкриваємо оригінальну бібліотеку
+    safeShow("shapeLibraryPanel");
+  }
+
+  const mathButtons=[
+    ["v152Ruler","📏 Лінійка",()=>clickInstrument("ruler")],
+    ["v152SetSquare","◩ Косинець",()=>clickInstrument("setsquare")],
+    ["v152Protractor","📐 Транспортир",()=>clickInstrument("protractor")],
+    ["v152Compass","🧭 Циркуль",()=>clickInstrument("compass")],
+    ["v152Angle","∠ Кут",()=>clickExisting("angleBtn")||safeShow("anglePanel")],
+    ["v152Ray","↦ Числовий промінь",()=>clickExisting("numberRayBtn")||safeShow("numberRayPanel")],
+    ["v152Graph","📈 Графік",()=>clickExisting("graphBuilderBtn")||safeShow("graphBuilderPanel")],
+    ["v152Calc","🧮 Калькулятор",()=>clickExisting("calculatorBtn")||safeShow("calculatorPanel")],
+    ["v152Point","• Точка",()=>clickExisting("pointBtn")],
+    ["v152Vertex","A Вершина",()=>clickExisting("vertexLabelBtn")],
+    ["v152Figures","⬡ 2D / 3D фігури",openFiguresPanel]
+  ];
+
+  function rebuildMath(){
+    const p=document.querySelector('.v56-panel[data-v56-panel="math"]');
+    if(!p)return;
+
+    // Залишаємо робочі існуючі елементи, але додаємо гарантований комплект зверху.
+    mathButtons.forEach(([id,label,fn])=>{
+      let b=q(id);
+      if(!b){
+        b=document.createElement("button");
+        b.id=id;b.type="button";b.className="v56-command";b.textContent=label;
+      }
+      if(b.parentElement!==p)p.appendChild(b);
+      b.onclick=e=>{e.preventDefault();e.stopPropagation();fn()};
+    });
+  }
+
+  /* ---------- ФІГУРИ: НЕЗАЛЕЖНИЙ НАДІЙНИЙ РЕНДЕР ---------- */
+  function canvas(){return window.fcanvas || (typeof fcanvas!=="undefined"?fcanvas:null)}
+  function style(){
+    return {
+      stroke:q("colorPicker")?.value||"#17315f",
+      strokeWidth:Math.max(1,Number(q("lineWidth")?.value||2)),
+      fill:"transparent",
+      strokeUniform:true,
+      erasable:true
+    };
+  }
+  function line(x1,y1,x2,y2,st,dash){
+    return new fabric.Line([x1,y1,x2,y2],{...st,fill:undefined,strokeDashArray:dash||null,selectable:false,evented:false});
+  }
+  function group(parts,left=320,top=230){
+    return new fabric.Group(parts,{left,top,selectable:true,evented:true,erasable:"deep"});
+  }
+  function poly(points,st){return new fabric.Polygon(points,{...st})}
+  function regular(n,r,st,star=false){
+    const pts=[];
+    const total=star?n*2:n;
+    for(let i=0;i<total;i++){
+      const rr=star?(i%2===0?r:r*.43):r;
+      const a=-Math.PI/2+i*2*Math.PI/total;
+      pts.push({x:Math.cos(a)*rr,y:Math.sin(a)*rr});
+    }
+    return poly(pts,st);
+  }
+
+  function addRobustShape(type){
+    const c=canvas();
+    if(!c || !window.fabric)return;
+    const st=style();
+    let o=null;
+
+    if(type==="circle") o=new fabric.Circle({...st,left:320,top:230,radius:65});
+    else if(type==="ellipse") o=new fabric.Ellipse({...st,left:320,top:230,rx:95,ry:58});
+    else if(type==="square") o=new fabric.Rect({...st,left:320,top:230,width:130,height:130});
+    else if(type==="rect") o=new fabric.Rect({...st,left:320,top:230,width:190,height:115});
+    else if(type==="triangle") o=new fabric.Triangle({...st,left:320,top:230,width:145,height:130});
+    else if(type==="star"){o=regular(5,72,st,true);o.set({left:320,top:230});}
+    else if(type==="parallelogram"){o=poly([{x:35,y:0},{x:180,y:0},{x:145,y:105},{x:0,y:105}],st);o.set({left:320,top:230});}
+    else if(type==="rhombus"){o=poly([{x:80,y:0},{x:160,y:65},{x:80,y:130},{x:0,y:65}],st);o.set({left:320,top:230});}
+    else if(type==="trapezoid"){o=poly([{x:45,y:0},{x:145,y:0},{x:190,y:110},{x:0,y:110}],st);o.set({left:320,top:230});}
+
+    else if(type==="cube" || type==="cuboid"){
+      const w=type==="cube"?105:155,h=100,d=32;
+      const parts=[
+        line(0,d,w,d,st),line(w,d,w,d+h,st),line(w,d+h,0,d+h,st),line(0,d+h,0,d,st),
+        line(d,0,w+d,0,st),line(w+d,0,w+d,h,st),line(w+d,h,w,d+h,st),
+        line(0,d,d,0,st),line(w,d,w+d,0,st),line(0,d+h,d,h,st,[7,5]),line(d,0,d,h,st,[7,5])
+      ];
+      o=group(parts);
+    }
+    else if(type==="pyramid"){
+      const parts=[
+        line(90,0,0,120,st),line(90,0,170,120,st),line(90,0,50,155,st),
+        line(0,120,170,120,st),line(170,120,50,155,st),line(50,155,0,120,st),
+        line(90,0,90,105,st,[7,5]),line(90,105,0,120,st,[7,5]),line(90,105,170,120,st,[7,5])
+      ]; o=group(parts);
+    }
+    else if(type==="cylinder"){
+      const parts=[
+        new fabric.Ellipse({...st,left:0,top:0,rx:70,ry:20,selectable:false,evented:false}),
+        line(0,20,0,135,st),line(140,20,140,135,st),
+        new fabric.Ellipse({...st,left:0,top:115,rx:70,ry:20,selectable:false,evented:false})
+      ]; o=group(parts);
+    }
+    else if(type==="cone"){
+      const parts=[
+        line(70,0,0,135,st),line(70,0,140,135,st),
+        new fabric.Ellipse({...st,left:0,top:115,rx:70,ry:20,selectable:false,evented:false})
+      ]; o=group(parts);
+    }
+    else if(type==="sphere"){
+      const parts=[
+        new fabric.Circle({...st,left:0,top:0,radius:70,selectable:false,evented:false}),
+        new fabric.Ellipse({...st,left:10,top:53,rx:60,ry:17,selectable:false,evented:false}),
+        new fabric.Ellipse({...st,left:52,top:5,rx:18,ry:65,selectable:false,evented:false})
+      ]; o=group(parts);
+    }
+    else if(type==="prism"){
+      const pts=[{x:0,y:35},{x:60,y:0},{x:120,y:35},{x:120,y:105},{x:60,y:140},{x:0,y:105}];
+      const back=pts.map(p=>({x:p.x+40,y:p.y-25}));
+      const parts=[];
+      for(let i=0;i<6;i++){let a=pts[i],b=pts[(i+1)%6];parts.push(line(a.x,a.y,b.x,b.y,st));}
+      for(let i=0;i<6;i++){let a=back[i],b=back[(i+1)%6];parts.push(line(a.x,a.y,b.x,b.y,st,i>2?[7,5]:null));}
+      for(let i=0;i<6;i++)parts.push(line(pts[i].x,pts[i].y,back[i].x,back[i].y,st,i>2?[7,5]:null));
+      o=group(parts);
+    }
+
+    if(!o)return;
+    c.add(o);c.setActiveObject(o);c.requestRenderAll();
+    try{pushHistory()}catch(_){}
+    try{autoSave()}catch(_){}
+  }
+
+  const map={
+    "Коло":"circle","Овал":"ellipse","Квадрат":"square","Прямокутник":"rect",
+    "Трикутник":"triangle","Зірка":"star","Паралелограм":"parallelogram","Ромб":"rhombus","Трапеція":"trapezoid",
+    "Куб":"cube","Паралелепіпед":"cuboid","Піраміда":"pyramid","Циліндр":"cylinder","Конус":"cone","Сфера":"sphere","Призма":"prism"
+  };
+
+  function bindFigures(){
+    const panels=[q("v56FiguresPanel"),q("shapeLibraryPanel")].filter(Boolean);
+    panels.forEach(p=>{
+      [...p.querySelectorAll("button")].forEach(b=>{
+        const text=(b.textContent||"").trim();
+        const type=b.dataset.v56Shape || b.dataset.shape || map[text];
+        const normalized=type==="diamond"?"rhombus":type;
+        if(!normalized || !["circle","ellipse","square","rect","triangle","star","parallelogram","rhombus","trapezoid","cube","cuboid","pyramid","cylinder","cone","sphere","prism"].includes(normalized))return;
+        if(b.__v152Bound)return;
+        b.__v152Bound=true;
+
+        // Capture на самій кнопці: старий handler, який давав null.value, не запускаємо.
+        b.addEventListener("click",e=>{
+          e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+          addRobustShape(normalized);
+          p.style.display="none";
+          p.classList.add("hidden");
+        },true);
+      });
+    });
+  }
+
+  function version(){
+    const b=q("appVersionBadge");if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
+  }
+
+  function init(){
+    addCss();
+    ensureTimerShortcut();
+    rebuildMath();
+    bindFigures();
+    version();
+    setTimeout(()=>{ensureTimerShortcut();rebuildMath();bindFigures();version()},450);
+    setTimeout(()=>{ensureTimerShortcut();rebuildMath();bindFigures();version()},1100);
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",init,{once:true});
+  }else init();
+  window.addEventListener("load",()=>setTimeout(init,180));
+})();
+
+
+
+/* =========================================================
+   v153 — LEFT TOOLBAR FINAL STATE GUARD
+   ========================================================= */
+(function(){
+  const q=id=>document.getElementById(id);
+
+  function paint(){
+    const tool=window.sofiaLockedTool||"select";
+    document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+      const on=b.dataset.tool===tool;
+      b.classList.toggle("active",on);
+      b.classList.remove("selected","v96-hand-active","v99-hand-active");
+      b.setAttribute("aria-pressed",on?"true":"false");
+    });
+    const cursor=q("v105CursorBtn");
+    if(cursor && tool!=="select"){
+      cursor.classList.remove("active");
+      cursor.setAttribute("aria-pressed","false");
+    }
+  }
+
+  function reapply(){
+    const tool=window.sofiaLockedTool||"select";
+    try{
+      if(typeof currentTool!=="undefined")currentTool=tool;
+      if(typeof setTool==="function")setTool(tool,true);
+      if((tool==="pen"||tool==="marker") && window.fcanvas){
+        window.fcanvas.isDrawingMode=true;
+      }
+    }catch(_){}
+    paint();
+  }
+
+  // Після створення штриха/фігури залишаємо саме вибраний користувачем інструмент.
+  const c=window.fcanvas;
+  if(c && !c.__v153GuardBound){
+    c.__v153GuardBound=true;
+    c.on("path:created",()=>setTimeout(reapply,0));
+    c.on("mouse:up",()=>setTimeout(reapply,0));
+  }
+
+  function version(){
+    const b=q("appVersionBadge");
+    if(b)b.textContent="v153";
+    document.documentElement.dataset.sofiaVersion="153";
+  }
+
+  paint();
+  version();
+  window.addEventListener("load",()=>setTimeout(()=>{paint();version()},250));
 })();
 
