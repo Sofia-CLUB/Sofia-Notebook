@@ -12107,3 +12107,37 @@ document.addEventListener("paste",e=>{
   version();
   window.addEventListener("load",()=>{addMathShortcuts();version()});
 })();
+
+/* v157 — ERASER RELEASE FIX */
+(function(){
+ const c=window.fcanvas;if(!c)return;
+ function stopEraser(){
+   try{if(typeof finishLocalErase==="function")finishLocalErase()}catch(e){}
+   try{isLocalErasing=false}catch(e){}
+   window.sofiaErasing=false;window.isErasing=false;window.eraserActive=false;
+   c.skipTargetFind=false;
+ }
+ document.addEventListener("pointerdown",e=>{
+   const b=e.target.closest?.(".side-tool[data-tool]");
+   if(b&&b.dataset.tool!=="eraser")stopEraser();
+ },true);
+ document.addEventListener("click",e=>{
+   const b=e.target.closest?.(".side-tool[data-tool]");if(!b||b.dataset.tool==="eraser")return;
+   const tool=b.dataset.tool;
+   setTimeout(()=>{
+     stopEraser();
+     if(tool==="pen"||tool==="marker"){
+       const col=document.getElementById("colorPicker")?.value||"#17315f";
+       const lw=Math.max(1,Number(document.getElementById("lineWidth")?.value)||2);
+       c.freeDrawingBrush=new fabric.PencilBrush(c);
+       c.freeDrawingBrush.color=(tool==="marker"&&typeof hexToRgba==="function")?hexToRgba(col,window.sofiaMarkerOpacity??.32):col;
+       c.freeDrawingBrush.width=tool==="marker"?Math.max(14,lw*5):lw;
+       c.freeDrawingBrush.strokeLineCap="round";c.freeDrawingBrush.strokeLineJoin="round";
+       c.isDrawingMode=true;c.selection=false;
+     }
+     c.requestRenderAll();
+   },0);
+ });
+ const b=document.getElementById("appVersionBadge");if(b)b.textContent="v157";
+ document.documentElement.dataset.sofiaVersion="157";
+})();
