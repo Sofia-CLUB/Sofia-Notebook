@@ -2814,8 +2814,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="156";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v156";
+  document.documentElement.dataset.sofiaVersion="158";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v158";
 })();
 
 
@@ -3525,8 +3525,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="156";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v156";
+    document.documentElement.dataset.sofiaVersion="158";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v158";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3883,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="156";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v156";
+    document.documentElement.dataset.sofiaVersion="158";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v158";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3986,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    if(badge) badge.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   function init(){
@@ -4085,8 +4085,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(badge)badge.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4189,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    if(badge)badge.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4482,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    if(badge)badge.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4597,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(badge)badge.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4728,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    if(badge)badge.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5135,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(badge)badge.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5232,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v156";document.documentElement.dataset.sofiaVersion="156";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v158";document.documentElement.dataset.sofiaVersion="158";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5506,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -5712,8 +5712,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -6009,8 +6009,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -6104,8 +6104,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -6286,8 +6286,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -6466,8 +6466,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -6739,8 +6739,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -7063,8 +7063,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -7174,7 +7174,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v156";
+  if(b) b.textContent="v158";
 }
 
 function init(){
@@ -7436,8 +7436,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -7737,8 +7737,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function repair(){
@@ -7923,8 +7923,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8358,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init108(){
@@ -8712,8 +8712,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b) b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function repair109(){
@@ -8850,8 +8850,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function apply110(){
@@ -9157,8 +9157,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -9369,8 +9369,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -9602,8 +9602,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function initG(){
@@ -9901,8 +9901,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function initMobile(){
@@ -10137,8 +10137,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init119(){
@@ -10286,8 +10286,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v156";
-  document.documentElement.dataset.sofiaVersion="156";
+  if(b)b.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 }
 
 function init(){
@@ -10368,7 +10368,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v156";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v158";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11021,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    const b=q("appVersionBadge");if(b)b.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,8 +11068,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11180,8 +11180,8 @@ document.addEventListener("paste",e=>{
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    if(badge)badge.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   if(document.readyState==="loading"){
@@ -11404,8 +11404,8 @@ document.addEventListener("paste",e=>{
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    if(b)b.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   function init(){
@@ -11614,8 +11614,8 @@ document.addEventListener("paste",e=>{
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    if(b)b.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   function init(){
@@ -11690,7 +11690,7 @@ document.addEventListener("paste",e=>{
   }
 
   function version(){
-    const b=$("appVersionBadge"); if(b)b.textContent="v156";
+    const b=$("appVersionBadge"); if(b)b.textContent="v158";
   }
 
   function init(){
@@ -11814,7 +11814,7 @@ document.addEventListener("paste",e=>{
    });
  }
 
- function version(){const b=$("appVersionBadge");if(b)b.textContent="v156";}
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v158";}
  function init(){
    addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
  }
@@ -12099,8 +12099,8 @@ document.addEventListener("paste",e=>{
   }
 
   function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v156";
-    document.documentElement.dataset.sofiaVersion="156";
+    const b=q("appVersionBadge");if(b)b.textContent="v158";
+    document.documentElement.dataset.sofiaVersion="158";
   }
 
   addMathShortcuts();
@@ -12138,6 +12138,127 @@ document.addEventListener("paste",e=>{
      c.requestRenderAll();
    },0);
  });
- const b=document.getElementById("appVersionBadge");if(b)b.textContent="v157";
- document.documentElement.dataset.sofiaVersion="157";
+ const b=document.getElementById("appVersionBadge");if(b)b.textContent="v158";
+ document.documentElement.dataset.sofiaVersion="158";
+})();
+
+
+/* =========================================================
+   v158 — DYNAMIC TOOL CURSOR
+   Курсор показує активний інструмент і реальний діаметр.
+   ========================================================= */
+(function(){
+  const c=window.fcanvas;
+  if(!c)return;
+
+  let cursor=document.getElementById("v158ToolCursor");
+  if(!cursor){
+    cursor=document.createElement("div");
+    cursor.id="v158ToolCursor";
+    cursor.innerHTML='<div class="v158-cursor-icon"></div>';
+    document.body.appendChild(cursor);
+  }
+
+  const style=document.createElement("style");
+  style.id="v158CursorStyle";
+  style.textContent=`
+    #v158ToolCursor{
+      position:fixed;left:0;top:0;z-index:2147483600;pointer-events:none;
+      display:none;transform:translate(-50%,-50%);
+      align-items:center;justify-content:center;border-radius:50%;
+      box-sizing:border-box;will-change:left,top,width,height;
+    }
+    #v158ToolCursor.show{display:flex}
+    #v158ToolCursor .v158-cursor-icon{
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+      font:700 14px/1 Arial,sans-serif;text-shadow:0 1px 2px #fff;
+      white-space:nowrap;
+    }
+    #v158ToolCursor.pen{border:1.5px solid rgba(23,49,95,.8);background:rgba(23,49,95,.06)}
+    #v158ToolCursor.marker{border:2px solid rgba(255,181,0,.85);background:rgba(255,225,80,.25)}
+    #v158ToolCursor.eraser{border:2px solid #d9683c;background:rgba(255,255,255,.82)}
+    #v158ToolCursor.line,#v158ToolCursor.arrow,#v158ToolCursor.curve,
+    #v158ToolCursor.polyline,#v158ToolCursor.wave{
+      border:1.5px solid rgba(23,49,95,.85);background:rgba(255,255,255,.35)
+    }
+    .notebook.v158-hide-native-cursor .upper-canvas{cursor:none!important}
+  `;
+  document.head.appendChild(style);
+
+  function tool(){
+    try{return window.sofiaLockedTool || currentTool || "select"}catch(_){return window.sofiaLockedTool||"select"}
+  }
+  function baseWidth(){
+    return Math.max(1,Number(document.getElementById("lineWidth")?.value)||2);
+  }
+  function visualSize(t){
+    const w=baseWidth();
+    if(t==="marker") return Math.max(14,w*5);
+    if(t==="eraser") return Math.max(14,window.sofiaEraserSize||w*6);
+    if(["pen","line","arrow","curve","polyline","wave"].includes(t)) return Math.max(7,w+6);
+    return 0;
+  }
+  function iconFor(t){
+    if(t==="pen")return "✎";
+    if(t==="marker")return "▰";
+    if(t==="eraser")return "▱";
+    if(t==="curve")return "⌒";
+    if(t==="polyline")return "⌁";
+    if(t==="wave")return "〰";
+    if(t==="arrow")return "➜";
+    if(t==="line")return "╱";
+    return "";
+  }
+  function refresh(){
+    const t=tool();
+    const supported=["pen","marker","eraser","line","arrow","curve","polyline","wave"].includes(t);
+    cursor.className=supported ? "show "+t : "";
+    document.getElementById("notebook")?.classList.toggle("v158-hide-native-cursor",supported);
+    if(!supported)return;
+    const size=Math.min(130,visualSize(t));
+    cursor.style.width=size+"px";
+    cursor.style.height=size+"px";
+    const ico=cursor.querySelector(".v158-cursor-icon");
+    ico.textContent=iconFor(t);
+    ico.style.fontSize=Math.max(10,Math.min(22,size*.55))+"px";
+    // Marker and eraser show the exact working footprint.
+    if(t==="marker"){
+      const col=document.getElementById("colorPicker")?.value||"#ffd54f";
+      cursor.style.borderColor=col;
+      cursor.style.background=typeof hexToRgba==="function"?hexToRgba(col,.18):"rgba(255,225,80,.25)";
+    }else if(t==="pen" || ["line","arrow","curve","polyline","wave"].includes(t)){
+      cursor.style.borderColor=document.getElementById("colorPicker")?.value||"#17315f";
+      cursor.style.background="rgba(255,255,255,.22)";
+    }else{
+      cursor.style.borderColor="#d9683c";
+      cursor.style.background="rgba(255,255,255,.82)";
+    }
+  }
+
+  const upper=c.upperCanvasEl;
+  upper.addEventListener("pointermove",e=>{
+    refresh();
+    if(!cursor.classList.contains("show"))return;
+    cursor.style.left=e.clientX+"px";
+    cursor.style.top=e.clientY+"px";
+  },{passive:true});
+  upper.addEventListener("pointerenter",refresh,{passive:true});
+  upper.addEventListener("pointerleave",()=>cursor.classList.remove("show"),{passive:true});
+
+  // Immediate visual response when thickness/color/tool changes.
+  document.getElementById("lineWidth")?.addEventListener("input",()=>{
+    const t=tool(),w=baseWidth();
+    if(t==="eraser")window.sofiaEraserSize=Math.max(14,w*6);
+    refresh();
+  });
+  document.getElementById("colorPicker")?.addEventListener("input",refresh);
+  document.querySelectorAll(".side-tool[data-tool]").forEach(b=>{
+    b.addEventListener("click",()=>setTimeout(refresh,0));
+    b.addEventListener("pointerdown",()=>setTimeout(refresh,0));
+  });
+
+  // Version badge.
+  const badge=document.getElementById("appVersionBadge");
+  if(badge)badge.textContent="v158";
+  document.documentElement.dataset.sofiaVersion="158";
 })();
