@@ -402,17 +402,16 @@ function makeEraserPath(points, width){
 
 function normalizeEraserLayerOrder(){
   const objects=fcanvas.getObjects().slice();
-  const masks=objects.filter(o=>o.isEraserMask);
   const texts=objects.filter(o=>isProtectedTextObject(o));
   const instruments=objects.filter(o=>o.isInstrument);
 
-  /* v161:
-     Маска гумки повинна бути зверху ЛИШЕ під час самого стирання.
-     Після завершення вона лишається у своїй позиції в стеку.
-     Тому новий напис/маркер, створений ПІСЛЯ стирання, малюється над
-     старою маскою і більше не має "дір" у вже стертих місцях. */
-  if(eraserStrokeActive || eraserPreview){
-    masks.forEach(m=>fcanvas.bringToFront(m));
+  /* v163:
+     НІКОЛИ не піднімаємо старі маски гумки наверх.
+     Інакше при повторному виборі гумки старі маски одразу
+     вирізають усе, що було написано після попереднього стирання.
+     Наверх піднімається тільки ПОТОЧНА маска, якою стираємо зараз. */
+  if(eraserPreview && fcanvas.getObjects().includes(eraserPreview)){
+    fcanvas.bringToFront(eraserPreview);
     texts.forEach(t=>fcanvas.bringToFront(t));
     instruments.forEach(i=>fcanvas.bringToFront(i));
   }
@@ -457,18 +456,20 @@ function finishLocalErase(){
     autoSave();
   }
   eraserPoints=[];
-  // v161: після гумки не переносимо старі маски поверх майбутніх штрихів.
+  // v163: після гумки не переносимо старі маски поверх майбутніх штрихів.
   fcanvas.skipTargetFind=false;
 }
 
-fcanvas.on("mouse:down",beginLocalErase);
-fcanvas.on("mouse:move",moveLocalErase);
-fcanvas.on("mouse:up",finishLocalErase);
+/* v163 legacy eraser disabled: fcanvas.on("mouse:down",beginLocalErase); */
+/* v163 legacy eraser disabled: fcanvas.on("mouse:move",moveLocalErase); */
+/* v163 legacy eraser disabled: fcanvas.on("mouse:up",finishLocalErase); */
 
 /* Після додавання/завантаження об'єктів зберігаємо порядок:
    графіка -> маска гумки -> текст. */
 fcanvas.on("object:added",e=>{
-  if(!e.target?.isEraserMask){
+  /* v163: додавання нового напису/штриха не повинно
+     переупорядковувати старі маски гумки. */
+  if(e.target?.isEraserMask && e.target===eraserPreview){
     setTimeout(normalizeEraserLayerOrder,0);
   }
 });
@@ -2821,8 +2822,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="161";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v161";
+  document.documentElement.dataset.sofiaVersion="163";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v163";
 })();
 
 
@@ -3532,8 +3533,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="161";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v161";
+    document.documentElement.dataset.sofiaVersion="163";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v163";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3890,8 +3891,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="161";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v161";
+    document.documentElement.dataset.sofiaVersion="163";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v163";
   }
 
   if(document.readyState==="loading"){
@@ -3993,8 +3994,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    if(badge) badge.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   function init(){
@@ -4092,8 +4093,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(badge)badge.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4196,8 +4197,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    if(badge)badge.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   if(document.readyState==="loading")
@@ -4489,8 +4490,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    if(badge)badge.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   if(document.readyState==="loading")
@@ -4604,8 +4605,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(badge)badge.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4735,8 +4736,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    if(badge)badge.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   if(document.readyState==="loading")
@@ -5142,8 +5143,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(badge)badge.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 if(document.readyState==="loading")
@@ -5239,7 +5240,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v161";document.documentElement.dataset.sofiaVersion="161";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v163";document.documentElement.dataset.sofiaVersion="163";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5513,8 +5514,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -5719,8 +5720,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -6016,8 +6017,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -6111,8 +6112,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -6293,8 +6294,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -6473,8 +6474,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -6746,8 +6747,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -6949,7 +6950,7 @@ function makeObjectPanel(){
       <div class="row"><label>Шрифт</label><select id="v102Font" class="grow">
         <option>Segoe Script</option><option>Segoe Print</option><option>Arial</option><option>Calibri</option><option>Times New Roman</option><option>Georgia</option>
       </select></div>
-      <div class="row"><label>Розмір</label><input id="v102FontSize" type="number" min="8" max="161" value="26" style="width:66px">
+      <div class="row"><label>Розмір</label><input id="v102FontSize" type="number" min="8" max="163" value="26" style="width:66px">
         <button class="btn" id="v102Bold"><b>B</b></button><button class="btn" id="v102Italic"><i>I</i></button><button class="btn" id="v102Underline"><u>U</u></button>
       </div>
       <div class="row"><label>Текст</label><input id="v102TextColor" type="color"><label>Фон</label><input id="v102TextBg" type="color"></div>
@@ -7070,8 +7071,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -7181,7 +7182,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v161";
+  if(b) b.textContent="v163";
 }
 
 function init(){
@@ -7443,8 +7444,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -7744,8 +7745,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function repair(){
@@ -7930,8 +7931,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8365,8 +8366,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init108(){
@@ -8719,8 +8720,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b) b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function repair109(){
@@ -8857,8 +8858,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function apply110(){
@@ -9164,8 +9165,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -9376,8 +9377,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -9609,8 +9610,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function initG(){
@@ -9908,8 +9909,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function initMobile(){
@@ -10144,8 +10145,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init119(){
@@ -10293,8 +10294,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(b)b.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 }
 
 function init(){
@@ -10375,7 +10376,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v161";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v163";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11028,8 +11029,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    const b=q("appVersionBadge");if(b)b.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11075,8 +11076,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11187,8 +11188,8 @@ document.addEventListener("paste",e=>{
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    if(badge)badge.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   if(document.readyState==="loading"){
@@ -11411,8 +11412,8 @@ document.addEventListener("paste",e=>{
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    if(b)b.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   function init(){
@@ -11621,8 +11622,8 @@ document.addEventListener("paste",e=>{
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    if(b)b.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   function init(){
@@ -11697,7 +11698,7 @@ document.addEventListener("paste",e=>{
   }
 
   function version(){
-    const b=$("appVersionBadge"); if(b)b.textContent="v161";
+    const b=$("appVersionBadge"); if(b)b.textContent="v163";
   }
 
   function init(){
@@ -11821,7 +11822,7 @@ document.addEventListener("paste",e=>{
    });
  }
 
- function version(){const b=$("appVersionBadge");if(b)b.textContent="v161";}
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v163";}
  function init(){
    addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
  }
@@ -12106,8 +12107,8 @@ document.addEventListener("paste",e=>{
   }
 
   function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v161";
-    document.documentElement.dataset.sofiaVersion="161";
+    const b=q("appVersionBadge");if(b)b.textContent="v163";
+    document.documentElement.dataset.sofiaVersion="163";
   }
 
   addMathShortcuts();
@@ -12145,50 +12146,50 @@ document.addEventListener("paste",e=>{
      c.requestRenderAll();
    },0);
  });
- const b=document.getElementById("appVersionBadge");if(b)b.textContent="v161";
- document.documentElement.dataset.sofiaVersion="161";
+ const b=document.getElementById("appVersionBadge");if(b)b.textContent="v163";
+ document.documentElement.dataset.sofiaVersion="163";
 })();
 
 
 /* =========================================================
-   v161 — DYNAMIC TOOL CURSOR
+   v163 — DYNAMIC TOOL CURSOR
    Курсор показує активний інструмент і реальний діаметр.
    ========================================================= */
 (function(){
   const c=window.fcanvas;
   if(!c)return;
 
-  let cursor=document.getElementById("v161ToolCursor");
+  let cursor=document.getElementById("v163ToolCursor");
   if(!cursor){
     cursor=document.createElement("div");
-    cursor.id="v161ToolCursor";
-    cursor.innerHTML='<div class="v161-cursor-icon"></div>';
+    cursor.id="v163ToolCursor";
+    cursor.innerHTML='<div class="v163-cursor-icon"></div>';
     document.body.appendChild(cursor);
   }
 
   const style=document.createElement("style");
-  style.id="v161CursorStyle";
+  style.id="v163CursorStyle";
   style.textContent=`
-    #v161ToolCursor{
+    #v163ToolCursor{
       position:fixed;left:0;top:0;z-index:2147483600;pointer-events:none;
       display:none;transform:translate(-50%,-50%);
       align-items:center;justify-content:center;border-radius:50%;
       box-sizing:border-box;will-change:left,top,width,height;
     }
-    #v161ToolCursor.show{display:flex}
-    #v161ToolCursor .v161-cursor-icon{
+    #v163ToolCursor.show{display:flex}
+    #v163ToolCursor .v163-cursor-icon{
       position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
       font:700 14px/1 Arial,sans-serif;text-shadow:0 1px 2px #fff;
       white-space:nowrap;
     }
-    #v161ToolCursor.pen{border:1.5px solid rgba(23,49,95,.8);background:rgba(23,49,95,.06)}
-    #v161ToolCursor.marker{border:2px solid rgba(255,181,0,.85);background:rgba(255,225,80,.25)}
-    #v161ToolCursor.eraser{border:2px solid #d9683c;background:rgba(255,255,255,.82)}
-    #v161ToolCursor.line,#v161ToolCursor.arrow,#v161ToolCursor.curve,
-    #v161ToolCursor.polyline,#v161ToolCursor.wave{
+    #v163ToolCursor.pen{border:1.5px solid rgba(23,49,95,.8);background:rgba(23,49,95,.06)}
+    #v163ToolCursor.marker{border:2px solid rgba(255,181,0,.85);background:rgba(255,225,80,.25)}
+    #v163ToolCursor.eraser{border:2px solid #d9683c;background:rgba(255,255,255,.82)}
+    #v163ToolCursor.line,#v163ToolCursor.arrow,#v163ToolCursor.curve,
+    #v163ToolCursor.polyline,#v163ToolCursor.wave{
       border:1.5px solid rgba(23,49,95,.85);background:rgba(255,255,255,.35)
     }
-    .notebook.v161-hide-native-cursor .upper-canvas{cursor:none!important}
+    .notebook.v163-hide-native-cursor .upper-canvas{cursor:none!important}
   `;
   document.head.appendChild(style);
 
@@ -12220,12 +12221,12 @@ document.addEventListener("paste",e=>{
     const t=tool();
     const supported=["pen","marker","eraser","line","arrow","curve","polyline","wave"].includes(t);
     cursor.className=supported ? "show "+t : "";
-    document.getElementById("notebook")?.classList.toggle("v161-hide-native-cursor",supported);
+    document.getElementById("notebook")?.classList.toggle("v163-hide-native-cursor",supported);
     if(!supported)return;
     const size=Math.min(130,visualSize(t));
     cursor.style.width=size+"px";
     cursor.style.height=size+"px";
-    const ico=cursor.querySelector(".v161-cursor-icon");
+    const ico=cursor.querySelector(".v163-cursor-icon");
     ico.textContent=iconFor(t);
     ico.style.fontSize=Math.max(10,Math.min(22,size*.55))+"px";
     // Marker and eraser show the exact working footprint.
@@ -12266,13 +12267,13 @@ document.addEventListener("paste",e=>{
 
   // Version badge.
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v161";
-  document.documentElement.dataset.sofiaVersion="161";
+  if(badge)badge.textContent="v163";
+  document.documentElement.dataset.sofiaVersion="163";
 })();
 
 
 /* =========================================================
-   v161 — WRITE AFTER ERASE: hard fix
+   v163 — WRITE AFTER ERASE: hard fix
    Новий штрих завжди SOURCE-OVER і завжди над старими масками гумки.
    ========================================================= */
 (function(){
@@ -12342,5 +12343,100 @@ document.addEventListener("paste",e=>{
   });
 
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v161";
+  if(badge)badge.textContent="v163";
+})();
+
+
+/* =========================================================
+   v163 — LOCAL ERASER ONLY
+   Один дотик = маленька локальна пляма. Рух = лише траєкторія губки.
+   Жодного підняття старих масок і жодного стирання всього написаного.
+   ========================================================= */
+(function(){
+  const c=window.fcanvas;
+  if(!c || !window.fabric)return;
+
+  let activeMask=null;
+  let pts=[];
+  const currentToolName=()=>window.sofiaLockedTool || (typeof currentTool!=="undefined"?currentTool:"");
+  const isErase=()=>currentToolName()==="eraser";
+  const size=()=>Math.max(8, Math.min(80, Number(window.sofiaEraserSize) || (Number(document.getElementById("lineWidth")?.value)||2)*6));
+
+  function xy(opt){
+    try{return c.getPointer(opt.e)}catch(_){return null}
+  }
+  function makeMask(points){
+    if(!points.length)return null;
+    const path=[];
+    path.push(["M",points[0].x,points[0].y]);
+    if(points.length===1){
+      // Tiny movement creates a round local dot rather than touching the whole drawing.
+      path.push(["L",points[0].x+0.01,points[0].y+0.01]);
+    }else{
+      for(let i=1;i<points.length;i++)path.push(["L",points[i].x,points[i].y]);
+    }
+    return new fabric.Path(path,{
+      fill:null,
+      stroke:"#000",
+      strokeWidth:size(),
+      strokeLineCap:"round",
+      strokeLineJoin:"round",
+      selectable:false,
+      evented:false,
+      objectCaching:false,
+      globalCompositeOperation:"destination-out",
+      isEraserMask:true,
+      excludeFromExport:false
+    });
+  }
+  function down(opt){
+    if(!isErase())return;
+    const p=xy(opt); if(!p)return;
+    pts=[p];
+    activeMask=makeMask(pts);
+    if(activeMask){
+      c.add(activeMask);
+      c.bringToFront(activeMask); // ONLY the current mask.
+      c.requestRenderAll();
+    }
+  }
+  function move(opt){
+    if(!isErase() || !activeMask || !pts.length)return;
+    const p=xy(opt); if(!p)return;
+    const last=pts[pts.length-1];
+    if(Math.hypot(p.x-last.x,p.y-last.y)<1.5)return;
+    pts.push(p);
+    c.remove(activeMask);
+    activeMask=makeMask(pts);
+    c.add(activeMask);
+    c.bringToFront(activeMask);
+    c.requestRenderAll();
+  }
+  function up(){
+    if(!activeMask)return;
+    // Freeze the current eraser stroke exactly where it was made.
+    activeMask.setCoords();
+    activeMask=null;
+    pts=[];
+    c.requestRenderAll();
+    try{saveState?.()}catch(_){}
+  }
+
+  // Register after legacy handlers have been disabled above.
+  c.on("mouse:down",down);
+  c.on("mouse:move",move);
+  c.on("mouse:up",up);
+
+  // Never reorder historical eraser masks.
+  c.on("object:added",e=>{
+    const o=e.target;
+    if(o && !o.isEraserMask && currentToolName()!=="eraser"){
+      o.set({globalCompositeOperation:"source-over"});
+      c.bringToFront(o);
+      c.requestRenderAll();
+    }
+  });
+
+  const badge=document.getElementById("appVersionBadge");
+  if(badge)badge.textContent="v163";
 })();
