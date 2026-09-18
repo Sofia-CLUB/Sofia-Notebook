@@ -406,11 +406,16 @@ function normalizeEraserLayerOrder(){
   const texts=objects.filter(o=>isProtectedTextObject(o));
   const instruments=objects.filter(o=>o.isInstrument);
 
-  // Маски стирають звичайну графіку.
-  masks.forEach(m=>fcanvas.bringToFront(m));
-  // Текст і вимірювальні прилади завжди лишаються над маскою гумки.
-  texts.forEach(t=>fcanvas.bringToFront(t));
-  instruments.forEach(i=>fcanvas.bringToFront(i));
+  /* v160:
+     Маска гумки повинна бути зверху ЛИШЕ під час самого стирання.
+     Після завершення вона лишається у своїй позиції в стеку.
+     Тому новий напис/маркер, створений ПІСЛЯ стирання, малюється над
+     старою маскою і більше не має "дір" у вже стертих місцях. */
+  if(eraserStrokeActive || eraserPreview){
+    masks.forEach(m=>fcanvas.bringToFront(m));
+    texts.forEach(t=>fcanvas.bringToFront(t));
+    instruments.forEach(i=>fcanvas.bringToFront(i));
+  }
   fcanvas.requestRenderAll();
 }
 
@@ -452,6 +457,8 @@ function finishLocalErase(){
     autoSave();
   }
   eraserPoints=[];
+  // v160: після гумки не переносимо старі маски поверх майбутніх штрихів.
+  fcanvas.skipTargetFind=false;
 }
 
 fcanvas.on("mouse:down",beginLocalErase);
@@ -2814,8 +2821,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
   el("runDiagnosticsBtn")?.addEventListener("click",runFullDiagnostics);
 
   // Version marker: proves new JS actually loaded.
-  document.documentElement.dataset.sofiaVersion="158";
-  if(el("appVersionBadge")) el("appVersionBadge").textContent="v159";
+  document.documentElement.dataset.sofiaVersion="160";
+  if(el("appVersionBadge")) el("appVersionBadge").textContent="v160";
 })();
 
 
@@ -3525,8 +3532,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       });
     }
 
-    document.documentElement.dataset.sofiaVersion="158";
-    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v159";
+    document.documentElement.dataset.sofiaVersion="160";
+    if($v("appVersionBadge"))$v("appVersionBadge").textContent="v160";
 
     const mo=new MutationObserver(()=>{
       clearTimeout(mo.__v56);
@@ -3883,8 +3890,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
       syncV57TextControls();
     },ms));
 
-    document.documentElement.dataset.sofiaVersion="158";
-    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v159";
+    document.documentElement.dataset.sofiaVersion="160";
+    if($57("appVersionBadge"))$57("appVersionBadge").textContent="v160";
   }
 
   if(document.readyState==="loading"){
@@ -3986,8 +3993,8 @@ $("mediaFileInput")?.addEventListener("change",e=>{
     });
 
     const badge=$60("appVersionBadge");
-    if(badge) badge.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    if(badge) badge.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   function init(){
@@ -4085,8 +4092,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true,attributes:true,
     attributeFilter:["style","class","hidden"]});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(badge)badge.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -4189,8 +4196,8 @@ else setTimeout(init,180);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    if(badge)badge.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   if(document.readyState==="loading")
@@ -4482,8 +4489,8 @@ else setTimeout(init,180);
     }
 
     const badge=$63("appVersionBadge");
-    if(badge)badge.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    if(badge)badge.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   if(document.readyState==="loading")
@@ -4597,8 +4604,8 @@ function init(){
   const mo=new MutationObserver(()=>setTimeout(bind,20));
   mo.observe(document.body,{childList:true,subtree:true});
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(badge)badge.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,220),{once:true});
@@ -4728,8 +4735,8 @@ else setTimeout(init,220);
     }
 
     const badge=document.getElementById("appVersionBadge");
-    if(badge)badge.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    if(badge)badge.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   if(document.readyState==="loading")
@@ -5135,8 +5142,8 @@ function init(){
   mo.observe(document.body,{childList:true,subtree:true});
 
   const badge=$68("appVersionBadge");
-  if(badge)badge.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(badge)badge.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 if(document.readyState==="loading")
@@ -5232,7 +5239,7 @@ function init(){
  document.addEventListener("fullscreenchange",()=>setTimeout(compactFullscreen,100));
  document.addEventListener("webkitfullscreenchange",()=>setTimeout(compactFullscreen,100));
  [300,900].forEach(ms=>setTimeout(()=>{note();build();compactFullscreen()},ms));
- let badge=$("appVersionBadge");if(badge)badge.textContent="v159";document.documentElement.dataset.sofiaVersion="158";
+ let badge=$("appVersionBadge");if(badge)badge.textContent="v160";document.documentElement.dataset.sofiaVersion="160";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});else setTimeout(init,180);
 })();
@@ -5506,8 +5513,8 @@ function resetFullscreen(){
 function markVersion(){
   let b=$87("appVersionBadge");
   if(!b) b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -5712,8 +5719,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -6009,8 +6016,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -6104,8 +6111,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -6286,8 +6293,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -6466,8 +6473,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -6739,8 +6746,8 @@ function markVersion(){
   if(!b){
     b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
   }
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -7063,8 +7070,8 @@ function bindHelp(){
 function markVersion(){
   let b=$102("appVersionBadge");
   if(!b)b=[...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -7174,7 +7181,7 @@ function findAndMakeRightRailTransparent(){
 function mark(){
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v159";
+  if(b) b.textContent="v160";
 }
 
 function init(){
@@ -7436,8 +7443,8 @@ function removeDuplicateSignature(){
 function mark(){
   const b=$105("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -7737,8 +7744,8 @@ function bindCursorButton(){
 function mark(){
   const b=$106("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function repair(){
@@ -7923,8 +7930,8 @@ function init(){
 
   const b=document.getElementById("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",()=>setTimeout(init,180),{once:true});
@@ -8358,8 +8365,8 @@ function bindOtherTools108(){
 function mark108(){
   const b=$108("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init108(){
@@ -8712,8 +8719,8 @@ function lowerSignature109(){
 function mark109(){
   const b=$109("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b) b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b) b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function repair109(){
@@ -8850,8 +8857,8 @@ function resizeSheet110(){
 function mark110(){
   const b=$110("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function apply110(){
@@ -9157,8 +9164,8 @@ function protectNewObjects(){
 function mark(){
   const b=$C("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -9369,8 +9376,8 @@ document.addEventListener("pointerdown",e=>{
 function mark(){
   const b=$D("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -9602,8 +9609,8 @@ function bindGraphDragG(){
 function markG(){
   const b=$G("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function initG(){
@@ -9901,8 +9908,8 @@ function resizeMobileCanvas(){
 function markMobile(){
   const b=$M("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function initMobile(){
@@ -10137,8 +10144,8 @@ function repair119(){
 function mark119(){
   const b=$119("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init119(){
@@ -10286,8 +10293,8 @@ function lockOnlyLeftRail(){
 function mark(){
   const b=$LF("appVersionBadge") ||
     [...document.querySelectorAll("span,small,b")].find(x=>/^v\d+$/i.test((x.textContent||"").trim()));
-  if(b)b.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
+  if(b)b.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 }
 
 function init(){
@@ -10368,7 +10375,7 @@ if(document.readyState==="loading"){
     document.addEventListener("click",e=>{
       if(e.target?.id==="v121SaveHeadingDefault") setTimeout(settle,0);
     },true);
-    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v159";
+    const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v160";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250),{once:true});
   else setTimeout(init,250);
@@ -11021,8 +11028,8 @@ document.addEventListener("paste",e=>{
 
   function init(){
     quality();textDefaults();liveWidth();
-    const b=q("appVersionBadge");if(b)b.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    const b=q("appVersionBadge");if(b)b.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,250));
   else setTimeout(init,250);
@@ -11068,8 +11075,8 @@ document.addEventListener("paste",e=>{
   function init(){
     prepareSelectors();setDefaults();bindCanvas();
     document.fonts?.load?.("32px Propysy").then(()=>{try{window.fcanvas?.requestRenderAll?.()}catch(_){}});
-    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    const b=document.getElementById("appVersionBadge");if(b)b.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,350));else setTimeout(init,350);
   window.addEventListener("load",()=>setTimeout(init,650));
@@ -11180,8 +11187,8 @@ document.addEventListener("paste",e=>{
     ensureCss();
     ensureButton();
     const badge=q("appVersionBadge");
-    if(badge)badge.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    if(badge)badge.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   if(document.readyState==="loading"){
@@ -11404,8 +11411,8 @@ document.addEventListener("paste",e=>{
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    if(b)b.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   function init(){
@@ -11614,8 +11621,8 @@ document.addEventListener("paste",e=>{
 
   function version(){
     const b=q("appVersionBadge");
-    if(b)b.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    if(b)b.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   function init(){
@@ -11690,7 +11697,7 @@ document.addEventListener("paste",e=>{
   }
 
   function version(){
-    const b=$("appVersionBadge"); if(b)b.textContent="v159";
+    const b=$("appVersionBadge"); if(b)b.textContent="v160";
   }
 
   function init(){
@@ -11814,7 +11821,7 @@ document.addEventListener("paste",e=>{
    });
  }
 
- function version(){const b=$("appVersionBadge");if(b)b.textContent="v159";}
+ function version(){const b=$("appVersionBadge");if(b)b.textContent="v160";}
  function init(){
    addCss(); removeDuplicateRightBars(); restorePanelContents(); ensureOrderButtons(); version();
  }
@@ -12099,8 +12106,8 @@ document.addEventListener("paste",e=>{
   }
 
   function version(){
-    const b=q("appVersionBadge");if(b)b.textContent="v159";
-    document.documentElement.dataset.sofiaVersion="158";
+    const b=q("appVersionBadge");if(b)b.textContent="v160";
+    document.documentElement.dataset.sofiaVersion="160";
   }
 
   addMathShortcuts();
@@ -12138,50 +12145,50 @@ document.addEventListener("paste",e=>{
      c.requestRenderAll();
    },0);
  });
- const b=document.getElementById("appVersionBadge");if(b)b.textContent="v159";
- document.documentElement.dataset.sofiaVersion="158";
+ const b=document.getElementById("appVersionBadge");if(b)b.textContent="v160";
+ document.documentElement.dataset.sofiaVersion="160";
 })();
 
 
 /* =========================================================
-   v159 — DYNAMIC TOOL CURSOR
+   v160 — DYNAMIC TOOL CURSOR
    Курсор показує активний інструмент і реальний діаметр.
    ========================================================= */
 (function(){
   const c=window.fcanvas;
   if(!c)return;
 
-  let cursor=document.getElementById("v159ToolCursor");
+  let cursor=document.getElementById("v160ToolCursor");
   if(!cursor){
     cursor=document.createElement("div");
-    cursor.id="v159ToolCursor";
-    cursor.innerHTML='<div class="v159-cursor-icon"></div>';
+    cursor.id="v160ToolCursor";
+    cursor.innerHTML='<div class="v160-cursor-icon"></div>';
     document.body.appendChild(cursor);
   }
 
   const style=document.createElement("style");
-  style.id="v159CursorStyle";
+  style.id="v160CursorStyle";
   style.textContent=`
-    #v159ToolCursor{
+    #v160ToolCursor{
       position:fixed;left:0;top:0;z-index:2147483600;pointer-events:none;
       display:none;transform:translate(-50%,-50%);
       align-items:center;justify-content:center;border-radius:50%;
       box-sizing:border-box;will-change:left,top,width,height;
     }
-    #v159ToolCursor.show{display:flex}
-    #v159ToolCursor .v159-cursor-icon{
+    #v160ToolCursor.show{display:flex}
+    #v160ToolCursor .v160-cursor-icon{
       position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
       font:700 14px/1 Arial,sans-serif;text-shadow:0 1px 2px #fff;
       white-space:nowrap;
     }
-    #v159ToolCursor.pen{border:1.5px solid rgba(23,49,95,.8);background:rgba(23,49,95,.06)}
-    #v159ToolCursor.marker{border:2px solid rgba(255,181,0,.85);background:rgba(255,225,80,.25)}
-    #v159ToolCursor.eraser{border:2px solid #d9683c;background:rgba(255,255,255,.82)}
-    #v159ToolCursor.line,#v159ToolCursor.arrow,#v159ToolCursor.curve,
-    #v159ToolCursor.polyline,#v159ToolCursor.wave{
+    #v160ToolCursor.pen{border:1.5px solid rgba(23,49,95,.8);background:rgba(23,49,95,.06)}
+    #v160ToolCursor.marker{border:2px solid rgba(255,181,0,.85);background:rgba(255,225,80,.25)}
+    #v160ToolCursor.eraser{border:2px solid #d9683c;background:rgba(255,255,255,.82)}
+    #v160ToolCursor.line,#v160ToolCursor.arrow,#v160ToolCursor.curve,
+    #v160ToolCursor.polyline,#v160ToolCursor.wave{
       border:1.5px solid rgba(23,49,95,.85);background:rgba(255,255,255,.35)
     }
-    .notebook.v159-hide-native-cursor .upper-canvas{cursor:none!important}
+    .notebook.v160-hide-native-cursor .upper-canvas{cursor:none!important}
   `;
   document.head.appendChild(style);
 
@@ -12213,12 +12220,12 @@ document.addEventListener("paste",e=>{
     const t=tool();
     const supported=["pen","marker","eraser","line","arrow","curve","polyline","wave"].includes(t);
     cursor.className=supported ? "show "+t : "";
-    document.getElementById("notebook")?.classList.toggle("v159-hide-native-cursor",supported);
+    document.getElementById("notebook")?.classList.toggle("v160-hide-native-cursor",supported);
     if(!supported)return;
     const size=Math.min(130,visualSize(t));
     cursor.style.width=size+"px";
     cursor.style.height=size+"px";
-    const ico=cursor.querySelector(".v159-cursor-icon");
+    const ico=cursor.querySelector(".v160-cursor-icon");
     ico.textContent=iconFor(t);
     ico.style.fontSize=Math.max(10,Math.min(22,size*.55))+"px";
     // Marker and eraser show the exact working footprint.
@@ -12259,95 +12266,6 @@ document.addEventListener("paste",e=>{
 
   // Version badge.
   const badge=document.getElementById("appVersionBadge");
-  if(badge)badge.textContent="v159";
-  document.documentElement.dataset.sofiaVersion="158";
-})();
-
-
-/* =========================================================
-   v159 — REAL TOOL POINTER (Fabric-event based)
-   ========================================================= */
-(function(){
-  if(!window.fcanvas) return;
-  const canvas=window.fcanvas;
-  const host=canvas.upperCanvasEl;
-  let p=document.getElementById("sofiaRealToolPointer");
-  if(!p){
-    p=document.createElement("div");
-    p.id="sofiaRealToolPointer";
-    p.innerHTML='<span></span>';
-    document.body.appendChild(p);
-  }
-  if(!document.getElementById("sofiaRealToolPointerCSS")){
-    const st=document.createElement("style");
-    st.id="sofiaRealToolPointerCSS";
-    st.textContent=`
-      #sofiaRealToolPointer{position:fixed;z-index:2147483647;pointer-events:none;display:none;
-        transform:translate(-50%,-50%);border-radius:50%;box-sizing:border-box;
-        align-items:center;justify-content:center;background:rgba(255,255,255,.25)}
-      #sofiaRealToolPointer.on{display:flex}
-      #sofiaRealToolPointer span{font-family:Arial,sans-serif;font-weight:800;line-height:1;
-        text-shadow:0 1px 2px #fff}
-      body.sofia-tool-pointer .upper-canvas{cursor:none!important}
-    `;
-    document.head.appendChild(st);
-  }
-  const val=id=>document.getElementById(id)?.value;
-  function activeTool(){ return window.sofiaLockedTool || window.currentTool || (typeof currentTool!=="undefined"?currentTool:"select"); }
-  function width(){
-    const n=Math.max(1,Number(val("lineWidth"))||2);
-    const t=activeTool();
-    if(t==="marker") return Math.max(16,n*5);
-    if(t==="eraser") return Math.max(18,Number(window.sofiaEraserSize)||n*6);
-    if(t==="pen") return Math.max(8,n+7);
-    if(["line","curve","polyline","wave","arrow"].includes(t)) return Math.max(10,n+8);
-    return 0;
-  }
-  function drawAt(clientX,clientY){
-    const t=activeTool();
-    const ok=["pen","marker","eraser","line","curve","polyline","wave","arrow"].includes(t);
-    document.body.classList.toggle("sofia-tool-pointer",ok);
-    p.className=ok?"on":"";
-    if(!ok)return;
-    const d=Math.min(150,width());
-    p.style.width=d+"px"; p.style.height=d+"px";
-    p.style.left=clientX+"px"; p.style.top=clientY+"px";
-    const color=val("colorPicker")||"#17315f";
-    const icon={pen:"✎",marker:"▰",eraser:"▱",line:"╱",curve:"⌒",polyline:"⌁",wave:"〰",arrow:"➜"}[t]||"";
-    p.firstElementChild.textContent=icon;
-    p.firstElementChild.style.fontSize=Math.max(10,Math.min(24,d*.55))+"px";
-    if(t==="eraser"){
-      p.style.border="2px solid #d9683c"; p.style.background="rgba(255,255,255,.88)";
-    }else if(t==="marker"){
-      p.style.border="2px solid "+color; p.style.background="rgba(255,220,70,.22)";
-    }else{
-      p.style.border="2px solid "+color; p.style.background="rgba(255,255,255,.18)";
-    }
-  }
-  function eventXY(e){
-    const ev=e?.e||e;
-    if(!ev)return null;
-    if(ev.touches?.[0])return [ev.touches[0].clientX,ev.touches[0].clientY];
-    if(ev.changedTouches?.[0])return [ev.changedTouches[0].clientX,ev.changedTouches[0].clientY];
-    return [ev.clientX,ev.clientY];
-  }
-  canvas.on("mouse:move",o=>{const q=eventXY(o);if(q)drawAt(q[0],q[1])});
-  canvas.on("mouse:over",o=>{const q=eventXY(o);if(q)drawAt(q[0],q[1])});
-  host.addEventListener("pointermove",e=>drawAt(e.clientX,e.clientY),true);
-  host.addEventListener("pointerleave",()=>{p.className="";document.body.classList.remove("sofia-tool-pointer")},true);
-  ["input","change"].forEach(ev=>{
-    document.getElementById("lineWidth")?.addEventListener(ev,e=>{
-      const n=Math.max(1,Number(e.target.value)||2);
-      if(activeTool()==="eraser") window.sofiaEraserSize=Math.max(18,n*6);
-    });
-  });
-  document.addEventListener("click",e=>{
-    const b=e.target.closest?.(".side-tool[data-tool]");
-    if(!b)return;
-    setTimeout(()=>{
-      window.sofiaLockedTool=b.dataset.tool;
-      try{currentTool=b.dataset.tool}catch(_){}
-    },0);
-  },true);
-  const badge=document.getElementById("appVersionBadge"); if(badge)badge.textContent="v159";
+  if(badge)badge.textContent="v160";
+  document.documentElement.dataset.sofiaVersion="160";
 })();
